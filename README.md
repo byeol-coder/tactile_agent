@@ -55,11 +55,20 @@ Graph의 **결정론적 함수**이므로 두 출력이 항상 일치하고, LLM
 - **Storage:** 로컬 파일 시스템 + SQLite
 - **Deployment:** Docker / docker-compose
 
-## AI 엔진 & 목업 모드
+## 엔진 (프로바이더) 선택
 
-`ANTHROPIC_API_KEY`가 설정되면 실제 Claude 파이프라인이 동작합니다. **키가 없으면**
-규칙 기반 목업으로 자동 전환되어 외부 의존성 없이 전체 플로우(업로드→분석→설계→렌더→
-음성→QA→export)를 데모할 수 있습니다. `TGA_FORCE_MOCK=1`로 강제할 수도 있습니다.
+`TGA_PROVIDER` 또는 키 존재 여부로 자동 선택됩니다 (우선순위: `TGA_PROVIDER` > Gemini키 > Claude키 > mock).
+
+| 프로바이더 | 키 필요 | 비용 | 실제 이미지 분석 | 의미 이해(제목·라벨·음성) |
+|---|---|---|---|---|
+| `cv` (로컬 OpenCV) | ❌ | 무료·오프라인 | ✅ 외곽선/윤곽 추출 | 휴리스틱 |
+| `gemini` (Gemini Flash) | Google AI Studio 무료키 | 무료 등급 | ✅ | ✅ LLM |
+| `anthropic` (Claude) | 유료키 | 유료 | ✅ | ✅ LLM |
+| `mock` | ❌ | 무료 | ❌ (고정 결과) | 고정 |
+
+- **무료로 실제 변환:** `TGA_PROVIDER=cv` (키 불필요). 업로드 이미지의 윤곽을 실제로 추출합니다.
+- **무료 LLM 비전:** `GEMINI_API_KEY=AIza...` (https://aistudio.google.com/apikey, 카드 불필요).
+- 강제 목업: `TGA_FORCE_MOCK=1`.
 
 > QA Agent는 의도적으로 **결정론적**입니다. 실제 래스터화된 매트릭스와 Scene Graph에서
 > 요소 간격·점 밀도·선 연속성·미세 디테일 수·배경 제거·핵심 의미 유지·음성↔촉각 일치·

@@ -74,7 +74,7 @@ export default function App() {
           {health
             ? health.mock_mode
               ? `엔진: 목업 모드 (API 키 없음)`
-              : `엔진: ${health.model}`
+              : `엔진: ${health.provider} · ${health.model}`
             : "백엔드 연결 확인 중…"}
         </div>
       </header>

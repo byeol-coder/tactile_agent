@@ -40,7 +40,12 @@ def _image_meta(raw: bytes, content_type: str | None) -> tuple[str, str, int, in
 
 @router.get("/health")
 def health() -> dict:
-    return {"status": "ok", "model": config.MODEL, "mock_mode": config.USE_MOCK}
+    return {
+        "status": "ok",
+        "provider": config.PROVIDER,
+        "model": config.active_model(),
+        "mock_mode": config.USE_MOCK,
+    }
 
 
 @router.post("/jobs")

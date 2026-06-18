@@ -22,7 +22,7 @@ _PROMPT = (
 
 
 def run(b64_data: str, media_type: str, filename: str) -> dict:
-    if config.USE_MOCK:
+    if not config.LLM_ENABLED:
         return _mock(filename)
 
     from .. import llm

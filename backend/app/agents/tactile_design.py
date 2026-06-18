@@ -30,7 +30,7 @@ _PROMPT = (
 
 
 def run(understanding: dict, width: int, height: int, aspect: str) -> dict:
-    if config.USE_MOCK:
+    if not config.LLM_ENABLED:
         return _mock(aspect)
 
     from .. import llm

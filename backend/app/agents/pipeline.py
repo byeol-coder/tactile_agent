@@ -11,6 +11,7 @@ The Human Review Editor (module 7) lives in the API layer and calls `rerender`.
 """
 from __future__ import annotations
 
+from .. import config
 from ..models import TactileDesign, TactileSpec
 from . import (
     audio_guide,
@@ -59,17 +60,27 @@ def _render_all(design: TactileDesign, understanding: dict, design_out: dict) ->
 
 def run_pipeline(b64: str, media_type: str, filename: str, width: int, height: int) -> dict:
     stages: list[dict] = []
-
-    understanding = image_understanding.run(b64, media_type, filename)
-    stages.append({"agent": "Image Understanding", "status": "done",
-                   "summary": understanding["image_analysis"]["summary"]})
-
     aspect = base.aspect_for(width, height)
-    design_out = tactile_design.run(understanding, 60, 40, aspect)
+
+    if config.PROVIDER == "cv":
+        # Local computer-vision path: real pixel processing, no LLM, no key.
+        from . import cv_vision
+
+        understanding, design_out = cv_vision.extract(b64, media_type, filename, width, height)
+        stages.append({"agent": "Image Understanding (Local CV)", "status": "done",
+                       "summary": understanding["image_analysis"]["summary"]})
+        stages.append({"agent": "Tactile Design (Local CV)", "status": "done",
+                       "summary": f"{len(design_out['tactile_design']['primitives'])}개 윤곽 추출"})
+    else:
+        understanding = image_understanding.run(b64, media_type, filename)
+        stages.append({"agent": "Image Understanding", "status": "done",
+                       "summary": understanding["image_analysis"]["summary"]})
+        design_out = tactile_design.run(understanding, 60, 40, aspect)
+        stages.append({"agent": "Tactile Design", "status": "done",
+                       "summary": f"{len(design_out['tactile_design']['primitives'])}개 촉각 요소 설계"
+                                  + (" · 분할 필요" if design_out.get("split_required") else "")})
+
     design = TactileDesign(**design_out["tactile_design"])
-    stages.append({"agent": "Tactile Design", "status": "done",
-                   "summary": f"{len(design.primitives)}개 촉각 요소 설계"
-                              + (" · 분할 필요" if design_out.get("split_required") else "")})
 
     rendered = _render_all(design, understanding, design_out)
     stages.append({"agent": "SVG Generation", "status": "done", "summary": "tactile.svg 생성"})

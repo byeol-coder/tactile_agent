@@ -26,7 +26,7 @@ _PROMPT = (
 
 
 def run(spec_partial: dict) -> dict:
-    if config.USE_MOCK:
+    if not config.LLM_ENABLED:
         return _mock(spec_partial)
 
     from .. import llm
