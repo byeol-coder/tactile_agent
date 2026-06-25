@@ -1,19 +1,3 @@
-# Python
-__pycache__/
-*.pyc
-backend/.venv/
-backend/data/
-*.sqlite3
-
-# Node
-node_modules/
-frontend/dist/
-
-# Env / secrets
 .env
-.env.local
-
-# OS / editor
 .DS_Store
-.idea/
-.vscode/
+*.local
