@@ -881,6 +881,137 @@
   }
   .right-col .accordion { margin-top: 0; }
 
+  /* ── SAVE ROW ───────────────────────────────────────────────── */
+  .save-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .save-row-label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+  .btn-save-preset {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary);
+    color: #FFF8F0;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 15px;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .14s, transform .12s, opacity .14s;
+    box-shadow: 0 2px 6px rgba(59,36,19,.22);
+  }
+  .btn-save-preset:hover:not(:disabled) { background: #4E3020; transform: translateY(-1px); }
+  .btn-save-preset:disabled { opacity: .35; cursor: default; transform: none; box-shadow: none; }
+
+  .btn-dl {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 7px 14px;
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .12s, border-color .12s, opacity .14s;
+  }
+  .btn-dl:hover:not(:disabled) { background: var(--bg); border-color: #C0A878; }
+  .btn-dl:disabled { opacity: .35; cursor: default; }
+  .btn-dl .dl-ext {
+    font-size: .68rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: .04em;
+  }
+  .btn-dl.dtm  .dl-ext { background: #E8F4FF; color: #2060A8; }
+  .btn-dl.dtms .dl-ext { background: #F0EBF8; color: #6030A0; }
+
+  /* Inline preset-name form */
+  .preset-save-form {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .preset-save-form.show { display: flex; }
+  .psf-label { font-size: .78rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .psf-input {
+    flex: 1;
+    min-width: 140px;
+    padding: 7px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .86rem;
+    color: var(--text);
+    background: var(--card);
+    outline: none;
+    transition: border-color .14s;
+  }
+  .psf-input:focus { border-color: var(--primary); }
+  .psf-ok {
+    background: var(--primary);
+    color: #FFF8F0;
+    border: none;
+    border-radius: 10px;
+    padding: 7px 16px;
+    font-size: .84rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background .14s;
+  }
+  .psf-ok:hover { background: #4E3020; }
+  .psf-cancel {
+    background: transparent;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .12s;
+  }
+  .psf-cancel:hover { background: var(--line); }
+  .save-flash {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--success);
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  .save-flash.show { opacity: 1; }
+
   /* ── COMPACT CONVERT STRIP ───────────────────────────────────── */
   /*
    * 변환 설정을 미리보기 바로 위에 배치 — 슬라이더를 움직이는 손과
@@ -1225,6 +1356,35 @@
             <span class="stat-val muted" id="sendStatus">—</span>
           </div>
         </div>
+
+        <!-- Save & Export row -->
+        <div class="save-row">
+          <span class="save-row-label">저장</span>
+          <button class="btn-save-preset" id="btnSavePreset" disabled>
+            ⭐ 프리셋으로 저장
+          </button>
+          <button class="btn-dl dtm" id="btnDlDtm" disabled>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M6.5 1v7M3.5 6l3 3 3-3M2 11h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="dl-ext">DTM</span>
+          </button>
+          <button class="btn-dl dtms" id="btnDlDtms" disabled>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M6.5 1v7M3.5 6l3 3 3-3M2 11h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="dl-ext">DTMS</span>
+          </button>
+          <span class="save-flash" id="saveFlash"></span>
+        </div>
+
+        <!-- Inline preset name form -->
+        <div class="preset-save-form" id="presetSaveForm">
+          <span class="psf-label">프리셋 이름</span>
+          <input class="psf-input" id="psfName" type="text" placeholder="이름을 입력하세요" maxlength="24"/>
+          <button class="psf-ok" id="psfOk">저장</button>
+          <button class="psf-cancel" id="psfCancel">취소</button>
+        </div>
       </div>
 
       <!-- Developer Options -->
@@ -1485,6 +1645,7 @@ function render() {
   $('out').value = hex;
   updatePinCount(n);
   updateHexStatus(hex.length === 600);
+  updateSaveButtons();
   renderGrid(grid);
 
   // Smart hints
@@ -1874,6 +2035,116 @@ $('saveCustomBtn').onclick = () => {
   resetAddForm();
   buildPresetGrid('custom');
 };
+
+// ── Save / Export ─────────────────────────────────────────────────
+function updateSaveButtons() {
+  const ready = currentHex.length === 600;
+  ['btnSavePreset','btnDlDtm','btnDlDtms'].forEach(id => $(id).disabled = !ready);
+}
+
+function getSaveName() {
+  return ($('fid').value || 'tactile').trim().replace(/\s+/g, '_') || 'tactile';
+}
+
+function triggerDownload(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function flashSave(msg) {
+  const el = $('saveFlash');
+  el.textContent = '✓ ' + msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function downloadDtm() {
+  if (!currentHex) return;
+  const name = getSaveName();
+  triggerDownload(currentHex, name + '.dtm', 'text/plain');
+  flashSave('.dtm 저장 완료');
+  log(`💾 DTM 저장: ${name}.dtm`);
+}
+
+function downloadDtms() {
+  if (!currentHex) return;
+  const name = getSaveName();
+  const dtms = {
+    title: name,
+    lang: 'korean',
+    lang_option: '1',
+    device: 'dotpad320',
+    audioPath: '',
+    items: [{
+      page: 1,
+      title: name,
+      graphic: { name: '1.dtm', data: currentHex },
+      text: { name: '1.txt', data: '', plain: name },
+      audio: { fileName: '' }
+    }]
+  };
+  triggerDownload(JSON.stringify(dtms, null, 2), name + '.dtms', 'application/json');
+  flashSave('.dtms 저장 완료');
+  log(`💾 DTMS 저장: ${name}.dtms`);
+}
+
+function getImgDataUrl() {
+  if (!img) return null;
+  try {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth || img.width || 300;
+    c.height = img.naturalHeight || img.height || 200;
+    c.getContext('2d').drawImage(img, 0, 0);
+    return c.toDataURL('image/png');
+  } catch { return null; }
+}
+
+$('btnDlDtm').onclick  = downloadDtm;
+$('btnDlDtms').onclick = downloadDtms;
+
+$('btnSavePreset').onclick = () => {
+  const form = $('presetSaveForm');
+  const showing = form.classList.contains('show');
+  form.classList.toggle('show', !showing);
+  if (!showing) {
+    $('psfName').value = $('fid').value || '';
+    $('psfName').focus();
+  }
+};
+
+$('psfCancel').onclick = () => $('presetSaveForm').classList.remove('show');
+
+$('psfOk').onclick = () => {
+  const name = $('psfName').value.trim();
+  if (!name) { $('psfName').focus(); return; }
+  const dataUrl = getImgDataUrl();
+  if (!dataUrl) { alert('이미지 소스를 불러올 수 없습니다.'); return; }
+  const preset = {
+    id: 'custom_' + Date.now(),
+    ko: name,
+    sub: '내 프리셋',
+    th: +$('th').value,
+    dataUrl,
+    isCustom: true
+  };
+  const arr = loadCustomPresets();
+  arr.push(preset);
+  saveCustomPresetsToStorage(arr);
+  $('presetSaveForm').classList.remove('show');
+  flashSave(`"${name}" 프리셋 저장 완료`);
+  log(`⭐ 프리셋 저장: "${name}"`);
+  if (activeCat === 'custom' || activeCat === 'all') buildPresetGrid(activeCat);
+};
+
+$('psfName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('psfOk').click();
+  if (e.key === 'Escape') $('psfCancel').click();
+});
 
 // ── Initial render ────────────────────────────────────────────────
 buildPresetGrid('all');
