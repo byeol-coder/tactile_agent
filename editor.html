@@ -3,346 +3,286 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-<title>Dot Tactile Studio · 라이브 에디터</title>
-<base href="./">
+<title>Dot Canvas Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#F3F4F6; --surface:#FFFFFF; --surface-2:#FAFBFC;
-    --ink:#1B2030; --ink-dim:#6B7280; --ink-faint:#9AA1AE;
-    --line:#E6E8EC; --line-soft:#EEF0F3;
-    --orange:#FF6A1F; --orange-press:#E85A12; --peach:#FFF1E8; --peach-line:#FFD3B8;
-    --charcoal:#2B2F3A; --indigo:#AEB6E8; --ok:#16A34A;
-    --pin:#23283A; --pin-down:#D7DBE3;
+    --bg:#F3F4F6; --surface:#FFFFFF; --panel:#FAFAFB; --line:#E5E7EB;
+    --text:#111827; --muted:#6B7280; --faint:#9CA3AF;
+    --accent:#FF6A1F; --accent-press:#E85A12; --accent-soft:#FFF1E8;
+    --success:#16A34A; --danger:#EF4444;
     --mono:'JetBrains Mono',ui-monospace,monospace;
     --body:'Pretendard','Inter','Noto Sans KR',system-ui,sans-serif;
+    --topbar:54px;          /* 상단 바 높이 (+1px border = 55px) */
+    --pad:1rem;             /* 모든 영역 공통 여백 (상·하·좌·우 균일) */
+    --rail-x:.5rem;         /* 레일 좌우 패딩 = (56-40)/2 로 아이콘 중앙 정렬 */
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased}
-  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
-  .skip{position:absolute;left:-9999px;top:0;background:var(--orange);color:#fff;padding:.6rem 1rem;border-radius:0 0 8px 0;z-index:60}
+  body{background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0)}
+  button,input,select{font-family:inherit}
+  svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:.5rem 1rem;z-index:80}
   .skip:focus{left:0}
-  button,select,input{font-family:inherit}
-  /* unified flat icon style */
-  svg.ic{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  svg.ic.fill{fill:currentColor;stroke:none}
 
-  .topbar{display:flex;align-items:center;gap:1.5rem;padding:0 1.25rem;height:56px;background:var(--surface);border-bottom:1px solid var(--line)}
-  .logo{font-weight:700;font-size:1.15rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.45rem}
-  .logo .mark{width:24px;height:24px;color:var(--orange)}
-  .logo b{color:var(--ink)}
-  .nav{display:flex;gap:1.3rem;font-size:.88rem;color:var(--ink-dim)}
-  .nav a{color:inherit;text-decoration:none}
-  .nav a.active{color:var(--orange);font-weight:600}
-  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:.4rem}
-  .iconbtn{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;border:1px solid transparent;color:var(--ink-dim);background:none;cursor:pointer}
-  .iconbtn:hover{background:var(--surface-2);border-color:var(--line)}
+  /* top bar */
+  .topbar{display:flex;align-items:center;gap:.9rem;height:var(--topbar);padding:0 var(--pad);background:var(--surface);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:1rem;white-space:nowrap}
+  .brand .mark{width:22px;height:22px;color:var(--accent)}
+  .brand small{font-weight:500;color:var(--faint);font-size:.74rem;margin-left:.1rem}
+  .fname{border:1px solid transparent;background:none;color:var(--text);font-size:.86rem;padding:.3rem .5rem;border-radius:7px;width:130px}
+  .fname:hover{border-color:var(--line)} .fname:focus{outline:none;border-color:var(--accent);background:var(--panel)}
+  .topbar .sp{flex:1}
+  .status{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:.34rem .7rem;white-space:nowrap}
+  .status .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .status.connecting .dot{background:#F2A33C}
+  .status.on .dot{background:var(--success);box-shadow:0 0 8px #16a34a88}
+  .status.err .dot{background:var(--danger)}
+  .btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:.5rem .8rem;font-size:.84rem;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;white-space:nowrap}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn .ic{width:16px;height:16px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
+  .btn.accent{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  .btn.accent:hover{background:var(--accent-press);color:#fff}
+  .btn.dark{background:#23283A;color:#fff;border-color:#23283A}
+  .btn.dark:hover{filter:brightness(1.12);color:#fff}
+  .btn:focus-visible,.tool:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-  .subhead{display:flex;align-items:center;gap:1rem;padding:.7rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--line)}
-  .doc{width:40px;height:40px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;color:var(--ink-faint)}
-  .titleblock h1{margin:0;font-size:1.02rem;font-weight:700}
-  .titleblock .acts{display:flex;gap:.9rem;font-size:.8rem;color:var(--ink-dim);margin-top:.1rem}
-  .titleblock .acts button{background:none;border:none;color:inherit;cursor:pointer;padding:0}
-  .titleblock .acts button:hover{color:var(--orange)}
-  .subhead .right{margin-left:auto;display:flex;align-items:center;gap:.7rem}
+  /* layout */
+  .work{display:grid;grid-template-columns:56px minmax(0,1fr) 336px;height:calc(100vh - var(--topbar) - 1px)}
+  .rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:var(--pad) var(--rail-x)}
+  .tool{width:40px;height:40px;border-radius:10px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+  .tool:hover{background:var(--panel);border-color:var(--line)}
+  .tool[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .tool .ic{width:21px;height:21px}
+  .rail .sep{width:24px;height:1px;background:var(--line);margin:.25rem 0}
 
-  .pill{appearance:none;border:none;border-radius:999px;padding:.55rem 1rem;font-size:.85rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
-  .pill.orange{background:var(--orange);color:#fff}.pill.orange:hover{background:var(--orange-press)}
-  .pill[disabled]{opacity:.45;cursor:not-allowed}
-  .pill .ic{width:16px;height:16px;stroke-width:2}
-  .chip-status{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--ink-dim);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:.35rem .75rem}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint)}
-  .chip-status.sim .dot{background:#F2A33C}
-  .chip-status.on .dot{background:var(--ok);box-shadow:0 0 8px #16a34a88}
-  .chip-status.off .dot{background:#E5564B}
+  .stage{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:var(--pad);overflow:auto;position:relative}
+  .board{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 8px 24px #1118270d}
+  #pad{display:block;border-radius:8px;background:#fff;touch-action:none}
+  #pad:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+  .boardinfo{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+  .boardinfo b{color:var(--accent)}
+  /* empty state */
+  .empty{position:absolute;inset:14px;border:2px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;text-align:center;padding:1.5rem;background:var(--surface)}
+  .empty.drag{border-color:var(--accent);background:var(--accent-soft)}
+  .empty .ic{width:40px;height:40px;color:var(--accent)}
+  .empty h2{margin:.2rem 0 0;font-size:1.05rem}
+  .empty p{margin:0;color:var(--muted);font-size:.85rem;max-width:34ch}
+  .empty .row{display:flex;gap:.5rem;margin-top:.4rem}
 
-  .work{display:grid;grid-template-columns:60px minmax(0,1fr) 350px;height:calc(100vh - 113px)}
-  @media(max-width:1024px){.work{grid-template-columns:60px 1fr}.rail-r{display:none}}
-  @media(max-width:680px){.work{grid-template-columns:1fr;height:auto}.rail-l{flex-direction:row!important;overflow:auto}}
+  /* right agent panel */
+  .panel{background:var(--surface);border-left:1px solid var(--line);overflow:auto;padding:var(--pad)}
+  .sec{border:1px solid var(--line);border-radius:12px;padding:.85rem;margin-bottom:.8rem;background:var(--panel)}
+  .panel .sec:last-child{margin-bottom:0}   /* 패널 하단 여백 = 상단(--pad)과 균일하게 */
+  .sec h3{margin:0 0 .55rem;font-size:.82rem;font-weight:700;display:flex;align-items:center;gap:.45rem;color:var(--text)}
+  .sec h3 .ic{width:15px;height:15px;color:var(--accent)}
+  .sec p{margin:0 0 .5rem;font-size:.82rem;color:var(--muted)}
+  .reco-card{display:flex;align-items:center;gap:.5rem;font-size:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:.45rem .6rem;margin-top:.4rem}
+  .reco-card .ic{width:15px;height:15px;color:var(--success);flex:none}
+  .scorebar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem}
+  .scorebar .lab{font-weight:700} .scorebar .lab.good{color:var(--success)} .scorebar .lab.mid{color:#D98A1F} .scorebar .lab.warn{color:var(--danger)}
+  .scorebar .pins{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
 
-  .rail-l{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.6rem 0;overflow:auto}
-  .tool{width:40px;height:40px;border-radius:10px;border:1px solid transparent;background:none;color:var(--ink-dim);cursor:pointer;display:grid;place-items:center}
-  .tool:hover{background:var(--surface-2);border-color:var(--line)}
-  .tool[aria-pressed="true"]{background:var(--orange);color:#fff;border-color:var(--orange)}
-  .tool:focus-visible,.iconbtn:focus-visible,.pill:focus-visible,.chip:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
-  .rail-sep{width:24px;height:1px;background:var(--line);margin:.25rem 0}
+  .slabel{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);margin-bottom:.3rem}
+  .slabel b{color:var(--accent)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .ticks{display:flex;justify-content:space-between;font-size:.7rem;color:var(--faint);margin-top:.15rem}
 
-  .canvas-wrap{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:1.2rem;overflow:auto}
-  .board{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 30px #1b203012}
-  #pad{display:block;border-radius:8px;background:#fff;cursor:crosshair;touch-action:none}
-  #pad:focus-visible{outline:3px solid var(--orange);outline-offset:4px}
-  .board-foot{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:640px;font-family:var(--mono);font-size:.74rem;color:var(--ink-dim)}
-  .board-foot b{color:var(--orange)}
-  .hint{font-size:.74rem;color:var(--ink-faint);text-align:center;max-width:62ch}
-  kbd{font-family:var(--mono);font-size:.7rem;background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:.04rem .32rem}
+  .quick{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+  .qbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:.5rem .4rem;font-size:.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.3rem}
+  .qbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .qbtn .ic{width:14px;height:14px}
+  .qbtn[disabled]{opacity:.45;cursor:not-allowed}
 
-  .rail-r{background:var(--surface);border-left:1px solid var(--line);overflow:auto;padding:1rem}
-  .sec{margin-bottom:1.3rem}
-  .sec h2{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0 0 .6rem;font-weight:700;display:flex;align-items:center;gap:.4rem}
-  .sec h2 .ic{width:14px;height:14px}
+  .livecard{font-size:.82rem}
+  .liverow{display:flex;align-items:center;justify-content:space-between;margin-top:.5rem}
+  .toggle{position:relative;width:42px;height:24px;border-radius:999px;background:var(--line);border:none;cursor:pointer;transition:background .15s}
+  .toggle[aria-checked="true"]{background:var(--accent)}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+  .toggle[aria-checked="true"]::after{left:21px}
+  .savebtns{display:flex;flex-direction:column;gap:.45rem}
+  .saverow{display:flex;gap:.45rem}.saverow .btn{flex:1}
+  details.expert{margin-top:.4rem;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+  details.expert summary{cursor:pointer;padding:.5rem .65rem;font-size:.78rem;color:var(--muted)}
+  details.expert .body{padding:.2rem .65rem .6rem}
+  details.expert label{display:block;font-size:.76rem;color:var(--muted);margin:.4rem 0 .2rem}
+  details.expert select,details.expert input{width:100%;border:1px solid var(--line);border-radius:7px;padding:.4rem .5rem;font-size:.8rem}
+  .readout{font-family:var(--mono);font-size:.64rem;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.5rem;max-height:90px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:.4rem}
 
-  .agent{border:1px solid var(--peach-line);background:linear-gradient(180deg,#fff,var(--peach));border-radius:14px;padding:.85rem}
-  .agent .lead{display:flex;align-items:center;gap:.45rem;font-size:.85rem;font-weight:600}
-  .agent .lead .ic{width:16px;height:16px;color:var(--orange)}
-  .ask{display:flex;gap:.4rem;margin-top:.6rem}
-  .ask input{flex:1;border:1px solid var(--peach-line);border-radius:10px;padding:.5rem .65rem;font-size:.85rem;background:#fff}
-  .ask .go{border:none;background:var(--orange);color:#fff;border-radius:10px;padding:0 .8rem;font-weight:700;cursor:pointer}
-  .ask .go:hover{background:var(--orange-press)}
-  .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
-  .chip{border:1px solid var(--peach-line);background:#fff;color:var(--charcoal);border-radius:999px;padding:.32rem .7rem;font-size:.78rem;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem}
-  .chip .ic{width:13px;height:13px}
-  .chip:hover{background:var(--orange);color:#fff;border-color:var(--orange)}
-  .reco{display:none;margin-top:.6rem;font-size:.8rem;color:var(--charcoal);background:#fff;border:1px solid var(--peach-line);border-radius:10px;padding:.55rem .65rem}
-  .reco.show{display:block}
-  .reco .row2{display:flex;gap:.4rem;margin-top:.45rem}
-  .reco button{border:none;background:var(--charcoal);color:#fff;border-radius:8px;padding:.4rem .7rem;font-size:.78rem;cursor:pointer}
-  .reco button.alt{background:#fff;color:var(--charcoal);border:1px solid var(--peach-line)}
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#23283A;color:#fff;padding:.6rem 1rem;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:.2s;z-index:90}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  .gen .row{display:flex;gap:.4rem}
-  .gen textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:.5rem .65rem;font-size:.85rem;background:#fff;resize:vertical;min-height:42px;font-family:inherit}
-  .gen .genbtn{border:none;background:var(--charcoal);color:#fff;border-radius:10px;padding:0 .8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.35rem;white-space:nowrap}
-  .gen .genbtn:hover{filter:brightness(1.12)}
-  .gen .genbtn .ic{width:15px;height:15px;stroke-width:2}
-  .gen small{display:block;color:var(--ink-faint);font-size:.72rem;margin-top:.35rem}
-
-  label.f{display:block;font-size:.78rem;color:var(--ink-dim);margin:.6rem 0 .25rem;display:flex;justify-content:space-between}
-  label.f b{color:var(--orange);font-weight:600}
-  input[type=text],select{width:100%;border:1px solid var(--line);border-radius:9px;padding:.5rem .6rem;font-size:.85rem;background:#fff;color:var(--ink)}
-  input[type=range]{width:100%;accent-color:var(--orange)}
-  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
-  .seg button{flex:1;background:#fff;border:none;color:var(--ink-dim);padding:.45rem;font-size:.8rem;cursor:pointer}
-  .seg button[aria-pressed="true"]{background:var(--orange);color:#fff;font-weight:700}
-  .kv{display:flex;justify-content:space-between;font-size:.8rem;color:var(--ink-dim);padding:.22rem 0;border-bottom:1px solid var(--line-soft)}
-  .kv span:last-child{color:var(--ink);font-family:var(--mono);font-size:.78rem}
-  .readout{font-family:var(--mono);font-size:.66rem;line-height:1.45;color:var(--ink-dim);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:.55rem .65rem;max-height:110px;overflow:auto;white-space:pre-wrap;word-break:break-all}
-  .readout .tag{color:var(--orange);font-weight:600}
-  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:.5rem .7rem;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.35rem}
-  .btn:hover{border-color:var(--orange);color:var(--orange)}
-  .btn .ic{width:15px;height:15px}
-  .btn.dark{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
-  .btn.dark:hover{filter:brightness(1.1);color:#fff}
-  .btn.full{width:100%}
-  .row{display:flex;gap:.5rem}.row>*{flex:1}
-  details{border:1px solid var(--line);border-radius:10px;margin-top:.6rem;background:#fff}
-  summary{cursor:pointer;padding:.55rem .7rem;font-size:.8rem}
-  details pre{margin:0;padding:.6rem .7rem;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:.66rem;color:var(--ink-dim);white-space:pre-wrap;word-break:break-all}
-  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* mobile */
+  .mobtab{display:none}
+  @media(max-width:860px){
+    .work{grid-template-columns:1fr;height:auto;min-height:calc(100vh - 55px)}
+    .rail{flex-direction:row;justify-content:center;border-right:none;border-bottom:1px solid var(--line);order:3;position:sticky;bottom:0;background:var(--surface)}
+    .stage{order:2;min-height:50vh}
+    .panel{order:4;border-left:none;border-top:1px solid var(--line);position:fixed;left:0;right:0;bottom:0;max-height:72vh;border-radius:16px 16px 0 0;box-shadow:0 -8px 30px #1118271f;transform:translateY(calc(100% - 52px));transition:transform .25s;z-index:60}
+    .panel.open{transform:translateY(0)}
+    .mobtab{display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;height:40px;margin:calc(-1 * var(--pad)) calc(-1 * var(--pad)) .6rem;border:none;border-bottom:1px solid var(--line);background:var(--surface);font-weight:700;font-size:.85rem;cursor:pointer;border-radius:16px 16px 0 0}
+    .topbar{flex-wrap:wrap;height:auto;padding:.5rem .7rem;gap:.5rem}
+    .fname{width:90px}
+  }
 </style>
 </head>
 <body>
 <a class="skip" href="#pad">캔버스로 건너뛰기</a>
 
-<!-- icon symbol library (defined once, referenced via <use>) -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
- <defs>
-  <g id="i-pen"><path d="M4 20l3-1L18 8l-2-2L5 17z"/><path d="M15 7l2 2"/></g>
-  <g id="i-erase"><path d="M8 18l-3-3a2 2 0 0 1 0-3l6-6a2 2 0 0 1 3 0l3 3a2 2 0 0 1 0 3l-7 7H6"/><path d="M4 21h16"/></g>
-  <g id="i-line"><path d="M5 19L19 5"/></g>
-  <g id="i-rect"><rect x="5" y="6" width="14" height="12" rx="1.5"/></g>
-  <g id="i-ellipse"><ellipse cx="12" cy="12" rx="7.5" ry="5.5"/></g>
-  <g id="i-fill"><path d="M11 4l7 7-6.5 6.5a2 2 0 0 1-2.8 0L4 12.5z"/><path d="M11 4 9 2"/><path d="M19 14c1 1.4 1 3 0 4a2 2 0 0 1-3 0c-1-1.3-.3-2.8 1.5-4"/></g>
-  <g id="i-undo"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/></g>
-  <g id="i-contrast"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></g>
-  <g id="i-gear"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4 5.3 5.3"/></g>
-  <g id="i-doc"><rect x="4" y="3" width="16" height="18" rx="2.5"/><circle cx="9" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="13" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="13" r="1.1" fill="currentColor" stroke="none"/><circle cx="13" cy="13" r="1.1" fill="currentColor" stroke="none"/></g>
-  <g id="i-bt"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></g>
-  <g id="i-spark"><path d="M12 3l1.7 4.6L18 9.3l-4.3 1.7L12 16l-1.7-5L6 9.3l4.3-1.7z"/><path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></g>
-  <g id="i-wand"><path d="M5 19l8.5-8.5"/><path d="M15 4l.9 2.1L18 7l-2.1.9L15 10l-.9-2.1L12 7l2.1-.9z"/><path d="M19.5 11.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></g>
-  <g id="i-image"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5L5 19"/></g>
-  <g id="i-auto"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"/><path d="M4 20v-4h4"/></g>
-  <g id="i-outline"><rect x="5" y="5" width="14" height="14" rx="2"/></g>
-  <g id="i-bold"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/></g>
-  <g id="i-thin"><path d="M6 12h12"/></g>
-  <g id="i-broom"><path d="M14 4l6 6M19 9l-9 9-5 1 1-5z"/><path d="M5 19l3 3"/></g>
-  <g id="i-frame"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 8h16M8 4v16"/></g>
-  <g id="i-invert"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></g>
-  <g id="i-balance"><path d="M12 4v16M5 8h14"/><circle cx="8" cy="14" r="2.5"/><circle cx="16" cy="14" r="2.5"/></g>
-  <g id="i-png"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/></g>
-  <g id="i-hex"><path d="M7 8h10M7 12h10M7 16h7"/></g>
-  <g id="i-save"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></g>
- </defs>
-</svg>
-<script>function ic(id,cls){return `<svg class="ic ${cls||''}" viewBox="0 0 24 24"><use href="#i-${id}"/></svg>`}</script>
-
-<!-- top nav -->
+<!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo"><svg class="ic mark" viewBox="0 0 24 24"><circle cx="7" cy="9" r="2.4" fill="currentColor" stroke="none"/><circle cx="7" cy="15" r="2.4" fill="currentColor" stroke="none"/><circle cx="14" cy="9" r="2.4" fill="currentColor" stroke="none"/><circle cx="14" cy="15" r="2.4" fill="currentColor" stroke="none"/></svg><b>Dot Tactile Studio</b></div>
-  <nav class="nav" aria-label="섹션">
-    <a href="./index.html">변환기</a>
-    <a href="./editor.html" class="active" aria-current="page">라이브 에디터</a>
-    <a href="#">Dot Cloud</a>
-    <a href="#">Support</a>
-  </nav>
-  <div class="right">
-    <button class="iconbtn" id="contrastBtn" title="큰 핀 보기" aria-label="큰 핀 보기 전환"><svg class="ic" viewBox="0 0 24 24"><use href="#i-contrast"/></svg></button>
-    <button class="iconbtn" title="설정" aria-label="설정"><svg class="ic" viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+  <div class="brand">
+    <svg class="ic mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="2.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="2.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="2.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="2.3" fill="currentColor" stroke="none"/></svg>
+    Dot Canvas Agent <small>Dot Tactile Studio</small>
   </div>
-</div>
-
-<!-- sub header -->
-<div class="subhead">
-  <div class="doc" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><use href="#i-doc"/></svg></div>
-  <div class="titleblock">
-    <h1 id="docTitle">Untitled</h1>
-    <div class="acts">
-      <button id="newBtn">새로 만들기</button>
-      <button id="exportBtn">내보내기</button>
-      <button id="saveBtn">저장</button>
-    </div>
-  </div>
-  <div class="right">
-    <div id="status" class="chip-status sim" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="statusText">시뮬레이터</span></div>
-    <button id="connectBtn" class="pill orange"><svg class="ic" viewBox="0 0 24 24"><use href="#i-bt"/></svg>DotPad 연결</button>
-  </div>
+  <input class="fname" id="fname" value="Untitled" aria-label="파일명" />
+  <div class="sp"></div>
+  <div class="status" id="status" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="statusText">DotPad 미연결</span></div>
+  <button class="btn" id="saveTopBtn" title="DTMS로 저장" aria-label="DTMS로 저장" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>저장</button>
+  <button class="btn accent" id="connectBtn"><svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 연결</button>
 </div>
 
 <div class="work">
-  <!-- left tool rail -->
-  <div class="rail-l" role="toolbar" aria-label="그리기 도구" id="rail">
-    <button class="tool" data-tool="pen" aria-pressed="true" title="펜 (P)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-pen"/></svg></button>
-    <button class="tool" data-tool="erase" aria-pressed="false" title="지우개 (E)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-erase"/></svg></button>
-    <div class="rail-sep" aria-hidden="true"></div>
-    <button class="tool" data-tool="line" aria-pressed="false" title="직선 (L)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-line"/></svg></button>
-    <button class="tool" data-tool="rect" aria-pressed="false" title="사각형 (R)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-rect"/></svg></button>
-    <button class="tool" data-tool="ellipse" aria-pressed="false" title="타원 (O)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-ellipse"/></svg></button>
-    <button class="tool" data-tool="fill" aria-pressed="false" title="채우기 (F)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-fill"/></svg></button>
-    <div class="rail-sep" aria-hidden="true"></div>
-    <button class="tool" id="undoBtn" title="실행취소 (Ctrl+Z)" aria-label="실행취소"><svg class="ic" viewBox="0 0 24 24"><use href="#i-undo"/></svg></button>
+  <!-- LEFT TOOLBAR -->
+  <div class="rail" role="toolbar" aria-label="도구" id="rail">
+    <button class="tool" data-tool="select" aria-pressed="true" title="선택 / 이동" aria-label="선택 / 이동"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4l14 7-6 2-2 6z"/></svg></button>
+    <button class="tool" data-tool="pen" aria-pressed="false" title="펜 (P)" aria-label="펜"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20l3-1L18 8l-2-2L5 17z"/><path d="M15 7l2 2"/></svg></button>
+    <button class="tool" data-tool="eraser" aria-pressed="false" title="지우개 (E)" aria-label="지우개"><svg class="ic" viewBox="0 0 24 24"><path d="M8 18l-3-3a2 2 0 0 1 0-3l6-6a2 2 0 0 1 3 0l3 3a2 2 0 0 1 0 3l-7 7H6"/><path d="M4 21h16"/></svg></button>
+    <div class="sep" aria-hidden="true"></div>
+    <button class="tool" id="undoBtn" title="되돌리기 (Ctrl/⌘+Z)" aria-label="되돌리기"><svg class="ic" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/></svg></button>
+    <button class="tool" id="clearBtn" title="전체 지우기" aria-label="전체 지우기"><svg class="ic" viewBox="0 0 24 24"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
   </div>
 
-  <!-- center canvas -->
-  <div class="canvas-wrap" id="main">
-    <div class="board"><canvas id="pad" tabindex="0" role="application" aria-label="촉각 그래픽 편집 모눈. 방향키로 커서 이동, 스페이스로 핀 토글."></canvas></div>
-    <div class="board-foot">
-      <span>커서 <b id="cursorXY">0, 0</b> · <span id="cursorState">내림</span></span>
-      <span>올라온 핀 <b id="pinCount">0</b></span>
+  <!-- CENTER CANVAS -->
+  <div class="stage" id="stage">
+    <div class="board">
+      <canvas id="pad" tabindex="0" role="application" aria-label="DotPad 60×40 촉각 미리보기. 펜/지우개 선택 후 방향키로 이동, 스페이스로 핀 토글."></canvas>
+      <!-- empty state -->
+      <div class="empty" id="empty">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <h2>이미지를 올려 시작하세요</h2>
+        <p>이미지를 올리면 DotPad에서 만져지는 촉각그래픽으로 자동 변환합니다.</p>
+        <div class="row">
+          <button class="btn accent" id="uploadBtn"><svg class="ic" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>이미지 업로드</button>
+          <button class="btn" id="sampleBtn">샘플로 시작</button>
+        </div>
+      </div>
     </div>
-    <p class="hint"><kbd>방향키</kbd> 이동 · <kbd>Space</kbd> 핀 토글 · <kbd>P E L R O F</kbd> 도구 — 편집은 연결된 DotPad에 실시간 반영됩니다.</p>
+    <div class="boardinfo" id="boardinfo">60×40 · 활성 핀 0개 · DotPad 미연결</div>
+    <input type="file" id="fileInput" accept="image/png,image/jpeg,image/svg+xml" class="sr-only" />
   </div>
 
-  <!-- right panel -->
-  <div class="rail-r" aria-label="편집 도우미 및 정보">
-    <!-- AGENT -->
+  <!-- RIGHT AGENT PANEL -->
+  <div class="panel" id="panel" aria-label="에이전트 패널">
+    <button class="mobtab" id="mobtab" aria-expanded="false">조정 패널 열기 ▲</button>
+
+    <!-- 1. 시작하기 -->
+    <div class="sec" id="secStart">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>시작하기</h3>
+      <p>이미지를 올려 촉각그래픽을 시작하세요.</p>
+      <div class="saverow">
+        <button class="btn accent" id="uploadBtn2">이미지 업로드</button>
+        <button class="btn" id="sampleBtn2">샘플로 시작</button>
+      </div>
+    </div>
+
+    <!-- 2. 추천 결과 -->
+    <div class="sec" id="secReco" style="display:none">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>추천 결과</h3>
+      <p id="recoLead">DotPad에서 형태가 잘 느껴지도록 자동으로 조정했습니다.</p>
+      <div id="scoreLine"></div>
+      <div id="recoReasons"></div>
+    </div>
+
+    <!-- 3. 촉각 선명도 -->
     <div class="sec">
-      <h2><svg class="ic" viewBox="0 0 24 24"><use href="#i-spark"/></svg>편집 도우미</h2>
-      <div class="agent">
-        <div class="lead"><svg class="ic" viewBox="0 0 24 24"><use href="#i-spark"/></svg> 어떻게 바꿀까요?</div>
-        <div class="ask">
-          <input type="text" id="agentInput" placeholder="예: 외곽선만 남겨줘 / 굵게 / 점 정리" aria-label="편집 명령 입력" />
-          <button class="go" id="agentGo">실행</button>
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2.4"/><circle cx="8" cy="16" r="2.4"/></svg>촉각 선명도</h3>
+      <div class="slabel"><span>부드럽게 — 또렷하게</span><b id="clarityVal">균형 있게</b></div>
+      <input type="range" id="clarity" min="40" max="220" value="128" disabled aria-label="촉각 선명도" />
+      <div class="ticks"><span>부드럽게</span><span>균형</span><span>또렷하게</span></div>
+    </div>
+
+    <!-- 4. 빠른 조정 -->
+    <div class="sec">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 7"/><path d="M21 4v3h-3"/><path d="M21 12a9 9 0 0 1-15 6.7L3 17"/><path d="M3 20v-3h3"/></svg>빠른 조정</h3>
+      <div class="quick">
+        <button class="qbtn" data-op="auto" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>자동 맞춤</button>
+        <button class="qbtn" data-op="denoise" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M14 4l6 6M19 9l-9 9-5 1 1-5z"/></svg>작은 점 정리</button>
+        <button class="qbtn" data-op="outline" disabled><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>외곽선 강조</button>
+        <button class="qbtn" data-op="invert" disabled><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>올라오는 부분 바꾸기</button>
+      </div>
+    </div>
+
+    <!-- 5. DotPad 라이브 -->
+    <div class="sec livecard">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 라이브</h3>
+      <p id="liveDesc">연결하면 조정 결과가 실시간으로 반영됩니다.</p>
+      <div class="liverow">
+        <span>라이브 반영</span>
+        <button class="toggle" id="liveToggle" role="switch" aria-checked="true" aria-label="라이브 반영 토글"></button>
+      </div>
+    </div>
+
+    <!-- 6. 저장 / 내보내기 -->
+    <div class="sec">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>저장 / 내보내기</h3>
+      <div class="savebtns">
+        <button class="btn accent" id="outBtn" disabled>지금 결과를 DotPad로 보내기</button>
+        <button class="btn dark" id="dtmsBtn" disabled>DTMS 저장</button>
+        <div class="saverow">
+          <button class="btn" id="hexBtn" disabled><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>HEX 복사</button>
+          <button class="btn" id="pngBtn" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>PNG 저장</button>
         </div>
-        <div class="chips" id="chips">
-          <button class="chip" data-op="recommend"><svg class="ic" viewBox="0 0 24 24"><use href="#i-balance"/></svg>균형형으로 정리</button>
-          <button class="chip" data-op="outline"><svg class="ic" viewBox="0 0 24 24"><use href="#i-outline"/></svg>외곽선만</button>
-          <button class="chip" data-op="dilate"><svg class="ic" viewBox="0 0 24 24"><use href="#i-bold"/></svg>굵게</button>
-          <button class="chip" data-op="erode"><svg class="ic" viewBox="0 0 24 24"><use href="#i-thin"/></svg>얇게</button>
-          <button class="chip" data-op="denoise"><svg class="ic" viewBox="0 0 24 24"><use href="#i-broom"/></svg>점 정리</button>
-          <button class="chip" data-op="frame"><svg class="ic" viewBox="0 0 24 24"><use href="#i-frame"/></svg>테두리</button>
-          <button class="chip" data-op="invert"><svg class="ic" viewBox="0 0 24 24"><use href="#i-invert"/></svg>반전</button>
+      </div>
+      <details class="expert">
+        <summary>전문가 설정</summary>
+        <div class="body">
+          <label for="method">변환 방식</label>
+          <select id="method"><option value="global">자동 (전역 임계값)</option><option value="otsu">Otsu</option><option value="sauvola">Sauvola</option><option value="adaptive">Adaptive</option></select>
+          <label for="rawth">세부 임계값 (threshold)</label>
+          <input type="number" id="rawth" min="0" max="255" value="128" />
+          <div class="readout" id="hexOut">HEX —</div>
         </div>
-        <div class="reco" id="reco" role="status"></div>
-      </div>
-    </div>
-
-    <!-- GENERATE / IMPORT -->
-    <div class="sec gen">
-      <h2><svg class="ic" viewBox="0 0 24 24"><use href="#i-wand"/></svg>텍스트 · 이미지에서 시작</h2>
-      <div class="row">
-        <textarea id="prompt" placeholder="예: 사과 한 개, 단순한 윤곽, 흰 배경" aria-label="이미지 생성 프롬프트"></textarea>
-        <button class="genbtn" id="genBtn"><svg class="ic" viewBox="0 0 24 24"><use href="#i-wand"/></svg>생성</button>
-      </div>
-      <small id="genHint">FLUX.1-schnell 생성 서버가 연결되면 텍스트로 바로 이미지를 만듭니다.</small>
-      <button class="btn full" id="importBtn" style="margin-top:.55rem"><svg class="ic" viewBox="0 0 24 24"><use href="#i-image"/></svg>이미지 불러오기</button>
-      <input type="file" id="fileInput" accept="image/*" class="sr-only" />
-
-      <label class="f" for="clarity">촉각 선명도 <b id="clarityVal">균형</b></label>
-      <input type="range" id="clarity" min="0" max="100" value="50" disabled aria-label="촉각 선명도" />
-      <div class="row" style="margin-top:.55rem">
-        <button class="btn dark" id="autoBtn" disabled><svg class="ic" viewBox="0 0 24 24"><use href="#i-auto"/></svg>자동으로 맞추기</button>
-      </div>
-      <label style="display:flex;gap:.5rem;align-items:center;font-size:.78rem;color:var(--ink-dim);margin-top:.5rem">
-        <input type="checkbox" id="polarity" style="accent-color:var(--orange)" /> 극성 반전(밝은 곳을 핀으로)
-      </label>
-    </div>
-
-    <!-- RESOLUTION -->
-    <div class="sec">
-      <h2>해상도</h2>
-      <div class="seg" role="group" aria-label="해상도">
-        <button data-res="60x40" aria-pressed="true">60 × 40</button>
-        <button data-res="96x64" aria-pressed="false">96 × 64</button>
-      </div>
-      <label class="f" for="brush">펜 굵기 <b id="brushVal">1</b></label>
-      <input type="range" id="brush" min="1" max="4" value="1" />
-    </div>
-
-    <!-- CONNECTION -->
-    <div class="sec">
-      <h2><svg class="ic" viewBox="0 0 24 24"><use href="#i-bt"/></svg>실시간 연동</h2>
-      <div class="kv"><span>상태</span><span id="kvState">시뮬레이터</span></div>
-      <div class="kv"><span>기기명</span><span id="kvName">—</span></div>
-      <div class="kv"><span>셀 구성</span><span id="kvCells">30 × 10</span></div>
-      <div class="kv"><span>라이브 출력</span><span id="kvLive">대기</span></div>
-      <div class="kv"><span>기기 입력</span><span id="kvKey">—</span></div>
-      <div class="row" style="margin-top:.6rem">
-        <button class="btn" id="testBtn" disabled><svg class="ic" viewBox="0 0 24 24"><use href="#i-auto"/></svg>기기 테스트</button>
-        <button class="btn" id="disconnectBtn" disabled>연결 끊기</button>
-      </div>
-      <small id="connHint" style="display:block;color:var(--ink-faint);font-size:.72rem;margin-top:.4rem">연결하려면 Chrome/Edge + HTTPS(또는 localhost) 환경에서 DotPad 전원을 켜고 [DotPad 연결]을 누르세요. 한 번 허용하면 다음부터 자동으로 다시 연결됩니다.</small>
-      <label class="f">전송 데이터 (graphic hex)</label>
-      <div class="readout" id="hexOut">00 …</div>
-    </div>
-
-    <!-- SAVE -->
-    <div class="sec">
-      <h2><svg class="ic" viewBox="0 0 24 24"><use href="#i-save"/></svg>저장 · 공개</h2>
-      <label class="f" for="title">제목</label>
-      <input type="text" id="title" placeholder="예: 태양계 행성 크기 비교" />
-      <label class="f" for="category">분류</label>
-      <select id="category"><option>수학</option><option>과학</option><option>사회</option><option>역사</option><option>지리</option><option>생물</option><option>음악</option><option>미술</option><option>체육</option><option>언어</option><option>생활</option><option>교통</option><option selected>도형</option><option>기호</option><option>유틸리티</option><option>기타</option></select>
-      <div class="row" style="margin-top:.7rem">
-        <button class="btn" id="pngBtn"><svg class="ic" viewBox="0 0 24 24"><use href="#i-png"/></svg>PNG</button>
-        <button class="btn" id="hexBtn"><svg class="ic" viewBox="0 0 24 24"><use href="#i-hex"/></svg>.hex</button>
-        <button class="btn dark" id="jsonBtn"><svg class="ic" viewBox="0 0 24 24"><use href="#i-save"/></svg>저장</button>
-      </div>
-      <details><summary>Supabase <code>graphics</code> insert 페이로드</summary><pre id="payload"></pre></details>
+      </details>
     </div>
   </div>
 </div>
 
+<div id="toast" role="status" aria-live="polite"></div>
 <div class="sr-only" id="live" role="status" aria-live="assertive"></div>
 
 <script type="module">
-/* Dot Tactile Studio · 라이브 에디터
-   - 실제 DotPad SDK 3.0.0 (BLE). 없으면 시뮬레이터 폴백.
-   - 인코딩: 60x40 = 10행×30열 셀, 셀당 2×4핀 column-major (bit0-3 왼쪽열, bit4-7 오른쪽열) — tactile_agent/Dot Fossil 동일.
-   - 텍스트→이미지: FLUX.1-schnell 생성 서버(server/) 호출. 미설정 시 안내.
-   - 자동 추천(자동으로 맞추기): Otsu / Sauvola / Adaptive + 외곽선 1·2줄 후보 → 촉각 품질 점수로 Best 선택 (서버 변환엔진과 동일 로직을 JS로 재구현). */
+/* Dot Canvas Agent
+   - 60×40 = 30×10 D3 셀, 셀당 2×4핀 column-major(bit0-3 왼쪽열, bit4-7 오른쪽열) — tactile_agent/Dot Fossil 동일
+   - 업로드→자동변환→촉각 선명도(threshold) 실시간→DotPad 라이브→DTMS/HEX/PNG 저장
+   - 서버 없이 동작, DotPad 미연결 시 시뮬레이터 미리보기만, Web Bluetooth 지원 시에만 연결 */
 let SDKMod=null;
-const BASE_URL = new URL('.', import.meta.url).href;
-const SDK_PATH = new URL('DotPadSDK-3_0_0.js', BASE_URL).href;
-try{ SDKMod=await import(SDK_PATH); }catch(e){ console.warn('SDK 미로드 → 시뮬레이터',e); }
-const GEN_API=(new URLSearchParams(location.search).get('api')||'').replace(/\/$/,''); // ?api=https://flux-server
+try{ SDKMod=await import('./DotPadSDK-3_0_0.js'); }catch(e){ console.warn('SDK 미로드 → 시뮬레이터',e); }
 
-const $=s=>document.querySelector(s);
-const live=$('#live');
+const $=s=>document.getElementById(s);
+const live=$('live');
 function say(m){ live.textContent=''; requestAnimationFrame(()=>live.textContent=m); }
+let toastT=null;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2000); }
 
-const RES={'60x40':{w:60,h:40},'96x64':{w:96,h:64}};
-let resKey='60x40', GW=60, GH=40;
+const GW=60, GH=40, CC=30, CR=10;
 let grid=new Uint8Array(GW*GH), undo=[];
-let tool='pen', brush=1, cursor={x:0,y:0}, bigPins=false;
-let sdk=null, dotDevice=null, connected=false, devCols=30, devRows=10;
 let srcImage=null, grayBuf=null;
+let threshold=128, polarity=false, method='global';
+let tool='select';
+let liveOn=true, connected=false, sdk=null, dotDevice=null, devCols=30, devRows=10;
+let hasImage=false;
 
 /* ---------- canvas ---------- */
-const pad=$('#pad'), ctx=pad.getContext('2d');
-let cell=13, off=8;
+const pad=$('pad'), ctx=pad.getContext('2d');
+let cell=13, off=8, cursor={x:0,y:0};
 function layout(){
-  const max=Math.min(660, window.innerWidth-450);
+  const max=Math.min(640, (window.innerWidth>860?window.innerWidth-460:window.innerWidth-48));
   cell=Math.max(6, Math.floor((max-off*2)/GW));
   const w=GW*cell+off*2,h=GH*cell+off*2,dpr=window.devicePixelRatio||1;
   pad.width=w*dpr;pad.height=h*dpr;pad.style.width=w+'px';pad.style.height=h+'px';
@@ -350,92 +290,34 @@ function layout(){
 }
 function draw(preview){
   const w=GW*cell+off*2,h=GH*cell+off*2;ctx.clearRect(0,0,w,h);
-  ctx.strokeStyle='#EEF0F3';ctx.lineWidth=1;
+  ctx.strokeStyle='#EFF1F4';ctx.lineWidth=1;
   for(let x=0;x<=GW;x++){const px=off+x*cell+.5;ctx.beginPath();ctx.moveTo(px,off);ctx.lineTo(px,h-off);ctx.stroke();}
   for(let y=0;y<=GH;y++){const py=off+y*cell+.5;ctx.beginPath();ctx.moveTo(off,py);ctx.lineTo(w-off,py);ctx.stroke();}
-  ctx.strokeStyle='#E2E5EA';
+  ctx.strokeStyle='#E3E6EB';
   for(let x=0;x<=GW;x+=2){const px=off+x*cell+.5;ctx.beginPath();ctx.moveTo(px,off);ctx.lineTo(px,h-off);ctx.stroke();}
   for(let y=0;y<=GH;y+=4){const py=off+y*cell+.5;ctx.beginPath();ctx.moveTo(off,py);ctx.lineTo(w-off,py);ctx.stroke();}
-  ctx.strokeStyle='#AEB6E8';ctx.lineWidth=1.4;
+  // subtle center guide
+  ctx.strokeStyle='#EAD9CC';ctx.lineWidth=1.2;
   const ax=off+(GW/2)*cell+.5,ay=off+(GH/2)*cell+.5;
   ctx.beginPath();ctx.moveTo(ax,off);ctx.lineTo(ax,h-off);ctx.stroke();
   ctx.beginPath();ctx.moveTo(off,ay);ctx.lineTo(w-off,ay);ctx.stroke();
-  const rOn=cell*(bigPins?0.42:0.34),rOff=cell*0.12;
+  const rOn=cell*0.34,rOff=cell*0.12;
   for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
     const cx=off+x*cell+cell/2,cy=off+y*cell+cell/2,on=grid[y*GW+x]^(preview?preview(x,y):0);
     if(on){ctx.fillStyle='#23283A';ctx.beginPath();ctx.arc(cx,cy,rOn,0,7);ctx.fill();}
-    else{ctx.fillStyle='#D7DBE3';ctx.beginPath();ctx.arc(cx,cy,rOff,0,7);ctx.fill();}
+    else{ctx.fillStyle='#D9DDE4';ctx.beginPath();ctx.arc(cx,cy,rOff,0,7);ctx.fill();}
   }
-  ctx.strokeStyle='#FF6A1F';ctx.lineWidth=2;ctx.strokeRect(off+cursor.x*cell+1,off+cursor.y*cell+1,cell-2,cell-2);
-  let n=0;for(let i=0;i<grid.length;i++)n+=grid[i];
-  $('#pinCount').textContent=n;$('#cursorXY').textContent=`${cursor.x}, ${cursor.y}`;$('#cursorState').textContent=grid[cursor.y*GW+cursor.x]?'올림':'내림';
+  if(tool!=='select'&&hasImage){ctx.strokeStyle='#FF6A1F';ctx.lineWidth=2;ctx.strokeRect(off+cursor.x*cell+1,off+cursor.y*cell+1,cell-2,cell-2);}
 }
 
-/* ---------- encoder (column-major: bit0-3 왼쪽열, bit4-7 오른쪽열) ---------- */
-function dotBit(lx,ly){ return lx*4+ly; }
-function gridToHex(cols,rows){let hex='';for(let cr=0;cr<rows;cr++)for(let cc=0;cc<cols;cc++){let b=0;for(let lx=0;lx<2;lx++)for(let ly=0;ly<4;ly++){const x=cc*2+lx,y=cr*4+ly;if(x<GW&&y<GH&&grid[y*GW+x])b|=(1<<dotBit(lx,ly));}hex+=b.toString(16).padStart(2,'0').toUpperCase();}return hex;}
-const nominalCells=()=>resKey==='60x40'?{cols:30,rows:10}:{cols:48,rows:16};
-let pushTimer=null;
-function streamNow(){ if(connected&&sdk&&dotDevice){ try{ sdk.displayGraphicData(gridToHex(devCols,devRows),dotDevice,SDKMod.DisplayMode.GraphicMode); markLive(); }catch(e){} } }
-function scheduleStream(){
-  const nom=nominalCells(),hex=gridToHex(nom.cols,nom.rows);
-  $('#hexOut').innerHTML=`<span class="tag">[${nom.cols}×${nom.rows} cells · ${hex.length/2} bytes]</span>\n`+(hex.match(/.{1,2}/g)||[]).join(' ');
-  updatePayload(hex);
-  if(!connected||!sdk||!dotDevice)return;
-  clearTimeout(pushTimer);pushTimer=setTimeout(streamNow,60);   // 드래그 중 합치고 ~60ms 라이브 전송
-}
-let liveTimer=null;
-function markLive(){ const e=$('#kvLive'); if(!e)return; e.textContent='● 전송 중'; e.style.color='var(--ok)'; clearTimeout(liveTimer); liveTimer=setTimeout(()=>{e.textContent='연결됨';e.style.color='';},900); }
-function updatePayload(hex){const nom=nominalCells();const p={title:$('#title').value||'(제목 없음)',category:$('#category').value,resolution:resKey,cell_layout:`${nom.cols}x${nom.rows}`,license:'free',status:'pending',submitted_by:'<auth.uid()>',dotpad_graphic_hex:hex};$('#payload').textContent="// supabase.from('graphics').insert({…})\n"+JSON.stringify(p,null,2);}
+/* ---------- encoder (column-major) + DTMS ---------- */
+const dotBit=(lx,ly)=>lx*4+ly;
+function gridToHex(){let hex='';for(let cr=0;cr<CR;cr++)for(let cc=0;cc<CC;cc++){let b=0;for(let lx=0;lx<2;lx++)for(let ly=0;ly<4;ly++){const x=cc*2+lx,y=cr*4+ly;if(grid[y*GW+x])b|=(1<<dotBit(lx,ly));}hex+=b.toString(16).padStart(2,'0').toUpperCase();}return hex;}
+function dtmsJSON(){const n=($('fname').value||'Untitled').trim();const hex=gridToHex();
+  return JSON.stringify({title:n,lang:'korean',lang_option:'1',device:'dotpad320',audioPath:'',items:[{page:1,title:n,graphic:{name:'1.dtm',data:hex},text:{name:'1.txt',data:'',plain:n},audio:{fileName:''}}]},null,2);}
 
-/* ---------- edit primitives ---------- */
-function snapshot(){undo.push(grid.slice());if(undo.length>50)undo.shift();}
-function setPin(x,y,v){if(x>=0&&y>=0&&x<GW&&y<GH)grid[y*GW+x]=v?1:0;}
-function paintBrush(x,y,v){const s=brush-1;for(let dy=-s;dy<=s;dy++)for(let dx=-s;dx<=s;dx++)if(dx*dx+dy*dy<=s*s+1)setPin(x+dx,y+dy,v);}
-function bucketFill(x,y,v){const t=grid[y*GW+x];if(t===(v?1:0))return;const st=[[x,y]];while(st.length){const[a,b]=st.pop();if(a<0||b<0||a>=GW||b>=GH||grid[b*GW+a]!==t)continue;grid[b*GW+a]=v?1:0;st.push([a+1,b],[a-1,b],[a,b+1],[a,b-1]);}}
-function linePts(x0,y0,x1,y1,cb){let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,e=dx-dy;while(1){cb(x0,y0);if(x0===x1&&y0===y1)break;const e2=2*e;if(e2>-dy){e-=dy;x0+=sx}if(e2<dx){e+=dx;y0+=sy}}}
-
-/* ---------- grid morphology (shared by agent + auto-fit) ---------- */
-function nb(g,x,y,diag){let n=0;const d=diag?[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1]];for(const[a,b]of d){const nx=x+a,ny=y+b;if(nx>=0&&ny>=0&&nx<GW&&ny<GH&&g[ny*GW+nx])n++;}return n;}
-function dilate1(g){const o=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)o[y*GW+x]=(g[y*GW+x]||nb(g,x,y,false)>0)?1:0;return o;}
-function boundary(g){const o=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(g[y*GW+x]&&nb(g,x,y,false)<4)o[y*GW+x]=1;return o;}
-function outlineOf(g,th){let o=boundary(g);if(th>=2)o=dilate1(o);return o;}
-function denoiseGrid(g){const o=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)o[y*GW+x]=(g[y*GW+x]&&nb(g,x,y,true)>=2)?1:0;return o;}
-
-/* ---------- editing agent ops ---------- */
-function applyOp(op){
-  snapshot();const src=grid.slice();let out;
-  if(op==='dilate')out=dilate1(src),tell('굵게');
-  else if(op==='erode'){out=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)out[y*GW+x]=(src[y*GW+x]&&nb(src,x,y,false)===4)?1:0;tell('얇게');}
-  else if(op==='outline')out=boundary(src),tell('외곽선만');
-  else if(op==='denoise')out=denoiseGrid(src),tell('점 정리');
-  else if(op==='recommend')out=denoiseGrid(src),tell('균형형으로 정리');
-  else if(op==='invert'){out=src.slice();for(let i=0;i<out.length;i++)out[i]^=1;tell('반전');}
-  else if(op==='frame'){out=src.slice();grid=out;for(let x=0;x<GW;x++){setPin(x,0,1);setPin(x,GH-1,1);}for(let y=0;y<GH;y++){setPin(0,y,1);setPin(GW-1,y,1);}scheduleStream();draw();tell('테두리');return;}
-  else if(op==='clear')out=new Uint8Array(GW*GH),tell('비우기');
-  else{say('명령을 이해하지 못했어요. 칩을 눌러보세요.');undo.pop();return;}
-  grid=out;scheduleStream();draw();
-}
-function tell(n){say(n+' 적용');}
-function parseIntent(t){t=t.toLowerCase();
-  if(/외곽|윤곽|outline|선만/.test(t))return'outline';
-  if(/굵게|두껍|볼드|bold|진하/.test(t))return'dilate';
-  if(/얇게|가늘|thin|erode/.test(t))return'erode';
-  if(/정리|노이즈|점\s*제거|denoise|깔끔/.test(t))return'denoise';
-  if(/반전|invert|뒤집/.test(t))return'invert';
-  if(/테두리|프레임|frame|액자/.test(t))return'frame';
-  if(/단순|균형|추천|simplify|정돈/.test(t))return'recommend';
-  if(/비우|지워|clear|초기화/.test(t))return'clear';
-  return null;}
-$('#chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)applyOp(b.dataset.op);});
-$('#agentGo').onclick=runAgent;$('#agentInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAgent();});
-function runAgent(){const v=$('#agentInput').value.trim();if(!v)return;const op=parseIntent(v);if(op){applyOp(op);$('#agentInput').value='';}else say('"'+v+'"는 아직 이해 못해요. 칩을 눌러보세요.');}
-
-/* ===================================================================
-   변환 엔진 (JS 재구현) — 서버의 OpenCV+scikit-image 로직과 동일
-   Otsu / Sauvola / Adaptive Threshold + 외곽선 1·2줄 후보 + 촉각 품질 점수
-   =================================================================== */
-function renderGrayFromSource(){
+/* ---------- image → gray ---------- */
+function renderGray(){
   if(!srcImage){grayBuf=null;return;}
   const oc=document.createElement('canvas');oc.width=GW;oc.height=GH;const o=oc.getContext('2d');
   const s=Math.min(GW/srcImage.width,GH/srcImage.height),dw=srcImage.width*s,dh=srcImage.height*s;
@@ -443,202 +325,177 @@ function renderGrayFromSource(){
   const d=o.getImageData(0,0,GW,GH).data;grayBuf=new Uint8ClampedArray(GW*GH);
   for(let i=0;i<GW*GH;i++)grayBuf[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
 }
-function otsu(g){const h=new Array(256).fill(0);for(const v of g)h[v|0]++;const N=g.length;let sum=0;for(let i=0;i<256;i++)sum+=i*h[i];let sumB=0,wB=0,mx=-1,thr=127;for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=N-wB;if(!wF)break;sumB+=i*h[i];const mB=sumB/wB,mF=(sum-sumB)/wF,btw=wB*wF*(mB-mF)*(mB-mF);if(btw>mx){mx=btw;thr=i;}}return thr;}
+
+/* ---------- threshold methods ---------- */
+function otsu(g){const h=new Array(256).fill(0);for(const v of g)h[v|0]++;const N=g.length;let sum=0;for(let i=0;i<256;i++)sum+=i*h[i];let sB=0,wB=0,mx=-1,t=128;for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=N-wB;if(!wF)break;sB+=i*h[i];const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);if(b>mx){mx=b;t=i;}}return t;}
 function fillT(g,t,pol){const o=new Uint8Array(GW*GH);for(let i=0;i<GW*GH;i++){let on=g[i]<=t?1:0;if(pol)on^=1;o[i]=on;}return o;}
 function integral(g){const W=GW+1,I=new Float64Array(W*(GH+1)),I2=new Float64Array(W*(GH+1));for(let y=1;y<=GH;y++)for(let x=1;x<=GW;x++){const v=g[(y-1)*GW+(x-1)];I[y*W+x]=v+I[(y-1)*W+x]+I[y*W+x-1]-I[(y-1)*W+x-1];I2[y*W+x]=v*v+I2[(y-1)*W+x]+I2[y*W+x-1]-I2[(y-1)*W+x-1];}return{I,I2,W};}
-function box(II,x0,y0,x1,y1){const{I,I2,W}=II;const sum=I[y1*W+x1]-I[y0*W+x1]-I[y1*W+x0]+I[y0*W+x0];const s2=I2[y1*W+x1]-I2[y0*W+x1]-I2[y1*W+x0]+I2[y0*W+x0];const n=(x1-x0)*(y1-y0),m=sum/n,v=Math.max(0,s2/n-m*m);return{m,s:Math.sqrt(v)};}
+function box(II,x0,y0,x1,y1){const{I,I2,W}=II;const s=I[y1*W+x1]-I[y0*W+x1]-I[y1*W+x0]+I[y0*W+x0];const s2=I2[y1*W+x1]-I2[y0*W+x1]-I2[y1*W+x0]+I2[y0*W+x0];const n=(x1-x0)*(y1-y0),m=s/n,v=Math.max(0,s2/n-m*m);return{m,sd:Math.sqrt(v)};}
 function adaptiveFill(g,win,C,pol){const II=integral(g),o=new Uint8Array(GW*GH),r=win>>1;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const x0=Math.max(0,x-r),y0=Math.max(0,y-r),x1=Math.min(GW,x+r+1),y1=Math.min(GH,y+r+1);const{m}=box(II,x0,y0,x1,y1);let on=g[y*GW+x]<=(m-C)?1:0;if(pol)on^=1;o[y*GW+x]=on;}return o;}
-function sauvolaFill(g,win,k,pol){const II=integral(g),o=new Uint8Array(GW*GH),r=win>>1,R=128;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const x0=Math.max(0,x-r),y0=Math.max(0,y-r),x1=Math.min(GW,x+r+1),y1=Math.min(GH,y+r+1);const{m,s}=box(II,x0,y0,x1,y1);const T=m*(1+k*((s/R)-1));let on=g[y*GW+x]<=T?1:0;if(pol)on^=1;o[y*GW+x]=on;}return o;}
-function components(g){const seen=new Uint8Array(GW*GH);let cc=0;for(let i=0;i<g.length;i++){if(g[i]&&!seen[i]){cc++;const st=[i];seen[i]=1;while(st.length){const p=st.pop(),x=p%GW,y=(p/GW)|0;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+a,ny=y+b;if(nx>=0&&ny>=0&&nx<GW&&ny<GH){const q=ny*GW+nx;if(g[q]&&!seen[q]){seen[q]=1;st.push(q);}}}}}}return cc;}
-function tactileScore(g){
-  let on=0,iso=0,solid=0;
-  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(g[y*GW+x]){on++;if(nb(g,x,y,true)<2)iso++;if(nb(g,x,y,false)===4)solid++;}
-  if(on<8)return 0;
-  const d=on/(GW*GH);
-  const densityScore=Math.exp(-Math.pow((d-0.18)/0.14,2));      // 너무 빽빽/엉성 둘 다 감점
-  const noiseScore=1-Math.min(1,(iso/on)*4);                    // 고립 점 적을수록 ↑
-  const blobScore=1-Math.min(1,(solid/on)*1.3);                 // 큰 면 채움 감점(외곽 선호)
-  const cc=components(g);const ccScore=1/(1+Math.max(0,cc-14)/14); // 너무 잘게 쪼개짐 감점
-  return 0.40*densityScore+0.25*noiseScore+0.20*blobScore+0.15*ccScore;
-}
-function autoFit(){
-  if(!grayBuf){say('먼저 이미지를 생성하거나 불러오세요');return;}
-  const pol=$('#polarity').checked, t=otsu(grayBuf);
-  const otsuG=fillT(grayBuf,t,pol), sauG=sauvolaFill(grayBuf,15,0.2,pol);
-  const cands=[
-    {name:'Otsu · 채움',g:otsuG},
-    {name:'적응형 · 채움',g:adaptiveFill(grayBuf,9,8,pol)},
-    {name:'Sauvola · 채움',g:sauG},
-    {name:'Otsu · 외곽선 1줄',g:outlineOf(otsuG,1)},
-    {name:'Otsu · 외곽선 2줄',g:outlineOf(otsuG,2)},
-    {name:'Sauvola · 외곽선 1줄',g:outlineOf(sauG,1)},
-  ];
-  let best=null;for(const c of cands){c.score=tactileScore(c.g);if(!best||c.score>best.score)best=c;}
-  snapshot();grid=best.g.slice();scheduleStream();draw();
-  showReco(`자동 선택: <b>${best.name}</b> · 촉각 점수 ${best.score.toFixed(2)}`, '다른 후보로', ()=>cycleCandidate(cands,best));
-  say('자동으로 맞췄어요. '+best.name);
-}
-let candIdx=0;
-function cycleCandidate(cands,best){candIdx=(candIdx+1)%cands.length;const c=cands[candIdx];snapshot();grid=c.g.slice();scheduleStream();draw();showReco(`후보: <b>${c.name}</b> · 촉각 점수 ${c.score.toFixed(2)}`,'다른 후보로',()=>cycleCandidate(cands,best));say(c.name);}
+function sauvolaFill(g,win,k,pol){const II=integral(g),o=new Uint8Array(GW*GH),r=win>>1,R=128;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const x0=Math.max(0,x-r),y0=Math.max(0,y-r),x1=Math.min(GW,x+r+1),y1=Math.min(GH,y+r+1);const{m,sd}=box(II,x0,y0,x1,y1);const T=m*(1+k*((sd/R)-1));let on=g[y*GW+x]<=T?1:0;if(pol)on^=1;o[y*GW+x]=on;}return o;}
 
-// 촉각 선명도 슬라이더: 0 단순 ↔ 100 또렷(외곽선)
-function clarityRender(){
+/* ---------- morphology ---------- */
+function nb(g,x,y,diag){let n=0;const d=diag?[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1]];for(const[a,b]of d){const nx=x+a,ny=y+b;if(nx>=0&&ny>=0&&nx<GW&&ny<GH&&g[ny*GW+nx])n++;}return n;}
+function dilate1(g){const o=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)o[y*GW+x]=(g[y*GW+x]||nb(g,x,y,false)>0)?1:0;return o;}
+function denoiseG(g){const o=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)o[y*GW+x]=(g[y*GW+x]&&nb(g,x,y,true)>=2)?1:0;return o;}
+function outlineG(g){const o=new Uint8Array(GW*GH);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(g[y*GW+x]&&nb(g,x,y,false)<4)o[y*GW+x]=1;return dilate1(o);}
+
+/* ---------- recompute from source ---------- */
+function recompute(){
   if(!grayBuf)return;
-  const c=+$('#clarity').value, pol=$('#polarity').checked, t=otsu(grayBuf);
-  let g=fillT(grayBuf,t,pol);
-  let label;
-  if(c<35){let passes=Math.round((35-c)/12)+1;for(let i=0;i<passes;i++)g=denoiseGrid(g);label='단순';}
-  else if(c>65){g=outlineOf(g,c>85?2:1);label=c>85?'또렷(외곽 2줄)':'또렷(외곽)';}
-  else{g=denoiseGrid(g);label='균형';}
-  $('#clarityVal').textContent=label;
-  grid=g;scheduleStream();draw();
+  if(method==='otsu'){const t=otsu(grayBuf);threshold=t;syncSliders();grid=fillT(grayBuf,t,polarity);}
+  else if(method==='sauvola')grid=sauvolaFill(grayBuf,15,0.2,polarity);
+  else if(method==='adaptive')grid=adaptiveFill(grayBuf,9,8,polarity);
+  else grid=fillT(grayBuf,threshold,polarity);
 }
-function showReco(html,btnLabel,onClick){
-  const r=$('#reco');
-  r.innerHTML=`<svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;color:var(--orange);display:inline-block;vertical-align:-2px"><use href="#i-spark"/></svg> ${html}`+(btnLabel?`<div class="row2"><button id="recoBtn">${btnLabel}</button></div>`:'');
-  r.classList.add('show');
-  if(btnLabel)r.querySelector('#recoBtn').onclick=onClick;
-}
+function syncSliders(){$('clarity').value=threshold;$('rawth').value=threshold;$('clarityVal').textContent=clarityLabel(threshold);}
+function clarityLabel(t){return t<100?'부드럽게':t>175?'또렷하게':'균형 있게';}
 
-/* ---------- generate from text (FLUX backend) ---------- */
-$('#genBtn').onclick=generate;
-$('#prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))generate();});
-async function generate(){
-  const p=$('#prompt').value.trim();if(!p){say('프롬프트를 입력하세요');return;}
-  if(!GEN_API){
-    showReco('텍스트 생성은 FLUX.1-schnell 생성 서버가 필요해요. <code>server/</code>를 띄운 뒤 <code>?api=서버주소</code>로 열어주세요.');
-    say('생성 서버가 연결되어 있지 않습니다');return;
+/* ---------- after any change ---------- */
+function afterChange(){draw();updateScore();updateHex();scheduleSend();}
+function updateHex(){const hex=gridToHex();$('hexOut').textContent='HEX '+hex;}
+function countOn(){let n=0;for(let i=0;i<grid.length;i++)n+=grid[i];return n;}
+function updateScore(){
+  const on=countOn();let iso=0;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(grid[y*GW+x]&&nb(grid,x,y,true)<2)iso++;
+  const d=on/(GW*GH);let lab,cls,reason;
+  if(on<20){lab='주의';cls='warn';reason='핀이 너무 적어요. 촉각 선명도를 높여보세요.';}
+  else if(d>0.55){lab='주의';cls='warn';reason='너무 빽빽해요. 외곽선 강조를 써보세요.';}
+  else if(iso/Math.max(1,on)>0.22){lab='보통';cls='mid';reason='작은 점이 많아요. 작은 점 정리를 추천해요.';}
+  else{lab='좋음';cls='good';reason='작은 점이 정리되어 형태가 잘 느껴집니다.';}
+  const sl=$('scoreLine');
+  if(sl && $('secReco').style.display!=='none'){
+    sl.innerHTML=`<div class="scorebar"><span class="lab ${cls}">촉각 인지 예상: ${lab}</span><span class="pins">활성 핀 ${on}개</span></div><div style="font-size:.8rem;color:var(--muted)">${reason}</div>`;
   }
-  const btn=$('#genBtn');btn.disabled=true;btn.innerHTML='생성 중…';say('이미지 생성 중…');
-  try{
-    const r=await fetch(GEN_API+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,width:512,height:512})});
-    if(!r.ok)throw new Error('서버 응답 '+r.status);
-    const j=await r.json();
-    await loadDataUrl(j.image_b64.startsWith('data:')?j.image_b64:('data:image/png;base64,'+j.image_b64));
-    say('이미지 생성 완료 — 자동으로 맞추는 중');autoFit();
-  }catch(err){showReco('생성 실패: '+err.message);say('생성 실패');}
-  finally{btn.disabled=false;btn.innerHTML='<svg class="ic" viewBox="0 0 24 24"><use href="#i-wand"/></svg>생성';}
+  const liveLabel = connected ? (liveOn?'실시간 반영 ON':'라이브 OFF') : 'DotPad 미연결';
+  $('boardinfo').innerHTML=`60×40 · 활성 핀 <b>${on}</b>개 · ${liveLabel}`;
 }
-function loadDataUrl(url){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{srcImage=img;onSourceReady();res();};img.onerror=rej;img.src=url;});}
 
-/* ---------- image import ---------- */
-$('#importBtn').onclick=()=>$('#fileInput').click();
-$('#fileInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const img=new Image();img.onload=()=>{srcImage=img;onSourceReady();say('이미지 불러옴 — 자동으로 맞추는 중');autoFit();};img.src=URL.createObjectURL(f);});
-function onSourceReady(){renderGrayFromSource();$('#clarity').disabled=false;$('#autoBtn').disabled=false;}
-$('#clarity').addEventListener('input',clarityRender);
-$('#polarity').addEventListener('change',()=>{if(grayBuf)autoFit();});
-$('#autoBtn').onclick=autoFit;
+/* ---------- DotPad send (debounce) ---------- */
+let sendT=null;
+function scheduleSend(){
+  if(!liveOn||!connected||!sdk||!dotDevice)return;
+  clearTimeout(sendT);
+  sendT=setTimeout(()=>{
+    try{ sdk.displayGraphicData(gridToHex(),dotDevice,SDKMod.DisplayMode.GraphicMode); setStatus('on','실시간 반영 중'); }
+    catch(e){ setStatus('err','전송 실패'); toast('DotPad 전송 실패'); }
+  },90);
+}
 
-/* ---------- pointer drawing ---------- */
-let drawing=false,paintVal=1,start=null;
+/* ---------- load source (upload / sample / drop) ---------- */
+function onImage(img){
+  srcImage=img; hasImage=true; renderGray();
+  method='global'; threshold=otsu(grayBuf); polarity=false; recompute(); grid=denoiseG(grid);
+  syncSliders();
+  $('empty').style.display='none';
+  $('secStart').style.display='none'; $('secReco').style.display='';
+  ['clarity'].forEach(id=>$(id).disabled=false);
+  document.querySelectorAll('.qbtn,#outBtn,#dtmsBtn,#hexBtn,#pngBtn,#saveTopBtn').forEach(b=>b.disabled=false);
+  $('recoLead').textContent='추천 결과가 준비됐어요. DotPad에서 형태가 잘 느껴지도록 자동으로 조정했습니다.';
+  $('recoReasons').innerHTML=[
+    '작은 점을 정리했어요',
+    '형태를 중앙에 맞췄어요',
+    '핀 밀도를 만지기 좋게 맞췄어요'
+  ].map(t=>`<div class="reco-card"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>${t}</div>`).join('');
+  afterChange();
+  say('이미지를 촉각그래픽으로 자동 변환했어요');
+  toast('촉각그래픽으로 자동 변환했어요');
+}
+function loadFile(f){
+  if(!f)return;
+  if(!/^image\/(png|jpeg|svg\+xml)$/.test(f.type)){toast('PNG, JPG, SVG만 지원해요');return;}
+  $('fname').value=f.name.replace(/\.(png|jpe?g|svg)$/i,'')||'Untitled';
+  const img=new Image();img.onload=()=>onImage(img);img.onerror=()=>toast('이미지를 열 수 없어요');img.src=URL.createObjectURL(f);
+}
+function loadSample(){
+  const c=document.createElement('canvas');c.width=240;c.height=160;const g=c.getContext('2d');
+  g.fillStyle='#fff';g.fillRect(0,0,240,160);g.strokeStyle='#000';g.lineWidth=10;g.lineJoin='round';
+  // 간단한 집 모양 (외곽선)
+  g.beginPath();g.moveTo(60,150);g.lineTo(60,80);g.lineTo(120,35);g.lineTo(180,80);g.lineTo(180,150);g.closePath();g.stroke();
+  g.strokeRect(105,105,30,45);
+  const img=new Image();img.onload=()=>{$('fname').value='샘플';onImage(img);};img.src=c.toDataURL();
+}
+$('uploadBtn').onclick=$('uploadBtn2').onclick=()=>$('fileInput').click();
+$('sampleBtn').onclick=$('sampleBtn2').onclick=loadSample;
+$('fileInput').addEventListener('change',e=>loadFile(e.target.files[0]));
+// drag & drop on board/empty
+['dragenter','dragover'].forEach(ev=>$('stage').addEventListener(ev,e=>{e.preventDefault();$('empty').classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>$('stage').addEventListener(ev,e=>{e.preventDefault();$('empty').classList.remove('drag');}));
+$('stage').addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)loadFile(f);});
+
+/* ---------- 촉각 선명도 slider ---------- */
+$('clarity').addEventListener('input',e=>{threshold=+e.target.value;method='global';$('method').value='global';$('rawth').value=threshold;$('clarityVal').textContent=clarityLabel(threshold);recompute();afterChange();});
+$('rawth').addEventListener('input',e=>{threshold=Math.max(0,Math.min(255,+e.target.value||0));$('clarity').value=Math.max(40,Math.min(220,threshold));$('clarityVal').textContent=clarityLabel(threshold);if(method==='global')recompute();afterChange();});
+$('method').addEventListener('change',e=>{method=e.target.value;recompute();afterChange();say('변환 방식 변경');});
+
+/* ---------- 빠른 조정 ---------- */
+$('panel').addEventListener('click',e=>{const b=e.target.closest('.qbtn');if(!b||b.disabled)return;const op=b.dataset.op;
+  undo.push(grid.slice());if(undo.length>40)undo.shift();
+  if(op==='auto'){method='global';$('method').value='global';threshold=otsu(grayBuf);syncSliders();recompute();grid=denoiseG(grid);toast('자동으로 맞췄어요');}
+  else if(op==='denoise'){grid=denoiseG(grid);toast('작은 점을 정리했어요');}
+  else if(op==='outline'){grid=outlineG(grid);toast('외곽선을 강조했어요');}
+  else if(op==='invert'){polarity=!polarity;if(grayBuf&&(method!=='global'||true))recompute();toast('올라오는 부분을 바꿨어요');}
+  afterChange();
+});
+
+/* ---------- tools / pointer / keyboard ---------- */
+function selectTool(t){tool=t;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));draw();say('도구: '+({select:'선택',pen:'펜',eraser:'지우개'}[t]));}
+$('rail').addEventListener('click',e=>{const b=e.target.closest('.tool[data-tool]');if(b)selectTool(b.dataset.tool);});
+$('undoBtn').onclick=()=>{if(undo.length){grid=undo.pop();afterChange();say('되돌리기');}};
+$('clearBtn').onclick=()=>{undo.push(grid.slice());grid=new Uint8Array(GW*GH);afterChange();say('전체 지우기');};
+function setPin(x,y,v){if(x>=0&&y>=0&&x<GW&&y<GH)grid[y*GW+x]=v?1:0;}
 function cellAt(ev){const r=pad.getBoundingClientRect();return{x:Math.max(0,Math.min(GW-1,Math.floor((ev.clientX-r.left-off)/cell))),y:Math.max(0,Math.min(GH-1,Math.floor((ev.clientY-r.top-off)/cell)))};}
-pad.addEventListener('pointerdown',ev=>{pad.setPointerCapture(ev.pointerId);const c=cellAt(ev);cursor=c;drawing=true;snapshot();if(tool==='pen'||tool==='erase'){paintVal=tool==='pen'?1:0;paintBrush(c.x,c.y,paintVal);scheduleStream();draw();}else if(tool==='fill'){bucketFill(c.x,c.y,1);drawing=false;scheduleStream();draw();}else start=c;});
-pad.addEventListener('pointermove',ev=>{if(!drawing)return;const c=cellAt(ev);cursor=c;if(tool==='pen'||tool==='erase'){paintBrush(c.x,c.y,paintVal);scheduleStream();draw();}else if(start){const set=new Set();shapeCells(start,c,(x,y)=>set.add(y*GW+x));draw((x,y)=>set.has(y*GW+x)&&!grid[y*GW+x]?1:0);}});
-pad.addEventListener('pointerup',ev=>{if(!drawing)return;drawing=false;if(start&&tool!=='pen'&&tool!=='erase'&&tool!=='fill'){shapeCells(start,cellAt(ev),(x,y)=>setPin(x,y,1));start=null;scheduleStream();draw();}});
-function shapeCells(a,b,cb){if(tool==='line')linePts(a.x,a.y,b.x,b.y,cb);else if(tool==='rect'){const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);for(let x=x0;x<=x1;x++){cb(x,y0);cb(x,y1)}for(let y=y0;y<=y1;y++){cb(x0,y);cb(x1,y)}}else if(tool==='ellipse'){const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,rx=Math.abs(b.x-a.x)/2||.5,ry=Math.abs(b.y-a.y)/2||.5;for(let t=0;t<360;t+=2){const r=t*Math.PI/180;cb(Math.round(cx+rx*Math.cos(r)),Math.round(cy+ry*Math.sin(r)))}}}
-
-/* ---------- keyboard ---------- */
-pad.addEventListener('keydown',ev=>{const k=ev.key;const mv=(dx,dy)=>{cursor.x=Math.max(0,Math.min(GW-1,cursor.x+dx));cursor.y=Math.max(0,Math.min(GH-1,cursor.y+dy));draw();say(`커서 ${cursor.x}, ${cursor.y} · ${grid[cursor.y*GW+cursor.x]?'올림':'내림'}`);};
+let drawing=false,pv=1;
+pad.addEventListener('pointerdown',ev=>{if(tool==='select'||!hasImage)return;pad.setPointerCapture(ev.pointerId);const c=cellAt(ev);cursor=c;drawing=true;undo.push(grid.slice());pv=tool==='pen'?1:0;setPin(c.x,c.y,pv);afterChange();});
+pad.addEventListener('pointermove',ev=>{if(!drawing)return;const c=cellAt(ev);cursor=c;setPin(c.x,c.y,pv);afterChange();});
+pad.addEventListener('pointerup',()=>{drawing=false;});
+pad.addEventListener('keydown',ev=>{const k=ev.key;const mv=(dx,dy)=>{cursor.x=Math.max(0,Math.min(GW-1,cursor.x+dx));cursor.y=Math.max(0,Math.min(GH-1,cursor.y+dy));draw();say(`${cursor.x}, ${cursor.y} · ${grid[cursor.y*GW+cursor.x]?'올림':'내림'}`);};
   if(k==='ArrowRight'){ev.preventDefault();mv(1,0)}else if(k==='ArrowLeft'){ev.preventDefault();mv(-1,0)}else if(k==='ArrowDown'){ev.preventDefault();mv(0,1)}else if(k==='ArrowUp'){ev.preventDefault();mv(0,-1)}
-  else if(k===' '||k==='Enter'){ev.preventDefault();snapshot();const v=grid[cursor.y*GW+cursor.x]?0:1;setPin(cursor.x,cursor.y,v);scheduleStream();draw();say(`${cursor.x}, ${cursor.y} ${v?'올림':'내림'}`);}
-  else if((ev.ctrlKey||ev.metaKey)&&k.toLowerCase()==='z'){ev.preventDefault();doUndo();}
-  else{const m={p:'pen',e:'erase',l:'line',r:'rect',o:'ellipse',f:'fill'};if(m[k.toLowerCase()])selectTool(m[k.toLowerCase()]);}});
+  else if(k===' '||k==='Enter'){ev.preventDefault();undo.push(grid.slice());const v=grid[cursor.y*GW+cursor.x]?0:1;setPin(cursor.x,cursor.y,v);afterChange();say(`${cursor.x}, ${cursor.y} ${v?'올림':'내림'}`);}
+  else if((ev.ctrlKey||ev.metaKey)&&k.toLowerCase()==='z'){ev.preventDefault();$('undoBtn').click();}
+  else if(k.toLowerCase()==='p')selectTool('pen');else if(k.toLowerCase()==='e')selectTool('eraser');
+});
 
-/* ---------- tools / resolution ---------- */
-function selectTool(t){tool=t;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t));say('도구: '+({pen:'펜',erase:'지우개',line:'직선',rect:'사각형',ellipse:'타원',fill:'채우기'}[t]));}
-$('#rail').addEventListener('click',e=>{const b=e.target.closest('.tool[data-tool]');if(b)selectTool(b.dataset.tool);});
-$('#brush').addEventListener('input',e=>{brush=+e.target.value;$('#brushVal').textContent=brush;});
-function doUndo(){if(undo.length){grid=undo.pop();scheduleStream();draw();say('실행취소');}}
-$('#undoBtn').onclick=doUndo;
-document.querySelectorAll('.seg [data-res]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.seg [data-res]').forEach(x=>x.setAttribute('aria-pressed',x===b));resKey=b.dataset.res;const r=RES[resKey];GW=r.w;GH=r.h;grid=new Uint8Array(GW*GH);undo=[];cursor={x:0,y:0};$('#kvCells').textContent=resKey==='60x40'?'30 × 10':'48 × 16';renderGrayFromSource();layout();scheduleStream();}));
-$('#newBtn').onclick=()=>{snapshot();grid.fill(0);scheduleStream();draw();say('새 캔버스');$('#reco').classList.remove('show');};
-$('#contrastBtn').onclick=()=>{bigPins=!bigPins;draw();say(bigPins?'큰 핀 보기 켬':'큰 핀 보기 끔');};
+/* ---------- save / export ---------- */
+function dl(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function saveName(){return ($('fname').value||'Untitled').trim();}
+$('dtmsBtn').onclick=$('saveTopBtn').onclick=()=>{dl(dtmsJSON(),saveName()+'.dtms','application/json');toast('DTMS로 저장했어요');};
+$('hexBtn').onclick=async()=>{try{await navigator.clipboard.writeText(gridToHex());toast('HEX를 복사했어요');}catch(e){toast('복사 실패 — 전문가 설정에서 확인하세요');}};
+$('pngBtn').onclick=()=>{const sc=8,c=document.createElement('canvas');c.width=GW*sc;c.height=GH*sc;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.fillStyle='#23283A';for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(grid[y*GW+x]){g.beginPath();g.arc(x*sc+sc/2,y*sc+sc/2,sc*0.4,0,7);g.fill();}c.toBlob(b=>{dl(b,saveName()+'.png','image/png');toast('PNG로 저장했어요');});};
+$('outBtn').onclick=()=>{if(!connected){toast('먼저 DotPad를 연결하세요');return;}try{sdk.displayGraphicData(gridToHex(),dotDevice,SDKMod.DisplayMode.GraphicMode);toast('DotPad로 보냈어요');setStatus('on','실시간 반영 중');}catch(e){toast('전송 실패');setStatus('err','전송 실패');}};
 
-/* ---------- export ---------- */
-function dl(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();}
-$('#hexBtn').onclick=()=>{const nom=nominalCells();dl('graphic.hex',new Blob([gridToHex(nom.cols,nom.rows)],{type:'text/plain'}));};
-$('#exportBtn').onclick=()=>$('#hexBtn').click();
-$('#jsonBtn').onclick=$('#saveBtn').onclick=()=>{const nom=nominalCells();const o={title:$('#title').value,category:$('#category').value,resolution:resKey,cell_layout:`${nom.cols}x${nom.rows}`,dotpad_graphic_hex:gridToHex(nom.cols,nom.rows),grid:Array.from(grid)};dl('graphic.json',new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));say('저장 파일 생성');};
-$('#pngBtn').onclick=()=>{const sc=8,c=document.createElement('canvas');c.width=GW*sc;c.height=GH*sc;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.fillStyle='#23283A';for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(grid[y*GW+x]){g.beginPath();g.arc(x*sc+sc/2,y*sc+sc/2,sc*0.4,0,7);g.fill();}c.toBlob(b=>dl('graphic.png',b));};
+/* ---------- live toggle ---------- */
+$('liveToggle').onclick=()=>{liveOn=!liveOn;$('liveToggle').setAttribute('aria-checked',liveOn);updateScore();if(liveOn&&connected)scheduleSend();say('라이브 반영 '+(liveOn?'켬':'끔'));};
 
-/* ---------- DotPad connect (실시간) ---------- */
-const statusEl=$('#status'),statusText=$('#statusText');
-function setStatus(m,t){statusEl.className='chip-status '+m;statusText.textContent=t;$('#kvState').textContent=t;}
-function setConnUI(on){ $('#testBtn').disabled=!on; $('#disconnectBtn').disabled=!on; $('#connectBtn').innerHTML = on?'<svg class="ic" viewBox="0 0 24 24"><use href="#i-bt"/></svg>연결됨':'<svg class="ic" viewBox="0 0 24 24"><use href="#i-bt"/></svg>DotPad 연결'; }
+/* ---------- DotPad connect ---------- */
+const statusEl=$('status'),statusText=$('statusText');
+function setStatus(mode,text){statusEl.className='status '+(mode==='on'?'on':mode==='connecting'?'connecting':mode==='err'?'err':'');statusText.textContent=text;}
+function setConnectBtn(on){$('connectBtn').innerHTML=(on?'<svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>라이브 반영 ON':'<svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 연결');}
 
 if(!navigator.bluetooth){
-  $('#connectBtn').disabled=true;$('#connectBtn').textContent='BLE 미지원';setStatus('off','Web Bluetooth 미지원');
-  $('#connHint').textContent='이 브라우저는 Web Bluetooth를 지원하지 않습니다. Chrome 또는 Edge에서 열어주세요.';
+  $('connectBtn').disabled=true;$('connectBtn').textContent='BLE 미지원';setStatus('err','연결 불가');
+  $('liveDesc').textContent='Chrome 또는 Edge에서 HTTPS 환경으로 열면 DotPad 연결을 사용할 수 있습니다.';
 }else if(!window.isSecureContext){
-  $('#connectBtn').disabled=true;$('#connectBtn').textContent='HTTPS 필요';setStatus('off','HTTPS 필요');
-  $('#connHint').innerHTML='실기기 연결은 보안 컨텍스트가 필요합니다. <b>https://</b> 주소(예: GitHub Pages)나 <b>localhost</b>에서 열어주세요.';
+  $('connectBtn').disabled=true;$('connectBtn').textContent='HTTPS 필요';setStatus('err','HTTPS 필요');
+  $('liveDesc').textContent='Chrome 또는 Edge에서 HTTPS 환경(또는 localhost)으로 열면 DotPad 연결을 사용할 수 있습니다.';
 }else if(!SDKMod){
-  $('#connectBtn').disabled=true;$('#connectBtn').textContent='SDK 없음';setStatus('off','SDK 로드 실패');
-  $('#connHint').textContent='DotPadSDK-3_0_0.js를 불러오지 못했습니다. editor.html과 같은 폴더에 SDK 파일이 있는지 확인하세요.';
+  $('connectBtn').disabled=true;$('connectBtn').textContent='SDK 없음';setStatus('err','SDK 로드 실패');
+  $('liveDesc').textContent='DotPadSDK-3_0_0.js를 같은 폴더에 두고 다시 열어주세요.';
 }else{
-  sdk=new SDKMod.DotPadSDK();
-  sdk.setCallBack(onMessage,onKey);
-  $('#connectBtn').onclick=()=>connect(false);
-  $('#disconnectBtn').onclick=()=>{ try{sdk.disconnect(dotDevice);}catch(e){} };
-  $('#testBtn').onclick=deviceTest;
-  setStatus('sim','연결 대기');
-  tryAutoReconnect();          // 이전에 허용한 기기면 클릭 없이 자동 연결
+  sdk=new SDKMod.DotPadSDK();sdk.setCallBack(onMsg,onKey);
+  $('connectBtn').onclick=connect;
+  tryAuto();
 }
+async function connect(){try{const sc=new SDKMod.DotPadScanner();const dev=await sc.startBleScan();if(!dev)return;setStatus('connecting','연결 중…');dotDevice=await sdk.connectBleDevice(dev);if(!dotDevice)setStatus('err','연결 실패');}catch(e){setStatus('err','오류');}}
+async function tryAuto(){if(!navigator.bluetooth.getDevices)return;try{const ds=await navigator.bluetooth.getDevices();const dp=ds.find(d=>(d.name||'').toLowerCase().startsWith('dotpad'));if(!dp)return;setStatus('connecting','이전 기기 재연결 중…');dotDevice=await sdk.connectBleDevice(dp);}catch(e){}}
+function onMsg(device,code,value){const C=SDKMod.DataCodes;
+  if(code===C.Connected){connected=true;devCols=device.numberCellColumns||30;devRows=device.numberCellRows||10;setStatus('on','DotPad 연결됨');setConnectBtn(true);$('liveDesc').textContent='변경 사항을 실시간으로 보내는 중입니다.';say('DotPad 연결됨');updateScore();scheduleSend();}
+  else if(code===C.Disconnected){connected=false;dotDevice=null;setStatus('','DotPad 미연결');setConnectBtn(false);$('liveDesc').textContent='연결하면 조정 결과가 실시간으로 반영됩니다.';updateScore();}
+}
+function onKey(){}
 
-async function connect(silent){
-  try{
-    const sc=new SDKMod.DotPadScanner();
-    const dev=await sc.startBleScan();              // 사용자 제스처로 기기 선택(최초 1회)
-    if(!dev){ if(!silent)say('연결이 취소되었습니다'); return; }
-    setStatus('sim','연결 중…');
-    dotDevice=await sdk.connectBleDevice(dev);
-    if(!dotDevice){ setStatus('off','연결 실패'); }
-  }catch(e){ setStatus('off','오류'); }
-}
-
-async function tryAutoReconnect(){
-  if(!navigator.bluetooth.getDevices) return;       // 일부 브라우저는 미지원
-  try{
-    const devs=await navigator.bluetooth.getDevices();
-    const dp=devs.find(d=>(d.name||'').toLowerCase().startsWith('dotpad'));
-    if(!dp) return;
-    setStatus('sim','이전 기기 재연결 중…'); say('이전 DotPad에 자동 연결 중');
-    dotDevice=await sdk.connectBleDevice(dp);        // 범위 내에 있으면 클릭 없이 연결
-  }catch(e){ setStatus('sim','연결 대기'); }          // 실패 시 수동 연결 버튼 사용
-}
-
-function deviceTest(){
-  if(!connected||!sdk||!dotDevice) return;
-  try{ sdk.displayAllUp(dotDevice); say('전체 핀 올림 — 손끝으로 확인하세요'); markLive();
-    setTimeout(()=>{ streamNow(); say('현재 그림으로 복귀'); }, 1200);
-  }catch(e){}
-}
-
-function onMessage(device,code,value){
-  const C=SDKMod.DataCodes;
-  if(code===C.Connected){
-    connected=true;
-    devCols=device.numberCellColumns||30; devRows=device.numberCellRows||10;
-    $('#kvName').textContent=device.deviceName||'DotPad';
-    $('#kvCells').textContent=`${devCols} × ${devRows}`; $('#kvLive').textContent='연결됨';
-    setStatus('on','연결됨 · 라이브'); setConnUI(true);
-    say('DotPad 연결됨 — 편집이 실시간으로 출력됩니다');
-    streamNow();                 // 연결 즉시 현재 캔버스를 기기에 출력
-  }else if(code===C.Disconnected){
-    connected=false; dotDevice=null; setStatus('off','연결 끊김'); setConnUI(false);
-    $('#kvLive').textContent='대기'; say('연결이 끊겼습니다');
-  }else if(code===C.DeviceName){ $('#kvName').textContent=value||'DotPad'; }
-}
-function onKey(device,keyCode,value){ $('#kvKey').textContent=keyCode+(value?(' · '+value):''); say('기기 입력 '+keyCode); }
+/* ---------- mobile drawer ---------- */
+$('mobtab').onclick=()=>{const p=$('panel');const open=p.classList.toggle('open');$('mobtab').setAttribute('aria-expanded',open);$('mobtab').textContent=open?'조정 패널 닫기 ▼':'조정 패널 열기 ▲';};
 
 /* ---------- init ---------- */
-if(GEN_API){
-  $('#genHint').textContent='생성 서버: '+GEN_API;
-}else{
-  $('#genHint').textContent='텍스트 생성 서버가 연결되어 있지 않습니다. `?api=https://flux-server` 또는 로컬 `server/`를 연결해 주세요.';
-  $('#genBtn').disabled=true;
-}
-window.addEventListener('resize',layout);layout();scheduleStream();
-</script>
-</body>
-</html>
+window.addEventListener('resize',layout);
+layout();updateScore();
