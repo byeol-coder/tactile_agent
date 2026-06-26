@@ -1780,19 +1780,91 @@ function fitCanvas(){
 layout=fitCanvas;
 window.addEventListener('resize',fitCanvas);
 
-/* ── autoSelect 패치: 어두운 형태→점 ── */
+/* ── autoSelect 패치: 형태 보존 + 과채움 방지 ── */
 autoSelect=function(){
   imgMeta=Object.assign(imgMeta||{},analyzeImageType());
-  const t=otsu(grayBuf); let pol=false;
-  if(!imgMeta.hasAlpha){
-    const m=fillT(grayBuf,t,false); let on=0; for(let i=0;i<N;i++) on+=m[i];
-    pol=(on>N*0.75);
+
+  // 1) 투명 PNG: alphaBuf >= 128 이면서 어두운 픽셀만 점으로
+  //    (이전엔 불투명 전체 → 형태와 무관한 픽셀까지 전부 점)
+  if(imgMeta.hasAlpha){
+    // 불투명 영역의 gray 분포로 Otsu 임계값 계산
+    const alphaGray=[];
+    for(let i=0;i<N;i++){ if(alphaBuf[i]>=128) alphaGray.push(grayBuf[i]); }
+    let t=128;
+    if(alphaGray.length>20){
+      // alphaGray 배열로 otsu 계산
+      const h=new Array(256).fill(0);
+      alphaGray.forEach(v=>h[v|0]++);
+      const NN=alphaGray.length;
+      let sum=0; for(let i=0;i<256;i++) sum+=i*h[i];
+      let sB=0,wB=0,mx=-1; t=128;
+      for(let i=0;i<256;i++){
+        wB+=h[i]; if(!wB) continue;
+        const wF=NN-wB; if(!wF) break;
+        sB+=i*h[i];
+        const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);
+        if(b>mx){mx=b;t=i;}
+      }
+    }
+    // alpha + gray 이중 조건으로 마스크 생성
+    const testGrid=new Uint8Array(N);
+    for(let i=0;i<N;i++){
+      testGrid[i]=(alphaBuf[i]>=128 && grayBuf[i]<=t)?1:0;
+    }
+    const on=testGrid.reduce((a,v)=>a+v,0);
+    const density=on/N;
+
+    // 과채움(40% 초과) → 임계값 낮춰 재시도
+    if(density>0.40){
+      const lower=Math.min(t, Math.round(t*0.6));
+      for(let i=0;i<N;i++){
+        testGrid[i]=(alphaBuf[i]>=128 && grayBuf[i]<=lower)?1:0;
+      }
+      threshold=lower;
+    } else {
+      threshold=t;
+    }
+
+    method='alpha_gray'; // 내부 식별용
+    // rebuild 시 alpha_gray 처리
+    const _baseMask=baseMask;
+    baseMask=function(th,meth,pol){
+      if(meth==='alpha_gray'||meth==='alpha'){
+        const o=new Uint8Array(N);
+        for(let i=0;i<N;i++) o[i]=(alphaBuf[i]>=128&&grayBuf[i]<=th)?1:0;
+        if(pol) for(let i=0;i<N;i++) o[i]^=1;
+        return o;
+      }
+      return _baseMask(th,meth,pol);
+    };
+    polarity=false; outline=0;
+    recoThreshold=threshold; recoOutline=0;
+    rebuild();
+    return {score:100,meth:'alpha_gray',pol:false,ol:0};
   }
-  method=imgMeta.hasAlpha?'alpha':'global';
-  polarity=pol; outline=0; threshold=t;
-  recoThreshold=t; recoOutline=0;
+
+  // 2) 일반 이미지: Otsu + 과채움 가드
+  const t=otsu(grayBuf);
+  let finalT=t, pol=false;
+
+  // 점 비율 체크
+  const testM=fillT(grayBuf,t,false);
+  let on=0; for(let i=0;i<N;i++) on+=testM[i];
+  const density=on/N;
+
+  if(density>0.75){
+    // 배경이 어두운 이미지 → 반전
+    pol=true;
+  } else if(density>0.50){
+    // 과채움 → 임계값 낮춤
+    finalT=Math.round(t*0.7);
+  }
+
+  method='global'; polarity=pol; outline=0;
+  threshold=finalT;
+  recoThreshold=finalT; recoOutline=0;
   rebuild();
-  return {score:100,meth:method,pol,ol:0};
+  return {score:100,meth:'global',pol,ol:0};
 };
 
 /* ══════════════════════════════════════════════════════
