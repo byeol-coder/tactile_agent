@@ -1,1776 +1,1065 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Dot Tactile Studio</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<title>Dot Canvas Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
-/* ── Variables ───────────────────────────────────────────────── */
-:root {
-  --bg:        #F2F2F5;
-  --surface:   #FFFFFF;
-  --surf-2:    #F7F7FA;
-  --border:    #E4E4EB;
-  --border-2:  #C8C8D4;
-  --text:      #0F0F14;
-  --text-2:    #4A4A5A;
-  --muted:     #8A8A9C;
-  --accent:    #2563EB;
-  --accent-lt: #EBF2FF;
-  --success:   #16A34A;
-  --danger:    #DC2626;
-  --warn:      #D97706;
-  --canvas-ws: #DDDDE8;
-  --dp-bg:     #16161C;
-  --r:         6px;
-  --r-lg:      10px;
-  color-scheme: light;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 12px;
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
-}
-button { font-family: inherit; cursor: pointer; }
-input  { font-family: inherit; }
-select { font-family: inherit; }
+  :root{
+    --bg:#F3F4F6; --workspace:#EEF0F3; --surface:#FFFFFF; --panel:#FAFAFB;
+    --line:#E5E7EB; --line-strong:#D1D5DB;
+    --text:#111827; --text-secondary:#4B5563; --muted:#6B7280; --faint:#9CA3AF;
+    --accent:#FF6A1F; --accent-hover:#E85A10; --accent-soft:#FFF1E8;
+    --success:#16A34A; --warning:#D97706; --danger:#DC2626;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --body:'Pretendard','Inter','Noto Sans KR',system-ui,sans-serif;
+    --header:56px; --statusbar:30px; --rail:52px; --panelw:312px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--workspace);color:var(--text);font-family:var(--body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0)}
+  button,input,select,textarea{font-family:inherit}
+  .skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:.5rem 1rem;z-index:120}
+  .skip:focus{left:0}
+  svg.ic{width:18px;height:18px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  svg.tic{width:24px;height:24px;display:block}
+  [hidden]{display:none!important}
 
-/* ── App Shell ───────────────────────────────────────────────── */
-#app { display: flex; flex-direction: column; height: 100vh; }
+  /* ============ HEADER ============ */
+  .header{display:flex;align-items:center;gap:12px;height:var(--header);padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:40}
+  .brand{display:flex;align-items:center;gap:9px;white-space:nowrap}
+  .brand .mark{width:24px;height:24px;color:var(--accent)}
+  .brand .bt{display:flex;flex-direction:column;line-height:1.1}
+  .brand .bt b{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .brand .bt small{font-size:11px;font-weight:500;color:var(--faint)}
+  .hsep{width:1px;height:24px;background:var(--line)}
+  .docwrap{display:flex;align-items:center;gap:6px;min-width:0}
+  .fname{border:1px solid transparent;background:none;color:var(--text);font-size:13px;font-weight:500;padding:5px 8px;border-radius:7px;width:130px}
+  .fname:hover{border-color:var(--line)}
+  .fname:focus{outline:none;border-color:var(--accent);background:var(--panel)}
+  .dirty{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none;opacity:0;transition:opacity .15s}
+  .dirty.on{opacity:1}
+  .menuwrap{position:relative}
+  .menu{position:absolute;top:calc(100% + 6px);left:0;min-width:210px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px #11182722;padding:6px;z-index:50}
+  .menu button{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;color:var(--text);font-size:13px;font-weight:500;padding:9px 10px;border-radius:7px;cursor:pointer;text-align:left}
+  .menu button:hover,.menu button:focus-visible{background:var(--panel);outline:none}
+  .menu .ic{width:16px;height:16px;color:var(--muted);flex:none}
+  .menu .mdiv{height:1px;background:var(--line);margin:4px 2px}
+  .header .sp{flex:1}
+  .chip{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--text-secondary);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap}
+  .chip .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+  .chip.connecting .dot{background:var(--warning);animation:pulse 1s infinite}
+  .chip.connected .dot,.chip.sending .dot,.chip.sent .dot{background:var(--success);box-shadow:0 0 7px #16a34a88}
+  .chip.error .dot{background:var(--danger)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .btn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:.12s}
+  .btn:hover{border-color:var(--line-strong);background:var(--panel)}
+  .btn:active{transform:translateY(.5px)}
+  .btn .ic{width:16px;height:16px}
+  .btn:disabled{opacity:1;color:var(--faint);background:var(--panel);border-color:var(--line);cursor:not-allowed}
+  .btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.accent:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+  .btn.accent:disabled{background:var(--panel);color:var(--faint);border-color:var(--line)}
+  .btn.dark{background:#23283A;color:#fff;border-color:#23283A}
+  .btn.dark:hover{filter:brightness(1.12)}
+  .btn.dark:disabled{background:var(--panel);color:var(--faint);border-color:var(--line);filter:none}
+  .btn:focus-visible,.tool:focus-visible,.seg button:focus-visible,.toggle:focus-visible,.chipbtn:focus-visible,.menuwrap>button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-/* ── Header ──────────────────────────────────────────────────── */
-.header {
-  flex-shrink: 0;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  z-index: 20;
-}
-.hd-brand {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-right: 4px;
-}
-.hd-logo {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 13px;
-  flex-shrink: 0;
-  letter-spacing: -.5px;
-}
-.hd-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: -.01em;
-  color: var(--text);
-  white-space: nowrap;
-}
-.hd-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-.hd-file {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border-radius: var(--r);
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-2);
-  cursor: pointer;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.hd-file:hover { border-color: var(--border-2); }
-.hd-file-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
-.hd-spacer { flex: 1; }
-/* DotPad status pill */
-.dp-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--surf-2);
-  font-size: 11.5px;
-  color: var(--text-2);
-  white-space: nowrap;
-}
-.dp-pill.connected { background: #F0FDF4; border-color: #BBF7D0; color: var(--success); }
-.dp-pill.error     { background: #FEF2F2; border-color: #FECACA; color: var(--danger); }
-.dp-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.dp-dot.off { background: var(--muted); }
-.dp-dot.on  { background: var(--success); box-shadow: 0 0 0 2px rgba(22,163,74,.2); }
-.dp-dot.ing { background: var(--warn); animation: blink .9s infinite; }
-.dp-dot.err { background: var(--danger); }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
-.dp-dev-name {
-  font-size: 10.5px;
-  padding: 1px 6px;
-  background: rgba(22,163,74,.1);
-  border-radius: 4px;
-  display: none;
-}
-.dp-dev-name.show { display: inline; }
-/* Live badge */
-.live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 10px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-.live-badge.on  { background: #DCFCE7; color: #15803D; }
-.live-badge.off { background: var(--surf-2); color: var(--muted); }
-.live-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-/* Header buttons */
-.hd-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: var(--r);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-2);
-  font-size: 12px;
-  font-weight: 600;
-  transition: all .12s;
-  white-space: nowrap;
-}
-.hd-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--surf-2); }
-.hd-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.hd-btn.primary:hover { background: #1D4ED8; }
-.hd-btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
-.ext-badge {
-  font-size: 9.5px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-  letter-spacing: .03em;
-}
-.ext-dtm  .ext-badge { background: rgba(37,99,235,.12); color: #2563EB; }
-.ext-dtms .ext-badge { background: rgba(124,58,237,.12); color: #7C3AED; }
+  /* ============ WORKSPACE GRID ============ */
+  .work{display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--panelw);height:calc(100vh - var(--header) - 1px)}
+  body:not([data-state="ready"]) .work{grid-template-columns:0 minmax(0,1fr) var(--panelw)}
+  .rail{grid-column:1} .stage{grid-column:2} .panel{grid-column:3}
 
-/* ── Workspace ───────────────────────────────────────────────── */
-.workspace {
-  flex: 1;
-  display: flex;
-  min-height: 0;
-  overflow: hidden;
-}
+  .rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0}
+  body:not([data-state="ready"]) .rail{display:none}
+  .tool{width:40px;height:40px;border-radius:10px;border:1px solid transparent;background:none;color:var(--text-secondary);cursor:pointer;display:grid;place-items:center;transition:.12s}
+  .tool:hover{background:var(--panel);color:var(--text)}
+  .tool[aria-pressed="true"]{background:var(--accent);color:#fff}
+  .tool:disabled{color:var(--faint);cursor:not-allowed;background:none}
+  .rail .sep{width:24px;height:1px;background:var(--line);margin:6px 0}
 
-/* ── Panels ──────────────────────────────────────────────────── */
-.panel {
-  flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--surface);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-.panel::-webkit-scrollbar { width: 4px; }
-.panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-.panel-left  { width: 216px; border-right: 1px solid var(--border); }
-.panel-right { width: 268px; border-left: 1px solid var(--border); }
+  .stage{background:var(--workspace);display:flex;flex-direction:column;min-width:0;position:relative}
+  .canvas-area{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;position:relative}
+  .board{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 3px #1118270d}
+  #pad{display:block;border-radius:6px;background:#fff;touch-action:none}
+  #pad:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+  /* tool context bar (thickness) */
+  .toolbar-ctx{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;box-shadow:0 4px 14px #11182714;z-index:8;font-size:13px}
+  .toolbar-ctx.show{display:flex}
+  .toolbar-ctx .lbl{font-weight:600;color:var(--text)}
+  .toolbar-ctx .lbl .sub{color:var(--muted);font-weight:500;margin-left:2px}
+  .sizegrp{display:flex;gap:4px}
+  .sizegrp button{min-width:42px;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:7px;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer}
+  .sizegrp button[aria-checked="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sizegrp button:hover:not([aria-checked="true"]){background:var(--panel)}
+  /* overlays */
+  .overlay{position:absolute;inset:16px;border-radius:8px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;background:rgba(255,255,255,.62);backdrop-filter:blur(1px)}
+  body[data-state="empty"] #emptyOv{display:flex}
+  body[data-state="analyzing"] #analyzeOv{display:flex}
+  #emptyOv{border:2px dashed var(--line-strong);background:rgba(255,255,255,.55)}
+  #emptyOv.drag{border-color:var(--accent);background:var(--accent-soft)}
+  #emptyOv .ic{width:44px;height:44px;color:var(--accent)}
+  #emptyOv h2{margin:4px 0 0;font-size:17px;font-weight:700}
+  #emptyOv p{margin:0;color:var(--muted);font-size:13px;max-width:38ch}
+  #emptyOv .row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+  .spinner{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #analyzeOv h2{margin:0;font-size:15px;font-weight:700}
+  #analyzeOv p{margin:0;color:var(--muted);font-size:12px;font-family:var(--mono)}
+  #analyzeOv .row{display:flex;gap:8px;margin-top:4px}
+  .samplechip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:.12s}
+  .samplechip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .linkbtn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:4px}
+  .linkbtn:hover{color:var(--accent)}
+  /* status bar */
+  .statusbar{height:var(--statusbar);display:flex;align-items:center;gap:9px;padding:0 14px;background:var(--surface);border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow-x:auto}
+  .statusbar .sdiv{color:var(--faint)}
+  .statusbar b{color:var(--text);font-weight:600}
+  .statusbar .perc.good{color:var(--success)} .statusbar .perc.mid{color:var(--warning)} .statusbar .perc.warn{color:var(--danger)}
 
-.p-section { border-bottom: 1px solid var(--border); }
-.p-hd {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-  background: var(--surf-2);
-}
-.p-hd:hover { color: var(--text-2); }
-.p-hd .chev { margin-left: auto; transition: transform .15s; flex-shrink: 0; }
-.p-hd.open .chev { transform: rotate(180deg); }
-.p-body { padding: 12px; }
-.p-body.closed { display: none; }
+  .panel{background:var(--surface);border-left:1px solid var(--line);overflow-y:auto;overflow-x:hidden}
+  .mobtab{display:none}
+  .psec{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .psec:last-child{border-bottom:none}
+  body:not([data-state="ready"]) .ro{display:none}
+  .img-only{}.tac-only{}
+  body[data-filekind="tactile"] .img-only{display:none}
+  body:not([data-filekind="tactile"]) .tac-only{display:none}
+  .psec h3{margin:0 0 10px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;color:var(--text)}
+  .psec h3 .ic{width:16px;height:16px;color:var(--accent)}
+  .psec .desc{margin:0 0 8px;font-size:13px;color:var(--text-secondary)}
+  .muted{color:var(--muted)} .faint{color:var(--faint)}
+  .note{font-size:12px;color:var(--text-secondary);background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warning);border-radius:6px;padding:8px 10px;line-height:1.45}
 
-/* ── Upload ──────────────────────────────────────────────────── */
-.upload-zone {
-  border: 1.5px dashed var(--border-2);
-  border-radius: var(--r-lg);
-  padding: 16px 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-}
-.upload-zone:hover, .upload-zone.over {
-  border-color: var(--accent);
-  background: var(--accent-lt);
-}
-.upload-zone.has-img {
-  border-style: solid;
-  border-color: rgba(37,99,235,.5);
-  background: var(--accent-lt);
-}
-.upload-thumb {
-  width: 100%;
-  height: 56px;
-  object-fit: contain;
-  margin-bottom: 5px;
-  display: none;
-}
-.upload-zone.has-img .upload-thumb { display: block; }
-.upload-zone.has-img .upload-icon { display: none; }
-.upload-icon { color: var(--muted); margin-bottom: 5px; }
-.upload-main { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.upload-sub  { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
-.upload-fname {
-  font-size: 10px;
-  color: var(--accent);
-  margin-top: 4px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  display: none;
-}
-.upload-zone.has-img .upload-fname { display: block; }
+  .agent-lead{font-size:13px;font-weight:600;color:var(--text);margin:0 0 8px}
+  .reco-card{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text-secondary);padding:5px 0}
+  .reco-card .ic{width:15px;height:15px;color:var(--success);flex:none;margin-top:2px}
+  .grade{display:flex;align-items:baseline;justify-content:space-between;margin:2px 0 6px}
+  .grade .g{font-size:14px;font-weight:700}
+  .grade .g.s4,.grade .g.s3{color:var(--success)} .grade .g.s2{color:var(--warning)} .grade .g.s1{color:var(--danger)}
+  .grade .pins{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .ask{display:flex;gap:6px;margin-top:10px}
+  .ask input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px;background:var(--surface);color:var(--text)}
+  .ask input:focus{outline:none;border-color:var(--accent)}
+  .ask .go{border:none;background:var(--accent);color:#fff;border-radius:9px;padding:0 12px;font-weight:700;cursor:pointer}
+  .ask .go:hover{background:var(--accent-hover)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chipbtn{border:1px solid var(--line);background:var(--surface);color:var(--text-secondary);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:500;cursor:pointer}
+  .chipbtn:hover{border-color:var(--accent);color:var(--accent)}
 
-.load-row { display: flex; gap: 6px; margin-top: 8px; }
+  .kv{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0}
+  .kv span:first-child{color:var(--muted);flex:none} .kv span:last-child{color:var(--text);font-family:var(--mono);font-size:12px;text-align:right}
+  .inforow{display:flex;gap:8px;margin-top:10px}.inforow .btn{flex:1}
 
-/* ── Recent ──────────────────────────────────────────────────── */
-.recent-list { display: flex; flex-direction: column; gap: 2px; }
-.recent-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 7px; border-radius: var(--r); cursor: pointer;
-}
-.recent-item:hover { background: var(--surf-2); }
-.recent-thumb { width: 22px; height: 22px; border-radius: 4px; object-fit: contain; background: var(--bg); flex-shrink: 0; border: 1px solid var(--border); }
-.recent-name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; color: var(--text-2); }
-.empty-note { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0; }
+  .slab{display:flex;justify-content:space-between;align-items:baseline}
+  .slab .t{font-size:14px;font-weight:700}
+  .slab .v{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--accent)}
+  input[type=range]{width:100%;height:24px;accent-color:var(--accent);cursor:pointer;margin:6px 0 2px}
+  input[type=range]:disabled{accent-color:var(--line-strong);cursor:not-allowed}
+  .ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .reco-line{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
+  .reco-line b{color:var(--text-secondary);font-weight:600}
+  .fb{font-size:12px;font-weight:500;margin-top:6px;min-height:16px;color:var(--muted)}
+  .fb.sending{color:var(--warning)} .fb.sent{color:var(--success)} .fb.err{color:var(--danger)}
 
-/* ── Preset ──────────────────────────────────────────────────── */
-.cat-tabs { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 8px; }
-.cat-tab {
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 10.5px;
-  font-weight: 600;
-  transition: all .12s;
-}
-.cat-tab:hover { border-color: var(--border-2); color: var(--text-2); }
-.cat-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:2px}
+  .seg button{flex:1;background:var(--surface);border:none;border-right:1px solid var(--line);color:var(--text-secondary);padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer}
+  .seg button:last-child{border-right:none}
+  .seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+  .seg button:hover:not([aria-pressed="true"]){background:var(--panel)}
+  .seg button:disabled{color:var(--faint);cursor:not-allowed}
 
-.preset-list { display: flex; flex-direction: column; gap: 1px; max-height: 280px; overflow-y: auto; }
-.preset-list::-webkit-scrollbar { width: 3px; }
-.preset-list::-webkit-scrollbar-thumb { background: var(--border); }
-.preset-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 7px; border-radius: var(--r); cursor: pointer;
-}
-.preset-item:hover { background: var(--surf-2); }
-.preset-item.active { background: var(--accent-lt); outline: 1px solid rgba(37,99,235,.25); outline-offset: -1px; }
-.p-thumb { width: 26px; height: 26px; border-radius: 4px; object-fit: contain; background: var(--bg); flex-shrink: 0; border: 1px solid var(--border); }
-.p-labels { flex: 1; min-width: 0; }
-.p-ko  { font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.p-sub { font-size: 10px; color: var(--muted); }
-.p-del { display: none; background: transparent; border: none; color: var(--danger); padding: 2px 4px; border-radius: 3px; font-size: 14px; line-height: 1; }
-.preset-item:hover .p-del.show { display: block; }
-.p-del:hover { background: rgba(220,38,38,.1); }
+  .quick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .qbtn{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:9px;padding:10px 6px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .qbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .qbtn .ic{width:15px;height:15px;flex:none}
+  .qbtn:disabled{opacity:1;color:var(--faint);cursor:not-allowed;border-color:var(--line)}
 
-/* ── Settings Presets ────────────────────────────────────────── */
-.sp-list { display: flex; flex-direction: column; gap: 3px; }
-.sp-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 9px;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  cursor: pointer;
-  background: var(--surface);
-  transition: all .12s;
-}
-.sp-item:hover { border-color: var(--border-2); background: var(--surf-2); }
-.sp-item.active { border-color: var(--accent); background: var(--accent-lt); }
-.sp-name { font-size: 12px; font-weight: 600; }
-.sp-desc { font-size: 10px; color: var(--muted); margin-top: 1px; }
-.sp-tag {
-  font-size: 9.5px; font-weight: 700;
-  padding: 2px 6px; border-radius: 4px;
-  background: var(--surf-2);
-  color: var(--muted);
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.sp-item.active .sp-tag { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .pagenav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+  .pagenav button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text)}
+  .pagenav button:disabled{color:var(--faint);cursor:not-allowed}
+  .pagenav .pind{font-family:var(--mono);font-size:13px;color:var(--text-secondary)}
 
-/* ── Canvas Area ─────────────────────────────────────────────── */
-.canvas-area {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
-  background: var(--canvas-ws);
-}
-.canvas-toolbar {
-  flex-shrink: 0; height: 38px;
-  display: flex; align-items: center; gap: 4px;
-  padding: 0 10px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-.tool-group { display: flex; align-items: center; gap: 2px; }
-.tool-group + .tool-group { padding-left: 8px; margin-left: 8px; border-left: 1px solid var(--border); }
-.tool-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  border-radius: var(--r);
-  font-size: 11px;
-  transition: all .12s;
-}
-.tool-btn:hover { background: var(--surf-2); color: var(--text-2); border-color: var(--border); }
-.tool-btn.active { background: var(--accent-lt); color: var(--accent); border-color: rgba(37,99,235,.3); }
-.zoom-val { font-size: 11px; color: var(--muted); min-width: 34px; text-align: center; font-weight: 600; }
-.tb-spacer { flex: 1; }
-.view-seg {
-  display: flex;
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.view-btn {
-  padding: 5px 10px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11px; font-weight: 600;
-  transition: all .12s;
-}
-.view-btn + .view-btn { border-left: 1px solid var(--border); }
-.view-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .liverow{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+  .liverow span{font-size:13px;font-weight:500}
+  .toggle{position:relative;width:42px;height:24px;border-radius:999px;background:var(--line-strong);border:none;cursor:pointer;transition:background .15s;flex:none}
+  .toggle[aria-checked="true"]{background:var(--accent)}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+  .toggle[aria-checked="true"]::after{left:21px}
+  .toggle:disabled{opacity:.5;cursor:not-allowed}
 
-.canvas-viewport {
-  flex: 1; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-}
-.canvas-stage {
-  display: flex; align-items: center; justify-content: center;
-  gap: 20px; padding: 24px;
-  transform-origin: center center;
-  transition: transform .1s;
-}
-.canvas-pane { display: flex; flex-direction: column; align-items: center; gap: 7px; }
-.canvas-lbl {
-  font-size: 10px; font-weight: 700;
-  letter-spacing: .07em; text-transform: uppercase;
-  color: var(--muted);
-}
-.canvas-frame {
-  border-radius: 6px; overflow: hidden;
-  border: 1px solid rgba(0,0,0,.15);
-  background: var(--dp-bg);
-  position: relative;
-  box-shadow: 0 4px 20px rgba(0,0,0,.2);
-}
-.canvas-frame canvas { display: block; }
-.grid-overlay {
-  position: absolute; inset: 0;
-  pointer-events: none;
-  opacity: 0; transition: opacity .2s;
-}
-.grid-overlay.show { opacity: 1; }
-.empty-hint {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 8px; color: rgba(255,255,255,.3);
-  font-size: 11px; text-align: center; padding: 12px;
-}
-.empty-hint.hidden { display: none; }
+  .savebtns{display:flex;flex-direction:column;gap:8px}
+  .saverow{display:flex;gap:8px}.saverow .btn{flex:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
 
-.canvas-status {
-  flex-shrink: 0; height: 32px;
-  display: flex; align-items: center;
-  gap: 14px; padding: 0 14px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  font-size: 11px;
-}
-.cs-item { display: flex; align-items: center; gap: 4px; color: var(--muted); }
-.cs-val { font-weight: 700; color: var(--text-2); }
-.cs-val.accent { color: var(--accent); }
-.cs-sep { width: 1px; height: 14px; background: var(--border); }
-.sync-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--muted);
-}
-.sync-dot.active { background: var(--success); }
+  details.expert summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary);padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px}
+  details.expert summary::before{content:"▸";color:var(--faint)}
+  details.expert[open] summary::before{content:"▾"}
+  details.expert .ebody{padding-top:8px}
+  .efield{margin-bottom:8px}
+  .efield label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .efield select,.efield input{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--text)}
+  .readout{font-family:var(--mono);font-size:11px;color:var(--text-secondary);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px;max-height:84px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin-top:6px}
 
-/* ── Right Panel ─────────────────────────────────────────────── */
-.ctrl-row {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 9px;
-}
-.ctrl-row:last-child { margin-bottom: 0; }
-.ctrl-label { font-size: 11.5px; color: var(--text-2); flex: 1; }
-.ctrl-sublabel { font-size: 10.5px; color: var(--muted); }
-.ctrl-val { font-size: 11px; font-weight: 700; color: var(--accent); min-width: 24px; text-align: right; }
+  /* modal dialog */
+  .modal-bg{position:fixed;inset:0;background:#11182766;display:none;align-items:center;justify-content:center;z-index:140;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--surface);border-radius:14px;max-width:380px;width:100%;padding:22px;box-shadow:0 20px 60px #11182733}
+  .modal h2{margin:0 0 8px;font-size:16px;font-weight:700}
+  .modal p{margin:0 0 18px;font-size:13px;color:var(--text-secondary);line-height:1.5}
+  .modal .actions{display:flex;flex-direction:column;gap:8px}
+  .modal .actions .btn{width:100%}
 
-/* Slider */
-.ctrl-slider {
-  -webkit-appearance: none;
-  width: 100%; height: 4px;
-  background: var(--bg);
-  border-radius: 2px;
-  outline: none; border: none;
-  margin: 5px 0;
-}
-.ctrl-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgba(37,99,235,.3);
-  cursor: pointer;
-  transition: transform .1s;
-}
-.ctrl-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
-.ctrl-slider.success::-webkit-slider-thumb { background: var(--success); }
-.slider-ends { display: flex; justify-content: space-between; font-size: 9.5px; color: var(--muted); margin-top: -3px; }
+  #toast{position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(16px);background:#23283A;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:.2s;z-index:130}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.ok{background:#15803D} #toast.err{background:#B91C1C}
 
-/* Number input */
-.num-in {
-  width: 52px; padding: 4px 7px;
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  color: var(--text);
-  font-size: 12px; text-align: center;
-}
-.num-in:focus { outline: none; border-color: var(--accent); }
-
-/* Toggle */
-.tog-wrap { position: relative; width: 34px; height: 20px; flex-shrink: 0; }
-.tog-in { opacity: 0; width: 0; height: 0; position: absolute; }
-.tog-track {
-  position: absolute; inset: 0;
-  background: var(--border-2);
-  border-radius: 10px; cursor: pointer;
-  transition: background .15s;
-}
-.tog-in:checked + .tog-track { background: var(--accent); }
-.tog-track::after {
-  content: '';
-  position: absolute; left: 2px; top: 2px;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,.2);
-  transition: left .15s;
-}
-.tog-in:checked + .tog-track::after { left: 16px; }
-
-/* Quick buttons */
-.quick-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; margin-bottom: 10px; }
-.q-btn {
-  padding: 5px 3px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surf-2);
-  color: var(--muted);
-  font-size: 9.5px; font-weight: 700;
-  text-align: center;
-  transition: all .12s;
-}
-.q-btn:hover { border-color: var(--accent); color: var(--accent); }
-.q-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-.q-btn.q-auto { border-color: var(--accent); color: var(--accent); }
-.q-btn.q-auto:hover { background: var(--accent); color: #fff; }
-.clarity-hd { margin-bottom: 8px; }
-.clarity-hd .ctrl-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--text-1); margin-bottom: 2px; }
-.clarity-hd .ctrl-sub { display: block; font-size: 10px; color: var(--muted); line-height: 1.4; }
-.adv-details { margin-top: 4px; }
-.adv-summary { font-size: 10px; color: var(--muted); cursor: pointer; user-select: none; padding: 2px 0; }
-.adv-summary:hover { color: var(--text-2); }
-
-/* Segment */
-.seg { display: flex; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
-.seg-btn {
-  flex: 1; padding: 5px 6px;
-  border: none; background: var(--surf-2);
-  color: var(--muted);
-  font-size: 11px; font-weight: 600;
-  transition: all .12s;
-}
-.seg-btn + .seg-btn { border-left: 1px solid var(--border); }
-.seg-btn:hover { color: var(--text-2); }
-.seg-btn.active { background: var(--accent); color: #fff; }
-
-/* Mode select */
-.ctrl-select {
-  width: 100%; padding: 5px 8px;
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  color: var(--text-2);
-  font-size: 11px;
-}
-.ctrl-select:focus { outline: none; border-color: var(--accent); }
-
-/* Outline sub */
-.outline-sub { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-.outline-sub.hidden { display: none; }
-
-/* Pin display */
-.pin-display {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px;
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  margin-bottom: 10px;
-}
-.pin-stat { text-align: center; flex: 1; }
-.pin-val { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.1; }
-.pin-lbl { font-size: 9.5px; color: var(--muted); margin-top: 2px; }
-.pin-divider { width: 1px; height: 36px; background: var(--border); }
-
-/* Buttons */
-.btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  background: var(--surface);
-  color: var(--text-2);
-  font-size: 12px; font-weight: 600;
-  transition: all .12s;
-  white-space: nowrap;
-}
-.btn:hover { border-color: var(--border-2); color: var(--text); background: var(--surf-2); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn.primary:hover { background: #1D4ED8; border-color: #1D4ED8; }
-.btn.danger  { border-color: rgba(220,38,38,.3); color: var(--danger); }
-.btn.danger:hover  { background: rgba(220,38,38,.06); }
-.btn.success { border-color: rgba(22,163,74,.3); color: var(--success); }
-.btn.success:hover { background: rgba(22,163,74,.06); }
-.btn.sm { padding: 5px 10px; font-size: 11px; border-radius: 5px; }
-.btn.full { width: 100%; justify-content: center; }
-.btn:disabled { opacity: .38; cursor: default; pointer-events: none; }
-
-/* Save form */
-.save-form {
-  display: none;
-  align-items: center; gap: 6px;
-  margin-top: 8px; padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.save-form.show { display: flex; }
-.save-form input {
-  flex: 1; padding: 5px 8px;
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  color: var(--text);
-  font-size: 11.5px;
-}
-.save-form input:focus { outline: none; border-color: var(--accent); }
-
-/* Flash */
-.flash { font-size: 11px; color: var(--success); opacity: 0; transition: opacity .2s; }
-.flash.show { opacity: 1; }
-
-/* Log */
-.log-area {
-  font-family: "SF Mono", ui-monospace, monospace;
-  font-size: 10.5px; line-height: 1.6;
-  color: var(--muted);
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 8px;
-  height: 110px;
-  overflow-y: auto; white-space: pre-wrap; word-break: break-all;
-}
-.log-area::-webkit-scrollbar { width: 3px; }
-.log-area::-webkit-scrollbar-thumb { background: var(--border); }
-
-.hex-out {
-  font-family: "SF Mono", ui-monospace, monospace;
-  font-size: 10px; color: var(--muted);
-  background: var(--surf-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r); padding: 7px;
-  height: 60px; overflow-y: auto;
-  resize: none; word-break: break-all; width: 100%;
-}
-
-/* ── Alert Banner ────────────────────────────────────────────── */
-.hint-banner {
-  display: none;
-  align-items: center; gap: 7px;
-  padding: 6px 12px;
-  font-size: 11.5px;
-}
-.hint-banner.warn { display: flex; background: #FFFBEB; border-bottom: 1px solid #FDE68A; color: #92400E; }
-.hint-banner.info { display: flex; background: #EFF6FF; border-bottom: 1px solid #BFDBFE; color: #1E40AF; }
+  @media(max-width:900px){:root{--panelw:300px}}
+  @media(max-width:820px){
+    .work{grid-template-columns:1fr!important;height:auto;min-height:calc(100vh - var(--header))}
+    .rail,.stage,.panel{grid-column:auto!important}
+    .stage{order:1;min-height:54vh}
+    .rail{order:2;flex-direction:row;justify-content:center;flex-wrap:wrap;border-right:none;border-top:1px solid var(--line);padding:8px;position:sticky;bottom:0;background:var(--surface);z-index:20}
+    .rail .sep{width:1px;height:24px;margin:0 6px}
+    .panel{order:3;position:fixed;left:0;right:0;bottom:0;max-height:78vh;border-left:none;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -6px 28px #11182722;transform:translateY(calc(100% - 50px));transition:transform .25s;z-index:60}
+    .panel.open{transform:translateY(0)}
+    .mobtab{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border:none;background:var(--surface);font-weight:700;font-size:14px;cursor:pointer;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line)}
+    .header{flex-wrap:wrap;height:auto;padding:8px 12px;gap:8px}
+    .header .hsep{display:none}
+    .fname{width:104px}
+  }
 </style>
 </head>
-<body>
-<div id="app">
+<body data-state="empty">
+<a class="skip" href="#pad">캔버스로 건너뛰기</a>
 
-<!-- ── Header ─────────────────────────────────────────────────── -->
+<!-- ============ HEADER ============ -->
 <header class="header">
-  <div class="hd-brand">
-    <div class="hd-logo">⠿</div>
-    <span class="hd-name">Dot Tactile Studio</span>
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="2.3" fill="currentColor"/><circle cx="8" cy="16" r="2.3" fill="currentColor"/><circle cx="16" cy="8" r="2.3" fill="currentColor"/><circle cx="16" cy="16" r="2.3" fill="currentColor"/></svg>
+    <span class="bt"><b>Dot Canvas Agent</b><small>by Dot Tactile Studio</small></span>
   </div>
-  <div class="hd-sep"></div>
-  <div class="hd-file" id="hdFile" title="현재 파일">
-    <span class="hd-file-dot" id="hdDirty" style="display:none"></span>
-    <span id="hdFileName">파일 없음</span>
+  <div class="hsep" aria-hidden="true"></div>
+  <div class="docwrap">
+    <input class="fname" id="fname" value="Untitled" aria-label="문서 이름" />
+    <span class="dirty" id="dirty" title="저장되지 않은 변경" aria-hidden="true"></span>
   </div>
-  <div class="hd-spacer"></div>
-
-  <!-- Hint Banner (inline in header flex) -->
-  <div class="hint-banner" id="hintBanner">
-    <span id="hintEmoji"></span>
-    <span id="hintText"></span>
+  <div class="menuwrap">
+    <button class="btn" id="loadMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="loadMenu"><svg class="ic" viewBox="0 0 24 24"><path d="M5 19h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-7l-2-2H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1z"/></svg>불러오기</button>
+    <div class="menu" id="loadMenu" role="menu" hidden>
+      <button role="menuitem" id="miImage"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5L5 19"/></svg>다른 이미지 불러오기</button>
+      <button role="menuitem" id="miTactile"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.6" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.6" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.6" fill="currentColor" stroke="none"/></svg>DTM·DTMS 파일 불러오기</button>
+    </div>
   </div>
-
-  <!-- Live badge -->
-  <div class="live-badge off" id="liveBadge">
-    <span class="live-badge-dot"></span>
-    <span id="liveLabel">Live Off</span>
-  </div>
-
-  <!-- DotPad status -->
-  <div class="dp-pill" id="dpPill">
-    <span class="dp-dot off" id="dpDot"></span>
-    <span id="dpLabel">DotPad 미연결</span>
-    <span class="dp-dev-name" id="dpDevName"></span>
-  </div>
-
-  <button class="hd-btn primary" id="btnConn" aria-label="DotPad 연결하기">연결하기</button>
-  <button class="hd-btn" id="btnDisc" disabled aria-label="DotPad 연결 해제">해제</button>
-
-  <div class="hd-sep"></div>
-
-  <button class="hd-btn" id="btnSavePreset" disabled aria-label="프리셋으로 저장">⭐ 프리셋</button>
-  <button class="hd-btn ext-dtm" id="btnDlDtm" disabled aria-label="DTM 파일로 저장">
-    <span class="ext-badge">DTM</span>저장
-  </button>
-  <button class="hd-btn ext-dtms" id="btnDlDtms" disabled aria-label="DTMS 파일로 저장">
-    <span class="ext-badge">DTMS</span>저장
-  </button>
+  <div class="sp"></div>
+  <div class="chip" id="chip" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="chipText">DotPad 미연결</span></div>
+  <button class="btn" id="saveTopBtn" title="저장" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>저장</button>
+  <button class="btn accent" id="connectBtn"><svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 연결</button>
 </header>
 
-<!-- ── Workspace ─────────────────────────────────────────────── -->
-<div class="workspace">
+<div class="work">
+  <!-- ============ LEFT TOOLBAR ============ -->
+  <nav class="rail" role="toolbar" aria-label="편집 도구" id="rail">
+    <button class="tool" data-tool="move" aria-pressed="true" title="이동 (M)" aria-label="이동 도구"><svg class="tic" viewBox="8 8 37 37" fill="none"><path d="M26.5 40.5V12.5M30.7 36.3L26.5 40.5L22.3 36.2999M30.7 16.7L26.5 12.5L22.3 16.7001M36.3 30.7L40.4999 26.5L36.3 22.3M40.4999 26.5H12.5001M16.7 30.7L12.5001 26.5L16.7001 22.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="tool" data-tool="pen" aria-pressed="false" title="펜 (P)" aria-label="펜 도구"><svg class="tic" viewBox="8 8 37 37" fill="none"><path d="M19.4839 40.4544L37.6613 40.5M23.6151 19.5H15.3387M19.4839 12.5C17.2013 12.5 15.3387 14.362 15.3387 16.63V34.7739C15.3387 35.4039 15.6048 36.356 15.9269 36.9019L17.0752 38.8059C18.3916 41.004 20.5622 41.004 21.8786 38.8059L23.027 36.9019C23.3491 36.356 23.6151 35.4039 23.6151 34.7739V16.63C23.6151 14.362 21.7526 12.5 19.4839 12.5Z" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg></button>
+    <button class="tool" data-tool="eraser" aria-pressed="false" title="지우개 (E)" aria-label="지우개 도구"><svg class="tic" viewBox="8 8 37 37" fill="none"><path d="M22.3298 40.5H39.0107M19.7164 22.4525L30.4895 33.3203M14.7122 34.4141L22.5661 26.4771M18.6322 38.3826L26.5 30.4456M13.8642 34.3019L18.7434 39.2239C19.5253 40.0117 20.5852 40.4543 21.6903 40.4543C22.7955 40.4543 23.8554 40.0117 24.6373 39.2239L39.1358 24.598C39.9168 23.8092 40.3554 22.74 40.3554 21.6252C40.3554 20.5104 39.9168 19.4411 39.1358 18.6524L34.2567 13.7303C33.4747 12.9425 32.4148 12.5 31.3097 12.5C30.2046 12.5 29.1446 12.9425 28.3627 13.7303L13.8642 28.3562C13.0833 29.145 12.6446 30.2143 12.6446 31.3291C12.6446 32.4438 13.0833 33.5131 13.8642 34.3019Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="sep" aria-hidden="true"></div>
+    <button class="tool" id="undoBtn" title="실행 취소 (⌘/Ctrl+Z)" aria-label="실행 취소"><svg class="tic" viewBox="8 8 37 37" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M32.2253 23.2753C35.7535 23.2753 38.5453 26.0326 38.5453 29.3416C38.5453 32.6506 35.7535 35.4078 32.2253 35.4078H20.1498C19.472 35.4078 18.9225 35.9573 18.9225 36.6351C18.9225 37.3129 19.472 37.8624 20.1498 37.8624H32.2253C37.0293 37.8624 40.9998 34.0846 40.9998 29.3416C40.9998 24.5985 37.0293 20.8208 32.2253 20.8208H15.6215C14.9437 20.8208 14.3942 21.3703 14.3942 22.0481C14.3942 22.7259 14.9437 23.2753 15.6215 23.2753H32.2253Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M19.9739 17.3744C19.5028 16.887 18.7259 16.8737 18.2385 17.3448L14.3743 21.079C14.135 21.3103 13.9999 21.6288 13.9999 21.9615C13.9999 22.2943 14.135 22.6128 14.3743 22.844L18.2385 26.5783C18.7259 27.0493 19.5028 27.0361 19.9739 26.5487C20.4449 26.0613 20.4316 25.2843 19.9442 24.8133L16.9932 21.9615L19.9442 19.1098C20.4316 18.6388 20.4449 17.8618 19.9739 17.3744Z" fill="currentColor"/></svg></button>
+    <button class="tool" id="redoBtn" title="다시 실행 (⌘/Ctrl+Shift+Z)" aria-label="다시 실행"><svg class="tic" viewBox="8 8 37 37" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M21.6307 23.2753C18.1026 23.2753 15.3108 26.0326 15.3108 29.3416C15.3108 32.6506 18.1026 35.4078 21.6307 35.4078H33.7063C34.3841 35.4078 34.9336 35.9573 34.9336 36.6351C34.9336 37.3129 34.3841 37.8624 33.7063 37.8624H21.6307C16.8268 37.8624 12.8563 34.0846 12.8563 29.3416C12.8563 24.5985 16.8268 20.8208 21.6307 20.8208H38.2346C38.9124 20.8208 39.4619 21.3703 39.4619 22.0481C39.4619 22.7259 38.9124 23.2753 38.2346 23.2753H21.6307Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M33.8822 17.3744C34.3532 16.887 35.1302 16.8737 35.6176 17.3448L39.4818 21.079C39.721 21.3103 39.8562 21.6288 39.8562 21.9615C39.8562 22.2943 39.721 22.6128 39.4818 22.844L35.6176 26.5783C35.1302 27.0493 34.3532 27.0361 33.8822 26.5487C33.4112 26.0613 33.4245 25.2843 33.9119 24.8133L36.8629 21.9615L33.9119 19.1098C33.4245 18.6388 33.4112 17.8618 33.8822 17.3744Z" fill="currentColor"/></svg></button>
+    <button class="tool" id="clearBtn" title="전체 지우기" aria-label="전체 지우기"><svg class="tic" viewBox="8 8 37 37" fill="none"><path d="M18.4243 40.5H19.9973L20.5514 38.927H23.1928L23.7271 40.5H25.3396L22.6982 33.4363H21.1054L18.4243 40.5ZM21.877 35.1775H21.8968L22.7872 37.7695H20.957L21.877 35.1775ZM25.652 40.5H30.648V39.1941H27.2052V33.4363H25.652V40.5ZM31.2196 40.5H36.2156V39.1941H32.7728V33.4363H31.2196V40.5Z" fill="currentColor"/><path d="M22.9086 30.2053H33.4565M21.2561 18.7933L28.0682 25.6653M18.0917 26.3569L23.058 21.3382M20.5705 28.8663L25.5456 23.8475M17.5555 26.286L20.6408 29.3984C21.1352 29.8965 21.8054 30.1763 22.5042 30.1763C23.203 30.1763 23.8733 29.8965 24.3677 29.3984L33.5355 20.15C34.0293 19.6512 34.3068 18.9751 34.3068 18.2701C34.3068 17.5652 34.0293 16.8891 33.5355 16.3903L30.4503 13.278C29.9558 12.7798 29.2857 12.5 28.5869 12.5C27.888 12.5 27.2178 12.7798 26.7234 13.278L17.5555 22.5264C17.0617 23.0252 16.7843 23.7013 16.7843 24.4062C16.7843 25.1111 17.0617 25.7872 17.5555 26.286Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </nav>
 
-<!-- ── Left Panel ──────────────────────────────────────────────── -->
-<aside class="panel panel-left" role="complementary" aria-label="파일 및 프리셋">
-
-  <!-- Import -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-import">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 7V2M2.5 5L5 7.5L7.5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 8.5h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      이미지 가져오기
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-import">
-      <div class="upload-zone" id="drop" role="button" tabindex="0" aria-label="이미지 업로드 - 클릭하거나 파일을 드래그하세요">
-        <img class="upload-thumb" id="uploadThumb" src="" alt="업로드된 이미지 미리보기"/>
-        <div class="upload-icon">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <path d="M14 18V10M14 10L10.5 13.5M14 10L17.5 13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M5 21h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div class="upload-main">Upload Image</div>
-        <div class="upload-sub">PNG · JPG · SVG · GIF</div>
-        <div class="upload-fname" id="uploadFName"></div>
-      </div>
-      <input type="file" id="fileInput" accept="image/*" style="display:none" aria-label="이미지 파일 선택"/>
-      <div class="load-row">
-        <button class="btn sm" style="flex:1" id="btnLoadDtm" aria-label="DTM 파일 불러오기">
-          <span class="ext-badge" style="background:rgba(37,99,235,.1);color:#2563EB;font-size:9px;padding:1px 4px;border-radius:3px">DTM</span>
-          불러오기
-        </button>
-        <button class="btn sm" style="flex:1" id="btnLoadDtms" aria-label="DTMS 파일 불러오기">
-          <span class="ext-badge" style="background:rgba(124,58,237,.1);color:#7C3AED;font-size:9px;padding:1px 4px;border-radius:3px">DTMS</span>
-          불러오기
-        </button>
-      </div>
-      <input type="file" id="dtmInput"  accept=".dtm,.txt" style="display:none"/>
-      <input type="file" id="dtmsInput" accept=".dtms,.json" style="display:none"/>
-    </div>
-  </div>
-
-  <!-- Recent -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-recent">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M5 3v2.5L6.5 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      최근 작업
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-recent">
-      <div class="recent-list" id="recentList"><div class="empty-note">최근 작업 없음</div></div>
-    </div>
-  </div>
-
-  <!-- Image Presets -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-imgpreset">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="3.5" height="3.5" rx="1" fill="currentColor"/><rect x="5.5" y="1" width="3.5" height="3.5" rx="1" fill="currentColor" opacity=".5"/><rect x="1" y="5.5" width="3.5" height="3.5" rx="1" fill="currentColor" opacity=".5"/><rect x="5.5" y="5.5" width="3.5" height="3.5" rx="1" fill="currentColor"/></svg>
-      이미지 프리셋
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-imgpreset">
-      <div class="cat-tabs" id="catTabs"></div>
-      <div class="preset-list" id="presetList"></div>
-    </div>
-  </div>
-
-  <!-- Settings Presets -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-spreset">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5h8M5 1v8M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" stroke-width="1.1" opacity=".5"/></svg>
-      변환 설정 프리셋
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-spreset">
-      <div class="sp-list" id="spList"></div>
-    </div>
-  </div>
-
-</aside>
-
-<!-- ── Center Canvas ────────────────────────────────────────────── -->
-<main class="canvas-area" role="main" aria-label="촉각 그래픽 캔버스">
-
-  <!-- Toolbar -->
-  <div class="canvas-toolbar">
-    <div class="tool-group">
-      <button class="tool-btn" id="btnZoomOut" title="축소 (Ctrl -)">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M4 6h4M10.5 10.5l1 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </button>
-      <span class="zoom-val" id="zoomVal" aria-label="현재 줌 레벨">100%</span>
-      <button class="tool-btn" id="btnZoomIn" title="확대 (Ctrl +)">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M6 4v4M4 6h4M10.5 10.5l1 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </button>
-      <button class="tool-btn" id="btnZoomFit" title="화면에 맞추기">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 4.5V2h2.5M9 2h2.5v2.5M11.5 8.5V11H9M4 11H1.5v-2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-    <div class="tool-group">
-      <button class="tool-btn" id="btnGrid" title="셀 그리드 표시" aria-pressed="false">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 5h11M1 9h11M5 1v11M9 1v11" stroke="currentColor" stroke-width=".85" opacity=".6"/></svg>
-      </button>
-    </div>
-    <div class="tb-spacer"></div>
-    <div class="view-seg">
-      <button class="view-btn active" data-mode="dots">Dots</button>
-      <button class="view-btn" data-mode="dotpad">DotPad</button>
-      <button class="view-btn" data-mode="split">Split</button>
-    </div>
-  </div>
-
-  <!-- Canvas viewport -->
-  <div class="canvas-viewport" id="viewport">
-    <div class="canvas-stage" id="canvasStage">
-      <!-- Original (split mode only) -->
-      <div class="canvas-pane" id="origPane" style="display:none">
-        <div class="canvas-lbl">원본 이미지</div>
-        <div class="canvas-frame" style="border-color:rgba(0,0,0,.1);box-shadow:0 2px 12px rgba(0,0,0,.12)">
-          <canvas id="src" width="60" height="40" style="width:240px;height:160px;image-rendering:pixelated;background:#fff"></canvas>
+  <!-- ============ CENTER STAGE ============ -->
+  <main class="stage" id="stage">
+    <div class="canvas-area" id="canvasArea">
+      <!-- tool thickness context bar -->
+      <div class="toolbar-ctx" id="toolCtx" role="group" aria-label="도구 두께">
+        <span class="lbl" id="toolCtxLbl">펜 도구<span class="sub">두께</span></span>
+        <div class="sizegrp" id="sizeGrp" role="radiogroup" aria-label="브러시 두께">
+          <button role="radio" data-size="1" aria-checked="true">1핀</button>
+          <button role="radio" data-size="2" aria-checked="false">2핀</button>
+          <button role="radio" data-size="3" aria-checked="false">3핀</button>
         </div>
       </div>
-      <div id="splitDiv" style="display:none;width:1px;height:50px;background:rgba(0,0,0,.15)"></div>
-      <!-- Tactile preview -->
-      <div class="canvas-pane" id="tactilePane">
-        <div class="canvas-lbl" id="tactileLbl">Dot Pad 60×40 Preview</div>
-        <div class="canvas-frame">
-          <canvas id="dots" width="540" height="360"></canvas>
-          <canvas id="gridCv" width="540" height="360" class="grid-overlay" style="position:absolute;inset:0;pointer-events:none"></canvas>
-          <div class="empty-hint" id="emptyHint">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="2" y="2" width="36" height="36" rx="6" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="15" r="2" fill="currentColor"/><circle cx="20" cy="15" r="2" fill="currentColor"/><circle cx="28" cy="15" r="2" fill="currentColor"/><circle cx="12" cy="25" r="2" fill="currentColor"/><circle cx="20" cy="25" r="2" fill="currentColor"/><circle cx="28" cy="25" r="2" fill="currentColor"/></svg>
-            <span>Upload an image or<br/>select a preset to begin</span>
+      <div class="board">
+        <canvas id="pad" tabindex="0" role="application" aria-label="DotPad 60×40 촉각 미리보기. 펜/지우개 선택 후 방향키로 이동, 스페이스로 핀 토글."></canvas>
+        <div class="overlay" id="emptyOv">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <h2>이미지를 올려 시작하세요</h2>
+          <p>이미지를 드래그하거나, 아래에서 이미지 또는 DTM·DTMS 파일을 불러오세요.</p>
+          <div class="row">
+            <button class="btn accent" id="emptyImageBtn"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5L5 19"/></svg>이미지 불러오기</button>
+            <button class="btn" id="emptyTactileBtn">DTM·DTMS 불러오기</button>
           </div>
+          <button class="linkbtn" id="sampleBtn">또는 샘플로 시작</button>
+        </div>
+        <div class="overlay" id="analyzeOv">
+          <div class="spinner" aria-hidden="true"></div>
+          <h2>촉각그래픽으로 변환하고 있어요</h2>
+          <p id="analyzeName">image.png</p>
+          <div class="row"><button class="linkbtn" id="cancelAnalyze">취소</button><button class="linkbtn" id="replaceAnalyze">이미지 교체</button></div>
         </div>
       </div>
     </div>
-  </div>
+    <div class="statusbar" id="statusbar" aria-live="off">
+      <span>60×40</span><span class="sdiv">·</span>
+      <span id="sbTool" hidden></span><span class="sdiv" id="sbToolDiv" hidden>·</span>
+      <span>줌 <b id="sbZoom">100%</b></span><span class="sdiv">·</span>
+      <span>활성 핀 <b id="sbPins">0</b>개</span><span class="sdiv">·</span>
+      <span class="perc" id="sbPerc">촉각 인지 —</span><span class="sdiv">·</span>
+      <span id="sbDot">DotPad 미연결</span>
+    </div>
+    <input type="file" id="imageFileInput" accept=".png,.jpg,.jpeg,.webp,.svg,image/*" class="sr-only" aria-hidden="true" />
+    <input type="file" id="tactileFileInput" accept=".dtm,.dtms" class="sr-only" aria-hidden="true" />
+  </main>
 
-  <!-- Status strip -->
-  <div class="canvas-status">
-    <div class="cs-item">
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="2" fill="currentColor"/></svg>
-      <span>핀</span>
-      <span class="cs-val accent" id="csPins">—</span>
-      <span class="cs-val" style="color:var(--muted)">/&nbsp;2400</span>
-    </div>
-    <div class="cs-sep"></div>
-    <div class="cs-item">
-      <span>점유율</span>
-      <span class="cs-val" id="csPct">—</span>
-    </div>
-    <div class="cs-sep"></div>
-    <div class="cs-item">
-      <span>해상도</span>
-      <span class="cs-val">60×40</span>
-    </div>
-    <div class="cs-sep"></div>
-    <div class="cs-item">
-      <div class="sync-dot" id="syncDot"></div>
-      <span id="syncLabel">대기 중</span>
-    </div>
-    <div style="flex:1"></div>
-    <div class="cs-item">
-      <span id="csFlash" class="flash"></span>
-    </div>
-  </div>
+  <!-- ============ RIGHT AGENT PANEL ============ -->
+  <aside class="panel" id="panel" aria-label="Canvas Agent 패널">
+    <button class="mobtab" id="mobtab" aria-expanded="false">조정 패널 열기 ▲</button>
 
-</main>
-
-<!-- ── Right Panel ──────────────────────────────────────────────── -->
-<aside class="panel panel-right" role="complementary" aria-label="변환 속성">
-
-  <!-- Image Processing -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-proc">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M3 5h4M5 3v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      Image Processing
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-proc">
-      <!-- Tactile Clarity -->
-      <div class="clarity-hd">
-        <span class="ctrl-label">Tactile Clarity</span>
-        <span class="ctrl-sub">Dot Pad에서 형태가 얼마나 또렷하게 느껴지는지 조정합니다</span>
+    <section class="psec" id="secAgent">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>Canvas Agent</h3>
+      <p class="agent-lead" id="agentLead">이미지를 올리면 DotPad에 가장 잘 느껴지는 형태로 자동 변환해 드려요.</p>
+      <div id="agentReco" class="ro"></div>
+      <div class="ask ro img-only" id="askWrap">
+        <input id="askInput" placeholder="예: 외곽선만 남겨줘" aria-label="Canvas Agent 명령" />
+        <button class="go" id="askGo" aria-label="명령 실행">↵</button>
       </div>
-      <div class="quick-grid">
-        <button class="q-btn" data-th="80" aria-label="단순하게 — 핵심 형태만 남김 (Threshold 80)">단순하게</button>
-        <button class="q-btn active" data-th="128" aria-label="균형 있게 — 형태와 디테일 균형 (Threshold 128)">균형 있게</button>
-        <button class="q-btn" data-th="185" aria-label="또렷하게 — 윤곽과 대비 강조 (Threshold 185)">또렷하게</button>
-        <button class="q-btn q-auto" id="btnAutoBest" aria-label="Auto Best — 이미지 분석 후 최적 임계값 자동 설정">Auto Best</button>
+      <div class="chips ro img-only" id="askChips">
+        <button class="chipbtn" data-cmd="simpler">더 단순하게</button>
+        <button class="chipbtn" data-cmd="outline">외곽선 강조</button>
+        <button class="chipbtn" data-cmd="denoise">점 정리</button>
+        <button class="chipbtn" data-cmd="invert">핀 반전</button>
       </div>
-      <input type="range" class="ctrl-slider" id="th" min="0" max="255" value="128" aria-label="형태 선명도 슬라이더"/>
-      <div class="slider-ends"><span>Less Detail</span><span>Clear Shape</span></div>
-      <details class="adv-details">
-        <summary class="adv-summary">고급 — 직접 수치 입력</summary>
-        <div class="ctrl-row" style="margin-top:6px">
-          <label class="ctrl-label" for="thNum" style="font-size:10px;color:var(--muted)">Threshold</label>
-          <input class="num-in" id="thNum" type="number" min="0" max="255" value="128" aria-label="임계값 직접 입력"/>
+    </section>
+
+    <!-- 파일 정보 -->
+    <section class="psec ro" id="secInfo">
+      <h3 class="img-only"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5L5 19"/></svg>이미지 정보</h3>
+      <h3 class="tac-only"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.6" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.6" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.6" fill="currentColor" stroke="none"/></svg>원본 촉각 데이터</h3>
+      <div id="infoImage" class="img-only">
+        <div class="kv"><span>파일</span><span id="infoFile">—</span></div>
+        <div class="kv"><span>원본 크기</span><span id="infoSize">—</span></div>
+        <div class="kv"><span>적용 해상도</span><span>60×40</span></div>
+        <div class="kv"><span>유형</span><span id="infoType">—</span></div>
+        <div class="kv"><span>추천 변환</span><span id="infoReco">—</span></div>
+      </div>
+      <div id="infoTactile" class="tac-only">
+        <div class="kv"><span>파일</span><span id="tFile">—</span></div>
+        <div class="kv"><span>형식</span><span id="tFormat">—</span></div>
+        <div class="kv"><span>해상도</span><span id="tRes">60×40</span></div>
+        <div class="kv"><span>페이지</span><span id="tPages">1</span></div>
+        <div class="kv"><span>버전</span><span id="tVersion">—</span></div>
+        <div class="kv"><span>가져오기</span><span id="tStatus">완료</span></div>
+      </div>
+      <div class="inforow">
+        <button class="btn" id="replaceImgBtn">이미지 교체</button>
+        <button class="btn" id="loadTactileBtn2">DTM·DTMS 불러오기</button>
+      </div>
+    </section>
+
+    <!-- 촉각 선명도 (이미지 전용) -->
+    <section class="psec ro" id="secClarity">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2.3"/><circle cx="9" cy="16" r="2.3"/></svg>촉각 방식</h3>
+      <div class="img-only">
+        <div class="seg" id="clarityModeSeg" role="group" aria-label="촉각 방식">
+          <button data-th="80" aria-pressed="false">단순</button>
+          <button data-th="128" aria-pressed="true">균형</button>
+          <button data-th="185" aria-pressed="false">또렷하게</button>
+        </div>
+        <p class="desc faint" style="margin:6px 0 10px;font-size:12px">손가락으로 느끼는 선명함을 선택하세요</p>
+        <div class="slab"><span class="t">부드럽게 — 또렷하게</span><span class="v" id="clarityVal">128</span></div>
+        <input type="range" id="clarity" min="20" max="240" value="128" aria-label="점 초벌도 슬라이더" />
+        <div class="ticks"><span>부드럽게</span><span>균형</span><span>또렷하게</span></div>
+        <div class="reco-line"><span>추천값: <b id="recoLabel">균형</b></span><button class="linkbtn" id="recoReset">추천값으로</button></div>
+        <div class="fb" id="clarityFb" role="status" aria-live="polite"></div>
+      </div>
+      <div class="tac-only note">DTM·DTMS는 이미 완성된 촉각 핀 데이터이므로 이미지용 촉각 선명도 조정이 적용되지 않습니다. 펜·지우개로 직접 편집할 수 있어요.</div>
+    </section>
+
+    <!-- 외곽선 (이미지 전용) -->
+    <section class="psec ro img-only" id="secOutline">
+      <h3><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>윤곽선</h3>
+      <div class="seg" role="group" aria-label="외곽선 모드">
+        <button data-outline="0" aria-pressed="true">없음</button>
+        <button data-outline="1" aria-pressed="false">1줄</button>
+        <button data-outline="2" aria-pressed="false">2줄</button>
+      </div>
+      <p class="desc faint" id="outlineDesc" style="margin:8px 0 0;font-size:12px">채움 실루엣을 유지합니다.</p>
+    </section>
+
+    <!-- 출력 크기 -->
+    <section class="psec ro" id="secOutputSize">
+      <h3><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg>출력 크기</h3>
+      <div class="seg" role="group" aria-label="출력 크기">
+        <button data-res="60x40" aria-pressed="true">기본 60×40</button>
+        <button data-res="96x64" aria-pressed="false" disabled title="지원 예정">세밀 96×64</button>
+      </div>
+      <p class="desc faint" style="margin:6px 0 0;font-size:12px">DotPad 표준 해상도입니다.</p>
+    </section>
+
+    <!-- 페이지 (DTM·DTMS 전용, 다중 페이지) -->
+    <section class="psec ro tac-only" id="secPages" hidden>
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>페이지</h3>
+      <div class="pagenav">
+        <button id="prevPage" aria-label="이전 페이지">‹ 이전</button>
+        <span class="pind" id="pageInd">1 / 1</span>
+        <button id="nextPage" aria-label="다음 페이지">다음 ›</button>
+      </div>
+    </section>
+
+    <!-- 빠른 조정 -->
+    <section class="psec ro" id="secQuick">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 7"/><path d="M21 4v3h-3"/><path d="M21 12a9 9 0 0 1-15 6.7L3 17"/><path d="M3 20v-3h3"/></svg>빠른 조정</h3>
+      <div class="quick">
+        <button class="qbtn img-only" data-op="auto"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9.4l-4.2 1.8L12 16l-1.8-4.8L6 9.4l4.2-1.8z"/></svg>자동 맞춤</button>
+        <button class="qbtn img-only" data-op="denoise"><svg class="ic" viewBox="0 0 24 24"><path d="M14 4l6 6M19 9l-9 9-5 1 1-5z"/></svg>작은 점 정리</button>
+        <button class="qbtn img-only" data-op="outline"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>외곽선 강조</button>
+        <button class="qbtn" data-op="invert"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>올림/내림 반전</button>
+      </div>
+    </section>
+
+    <!-- DotPad 라이브 -->
+    <section class="psec ro" id="secLive">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 라이브</h3>
+      <p class="desc" id="liveDesc">연결하면 조정 결과가 실시간으로 반영됩니다.</p>
+      <button class="btn accent" id="liveConnectBtn" style="width:100%"><svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 연결</button>
+      <div class="liverow" id="liveToggleRow" style="display:none"><span>라이브 반영</span><button class="toggle" id="liveToggle" role="switch" aria-checked="false" aria-label="라이브 반영" disabled></button></div>
+    </section>
+
+    <!-- 저장 / 내보내기 -->
+    <section class="psec ro" id="secSave">
+      <h3><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>저장 / 내보내기</h3>
+      <div class="savebtns">
+        <button class="btn accent" id="outBtn" title="DotPad로 출력" disabled>닷패드로 출력</button>
+        <button class="btn dark" id="dtmsBtn" title="파일로 저장" disabled>.dtms 파일로 저장</button>
+        <div class="saverow">
+          <button class="btn" id="hexBtn" disabled><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>HEX 복사</button>
+          <button class="btn" id="pngBtn" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 19h14"/></svg>PNG 저장</button>
+        </div>
+      </div>
+      <p class="hint" id="saveHint">변환 결과가 준비되면 저장할 수 있습니다.</p>
+    </section>
+
+    <!-- 전문가 설정 (이미지 전용) -->
+    <section class="psec ro img-only" id="secExpert">
+      <details class="expert">
+        <summary>전문가 설정</summary>
+        <div class="ebody">
+          <div class="efield"><label for="method">변환 방식</label>
+            <select id="method"><option value="global">자동 (전역 임계값)</option><option value="otsu">Otsu</option><option value="sauvola">Sauvola</option><option value="adaptive">Adaptive</option><option value="mean">평균 밝기</option></select></div>
+          <div class="efield"><label for="rawth">세부 임계값 (raw threshold)</label>
+            <input type="number" id="rawth" min="0" max="255" value="128" /></div>
+          <div class="efield"><label for="minComp">최소 컴포넌트 크기 (핀)</label>
+            <input type="number" id="minComp" min="1" max="40" value="3" /></div>
+          <div class="efield"><label for="advSize">고급 브러시 두께(4·5핀)</label>
+            <select id="advSize"><option value="0">사용 안 함</option><option value="1">사용</option></select></div>
+          <div class="readout" id="hexOut">HEX —</div>
         </div>
       </details>
-      <!-- Brightness -->
-      <div class="ctrl-row" style="margin-top:10px">
-        <label class="ctrl-label" for="bright">Brightness</label>
-        <span class="ctrl-val" id="brightVal">0</span>
-      </div>
-      <input type="range" class="ctrl-slider" id="bright" min="-100" max="100" value="0" aria-label="밝기 슬라이더"/>
-      <div class="slider-ends"><span>−100</span><span>+100</span></div>
-      <!-- Contrast -->
-      <div class="ctrl-row" style="margin-top:10px">
-        <label class="ctrl-label" for="contrast">Contrast</label>
-        <span class="ctrl-val" id="contrastVal">0</span>
-      </div>
-      <input type="range" class="ctrl-slider" id="contrast" min="-100" max="100" value="0" aria-label="대비 슬라이더"/>
-      <div class="slider-ends"><span>−100</span><span>+100</span></div>
-      <!-- Noise / Simp -->
-      <div class="ctrl-row" style="margin-top:10px">
-        <label class="ctrl-label" for="noise">Noise Reduction</label>
-        <span class="ctrl-val" id="noiseVal">0</span>
-      </div>
-      <input type="range" class="ctrl-slider success" id="noise" min="0" max="3" value="0" step="1" aria-label="노이즈 제거 슬라이더"/>
-      <div class="ctrl-row" style="margin-top:8px">
-        <label class="ctrl-label" for="simp">Simplify Detail</label>
-        <span class="ctrl-val" id="simpVal">0</span>
-      </div>
-      <input type="range" class="ctrl-slider success" id="simp" min="0" max="3" value="0" step="1" aria-label="단순화 슬라이더"/>
-      <!-- Fit mode -->
-      <div class="ctrl-row" style="margin-top:10px">
-        <label class="ctrl-label" for="fit">Fit to Grid</label>
-        <label class="tog-wrap"><input type="checkbox" class="tog-in" id="fit" checked aria-label="비율 유지 켜기/끄기"><span class="tog-track"></span></label>
-      </div>
-      <!-- Pattern name -->
-      <div class="ctrl-row" style="margin-top:4px">
-        <label class="ctrl-label" for="fid">Pattern Name</label>
-        <input class="num-in" id="fid" type="text" value="tactile" style="width:110px;text-align:left" aria-label="패턴 이름 입력"/>
-      </div>
+    </section>
+  </aside>
+</div>
+
+<!-- unsaved-changes dialog -->
+<div class="modal-bg" id="guardModal" role="dialog" aria-modal="true" aria-labelledby="guardTitle" aria-describedby="guardDesc">
+  <div class="modal">
+    <h2 id="guardTitle">저장되지 않은 변경이 있어요</h2>
+    <p id="guardDesc">새 파일을 불러오면 지금 작업한 내용이 사라집니다.</p>
+    <div class="actions">
+      <button class="btn accent" id="guardSave">저장 후 불러오기</button>
+      <button class="btn" id="guardProceed">저장하지 않고 불러오기</button>
+      <button class="btn" id="guardCancel">취소</button>
     </div>
   </div>
+</div>
 
-  <!-- Tactile Output -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-tactile">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="2" y="1" width="6" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M4 4h2M4 6h2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
-      Tactile Output
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-tactile">
-      <!-- Invert -->
-      <div class="ctrl-row">
-        <label class="ctrl-label" for="inv">Invert (밝은 부분 → 핀)</label>
-        <label class="tog-wrap"><input type="checkbox" class="tog-in" id="inv" aria-label="반전 켜기/끄기"><span class="tog-track"></span></label>
-      </div>
-      <!-- Live output -->
-      <div class="ctrl-row">
-        <label class="ctrl-label" for="autoSend">Live Output (실시간 전송)</label>
-        <label class="tog-wrap"><input type="checkbox" class="tog-in" id="autoSend" checked aria-label="실시간 자동 전송 켜기/끄기"><span class="tog-track"></span></label>
-      </div>
-      <!-- Pin display -->
-      <div class="pin-display">
-        <div class="pin-stat">
-          <div class="pin-val" id="pinCount">—</div>
-          <div class="pin-lbl">올라온 핀</div>
-        </div>
-        <div class="pin-divider"></div>
-        <div class="pin-stat">
-          <div class="pin-val" style="color:var(--muted)">2400</div>
-          <div class="pin-lbl">전체 핀</div>
-        </div>
-        <div class="pin-divider"></div>
-        <div class="pin-stat">
-          <div class="pin-val" id="pinPct" style="color:var(--text-2); font-size:14px">—</div>
-          <div class="pin-lbl">점유율</div>
-        </div>
-      </div>
-      <!-- Action buttons -->
-      <div style="display:flex;gap:6px;margin-bottom:6px">
-        <button class="btn sm" style="flex:1" id="btnUp" disabled aria-label="전체 핀 올리기">↑ All Pins Up</button>
-        <button class="btn sm" style="flex:1" id="btnDn" disabled aria-label="전체 핀 내리기">↓ All Pins Down</button>
-      </div>
-      <button class="btn sm primary full" id="btnSend" disabled aria-label="현재 변환 결과를 DotPad로 전송">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        Send to Dot Pad
-      </button>
-    </div>
-  </div>
-
-  <!-- Outline -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-outline">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1.5" y="1.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.3"/></svg>
-      Outline
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-outline">
-      <div class="ctrl-row">
-        <label class="ctrl-label" for="outlineOn">Outline Detection</label>
-        <label class="tog-wrap"><input type="checkbox" class="tog-in" id="outlineOn" aria-label="외곽선 감지 켜기/끄기"><span class="tog-track"></span></label>
-      </div>
-      <div class="outline-sub hidden" id="outlineSub">
-        <div class="ctrl-row" style="margin-bottom:5px">
-          <span class="ctrl-label">Outline Thickness</span>
-        </div>
-        <div class="seg" role="group" aria-label="외곽선 두께 선택">
-          <button class="seg-btn active" data-lines="1" aria-pressed="true">1-Line (Fine)</button>
-          <button class="seg-btn" data-lines="2" aria-pressed="false">2-Line (Bold)</button>
-        </div>
-        <div class="ctrl-row" style="margin-top:10px">
-          <label class="ctrl-label" for="outlineStr">Strength</label>
-          <span class="ctrl-val" id="outlineStrVal">1.0</span>
-        </div>
-        <input type="range" class="ctrl-slider" id="outlineStr" min="30" max="300" value="100" aria-label="외곽선 감지 강도"/>
-        <div class="ctrl-row" style="margin-top:6px">
-          <label class="ctrl-label" for="outlineMode">Output Mode</label>
-        </div>
-        <select class="ctrl-select" id="outlineMode" aria-label="외곽선 출력 방식 선택">
-          <option value="overlay">Shape + Outline (Overlay)</option>
-          <option value="outline">Outline Only</option>
-          <option value="detail">Detail Priority</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- Canvas Settings -->
-  <div class="p-section">
-    <div class="p-hd" id="hd-canvas">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 4h8M4 1v8" stroke="currentColor" stroke-width=".9" opacity=".6"/></svg>
-      Canvas
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body closed" id="body-canvas">
-      <div class="ctrl-row">
-        <span class="ctrl-label">Cell Grid Overlay</span>
-        <label class="tog-wrap">
-          <input type="checkbox" class="tog-in" id="gridToggle" aria-label="그리드 오버레이 켜기/끄기">
-          <span class="tog-track"></span>
-        </label>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button class="btn sm" style="flex:1" id="btnZoomFit2">Fit View</button>
-        <button class="btn sm" style="flex:1" id="btnResetZoom">Reset 100%</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Save & Export -->
-  <div class="p-section">
-    <div class="p-hd open" id="hd-save">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1.5" y="1.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 6.5v-4h3v4M3.5 6.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-      저장 & 내보내기
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body" id="body-save">
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <button class="btn sm primary full" id="btnSavePreset2" disabled>⭐ Save as Preset</button>
-        <button class="btn sm full ext-dtm" id="btnDlDtm2" disabled>
-          <span class="ext-badge">DTM</span> Export DTM
-        </button>
-        <button class="btn sm full ext-dtms" id="btnDlDtms2" disabled>
-          <span class="ext-badge">DTMS</span> Export DTMS
-        </button>
-      </div>
-      <div class="save-form" id="saveForm">
-        <input type="text" id="saveFormName" placeholder="프리셋 이름" maxlength="24" aria-label="저장할 프리셋 이름"/>
-        <button class="btn sm primary" id="saveFormOk">저장</button>
-        <button class="btn sm" id="saveFormCancel">취소</button>
-      </div>
-      <!-- HEX output -->
-      <div style="margin-top:10px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-          <span style="font-size:10.5px;color:var(--muted)">HEX Output (600 chars)</span>
-          <div style="display:flex;gap:5px">
-            <button class="btn sm" id="copyHex" aria-label="HEX 코드 복사">HEX 복사</button>
-            <button class="btn sm" id="copyLine" aria-label="TypeScript 코드 줄 복사">코드 복사</button>
-          </div>
-        </div>
-        <textarea class="hex-out" id="hexOut" readonly aria-label="변환된 HEX 출력" placeholder="변환 완료 시 600자 HEX 표시"></textarea>
-      </div>
-    </div>
-  </div>
-
-  <!-- Log -->
-  <div class="p-section">
-    <div class="p-hd" id="hd-log">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 3h7M1.5 5h5M1.5 7h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      전송 로그
-      <svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>
-    </div>
-    <div class="p-body closed" id="body-log">
-      <div class="log-area" id="logEl" role="log" aria-label="전송 로그" aria-live="polite"></div>
-      <button class="btn sm full" style="margin-top:6px" id="btnClearLog">로그 지우기</button>
-    </div>
-  </div>
-
-</aside>
-</div><!-- /workspace -->
-
-</div><!-- /#app -->
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="sr-only" id="live" role="status" aria-live="assertive"></div>
 
 <script type="module">
-import { DotPadSDK, DotPadScanner } from './DotPadSDK-3_0_0.js';
+/* ============================================================
+   Dot Canvas Agent — 촉각그래픽 제작 도구
+   - 60×40핀 = 10행×30열 셀, 셀당 2×4핀 column-major (bit0-3 왼쪽열, bit4-7 오른쪽열)
+     → tactile_agent / Dot Fossil / index.html 과 동일 HEX 포맷 (보존). DTM·DTMS 동일 매핑 재사용.
+   - 이미지: 다중후보 threshold→polarity→노이즈제거/주요컴포넌트→외곽선(없음/1줄/2줄)→품질평가→HEX
+   - DTM·DTMS: 원본 핀 데이터를 손상 없이 그대로 로드(임계값 재적용 금지). 다중 페이지 지원.
+   - 펜/지우개: 핀 단위 두께(1~3핀, 고급 4·5핀), Bresenham 보간, 드래그=1 undo, 호버 브러시 미리보기.
+   - SDK 비차단 로드. 미연결 시 시뮬레이터만. 전송: 100ms debounce + 동일 HEX 중복방지 + last-wins.
+   ============================================================ */
+let SDKMod=null;
+const $=s=>document.getElementById(s);
+const live=$('live');
+function say(m){ live.textContent=''; requestAnimationFrame(()=>live.textContent=m); }
+let toastT=null;
+function toast(m,kind){ const t=$('toast'); t.textContent=m; t.className='show'+(kind?' '+kind:''); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
 
-// ── Constants ────────────────────────────────────────────────────
-const DOT_COLS = 60, DOT_ROWS = 40;
-const DISP_W = 540, DISP_H = 360;
-const BIT_ORDER = [
-  {x:0,y:0,bit:0},{x:0,y:1,bit:1},{x:0,y:2,bit:2},{x:0,y:3,bit:3},
-  {x:1,y:0,bit:4},{x:1,y:1,bit:5},{x:1,y:2,bit:6},{x:1,y:3,bit:7},
-];
-const STORAGE_IMG    = 'dts_customPresets_v1';
-const STORAGE_RECENT = 'dts_recent_v1';
-const $ = id => document.getElementById(id);
+const GW=60, GH=40, CC=30, CR=10, N=GW*GH;
+const HEXLEN=CC*CR*2;                 // 600
 
-// ── State ────────────────────────────────────────────────────────
-let img = null, currentHex = '', viewMode = 'dots';
-let activeCat = 'all', activeImgPresetId = null, activeSpId = null;
-let zoom = 1.0, gridVisible = false;
-let renderTimer = null, autoSendTimer = null;
+/* ---------- state ---------- */
+let appState='empty';                 // empty | analyzing | ready
+let dpState='disconnected';
+let fileKind=null;                    // 'image' | 'tactile'
+let tool='move';
+let grid=new Uint8Array(N);
+let srcImage=null, grayBuf=null, alphaBuf=null, imgMeta=null;
+let threshold=128, polarity=false, method='global', outline=0, minComp=3;
+let recoThreshold=128, recoOutline=0;
+let liveOn=true, connected=false, sdk=null, dotDevice=null;
+let hasImage=false, dirty=false, loading=false;
+let pendingImg=null, pendingName='';
+// tactile / pages
+let pages=[], pageUndo=[], pageRedo=[], curPage=0, tactileMeta=null;
+// brush
+let toolSettings={pen:{size:1},eraser:{size:2}};
+let advSizes=false;
+let hoverBrush=null;
 
-// ── Canvas setup ─────────────────────────────────────────────────
-const srcCv  = $('src'),   srcCtx  = srcCv.getContext('2d', { willReadFrequently: true });
-const dotsCv = $('dots'),  dotsCtx = dotsCv.getContext('2d');
-const gridCv = $('gridCv'),gridCtx = gridCv.getContext('2d');
-
-// ── DotPad SDK ───────────────────────────────────────────────────
-const sdk = new DotPadSDK();
-let dotDevice = null, connected = false;
-
-function log(msg) {
-  const el = $('logEl');
-  el.textContent += `[${new Date().toLocaleTimeString('ko-KR')}] ${msg}\n`;
-  el.scrollTop = el.scrollHeight;
+/* ============================================================
+   CANVAS RENDER
+   ============================================================ */
+const pad=$('pad'), ctx=pad.getContext('2d');
+let cell=12, off=6, cursor={x:0,y:0};
+function layout(){
+  const wide=window.innerWidth>820;
+  const railW=(appState==='ready')?52:0;
+  const panelW=window.innerWidth>900?312:300;
+  const availW=(wide?window.innerWidth-railW-panelW:window.innerWidth)-72;
+  const availH=window.innerHeight-56-30-72;
+  const cw=Math.floor((availW-off*2)/GW), ch=Math.floor((availH-off*2)/GH);
+  cell=Math.max(6,Math.min(16,Math.min(cw,ch)));
+  const w=GW*cell+off*2,h=GH*cell+off*2,dpr=window.devicePixelRatio||1;
+  pad.width=w*dpr;pad.height=h*dpr;pad.style.width=w+'px';pad.style.height=h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  $('sbZoom').textContent=Math.round(cell/12*100)+'%';
+  draw();
 }
-
-function setDpUI(mode, label, devName) {
-  $('dpDot').className  = 'dp-dot ' + mode;
-  $('dpLabel').textContent = label;
-  $('dpPill').className = 'dp-pill' + (mode === 'on' ? ' connected' : mode === 'err' ? ' error' : '');
-  if (devName != null) {
-    $('dpDevName').textContent = devName;
-    $('dpDevName').classList.toggle('show', !!devName);
+function draw(){
+  const w=GW*cell+off*2,h=GH*cell+off*2;ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle='#EFF1F4';ctx.lineWidth=1;
+  for(let x=0;x<=GW;x++){const px=off+x*cell+.5;ctx.beginPath();ctx.moveTo(px,off);ctx.lineTo(px,h-off);ctx.stroke();}
+  for(let y=0;y<=GH;y++){const py=off+y*cell+.5;ctx.beginPath();ctx.moveTo(off,py);ctx.lineTo(w-off,py);ctx.stroke();}
+  ctx.strokeStyle='#E5E8EE';
+  for(let x=0;x<=GW;x+=2){const px=off+x*cell+.5;ctx.beginPath();ctx.moveTo(px,off);ctx.lineTo(px,h-off);ctx.stroke();}
+  for(let y=0;y<=GH;y+=4){const py=off+y*cell+.5;ctx.beginPath();ctx.moveTo(off,py);ctx.lineTo(w-off,py);ctx.stroke();}
+  ctx.strokeStyle='#EFE0D6';ctx.lineWidth=1.2;
+  const ax=off+(GW/2)*cell+.5,ay=off+(GH/2)*cell+.5;
+  ctx.beginPath();ctx.moveTo(ax,off);ctx.lineTo(ax,h-off);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(off,ay);ctx.lineTo(w-off,ay);ctx.stroke();
+  const rOn=cell*0.36,rOff=cell*0.12;
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+    const on=grid[y*GW+x];const cx=off+x*cell+cell/2,cy=off+y*cell+cell/2;
+    if(on){ctx.fillStyle='#23283A';ctx.beginPath();ctx.arc(cx,cy,rOn,0,7);ctx.fill();}
+    else{ctx.fillStyle='#D7DBE3';ctx.beginPath();ctx.arc(cx,cy,rOff,0,7);ctx.fill();}
   }
-}
-
-function updateLiveBadge() {
-  const on = connected && $('autoSend').checked;
-  $('liveBadge').className = 'live-badge ' + (on ? 'on' : 'off');
-  $('liveLabel').textContent = on ? 'Live On' : 'Live Off';
-}
-
-function setSendConnUI(isConnected) {
-  connected = isConnected;
-  $('btnConn').disabled = isConnected;
-  ['btnDisc','btnSend','btnUp','btnDn'].forEach(id => $(id).disabled = !isConnected);
-  setSyncLabel(isConnected ? 'Ready' : '—', isConnected);
-  updateLiveBadge();
-}
-
-function uiConnected(devName) {
-  setDpUI('on', devName || 'DotPad', devName || '');
-  setSendConnUI(true);
-  log(`✅ Connected: ${devName || 'DotPad'}`);
-}
-function uiDisconnected() {
-  dotDevice = null;
-  setDpUI('off', 'DotPad 미연결', '');
-  setSendConnUI(false);
-}
-
-function setSyncLabel(label, active) {
-  $('syncLabel').textContent = label;
-  $('syncDot').classList.toggle('active', active);
-}
-
-sdk.setCallBack((dev, code, data) => {
-  if (code === 'Connected')    { dotDevice = dev; uiConnected(data||''); }
-  else if (code === 'Disconnected') { uiDisconnected(); log('🔌 Disconnected.'); }
-  else if (code === 'DeviceName' && data) { $('dpDevName').textContent = data; $('dpDevName').classList.add('show'); log(`📟 Device: ${data}`); }
-}, (_d, key) => log(`🎮 Key: ${key}`));
-
-$('btnConn').onclick = async () => {
-  if (!('bluetooth' in navigator) || !window.isSecureContext) {
-    setDpUI('err', 'Not supported', ''); log('❌ Web Bluetooth requires Chrome/Edge + HTTPS or localhost.'); return;
+  // hover brush preview
+  if(hoverBrush){
+    ctx.fillStyle=hoverBrush.kind==='eraser'?'rgba(220,38,38,.22)':'rgba(255,90,31,.26)';
+    ctx.strokeStyle=hoverBrush.kind==='eraser'?'rgba(220,38,38,.55)':'rgba(255,90,31,.6)';ctx.lineWidth=1.4;
+    for(const [x,y] of hoverBrush.cells){ if(x<0||y<0||x>=GW||y>=GH)continue; ctx.fillRect(off+x*cell+1,off+y*cell+1,cell-2,cell-2); }
   }
-  setDpUI('ing', 'Connecting…', '');
-  $('btnConn').disabled = true;
-  log('🔍 Scanning for DotPad…');
-  try {
-    const ble = await new DotPadScanner().startBleScan();
-    if (!ble) { uiDisconnected(); log('⚠️ Cancelled.'); return; }
-    log(`📡 Connecting: ${ble.name ?? '(unnamed)'}`);
-    const dev = await sdk.connectBleDevice(ble);
-    if (!dev) { uiDisconnected(); log('❌ Connection failed.'); }
-  } catch(e) { uiDisconnected(); log(`❌ ${e.message ?? e}`); }
-};
-$('btnDisc').onclick = () => { sdk.disconnect(dotDevice ?? undefined); uiDisconnected(); log('🔌 Disconnected.'); };
+  if(tool!=='move'&&hasImage&&!hoverBrush){ctx.strokeStyle='#FF5A1F';ctx.lineWidth=2;ctx.strokeRect(off+cursor.x*cell+1,off+cursor.y*cell+1,cell-2,cell-2);}
+}
 
-function sendHex(hex, label) {
-  if (!connected || !hex) return;
-  try {
-    sdk.displayGraphicData(hex, dotDevice ?? undefined);
-    setSyncLabel('Sent ✓', true);
-    if (label) log(label);
-    clearTimeout(sendHex._t);
-    sendHex._t = setTimeout(() => { if (connected) setSyncLabel('Ready', true); }, 2000);
-  } catch(e) {
-    setSyncLabel('Send failed', false);
-    log(`❌ Send error: ${e.message ?? e}`);
+/* ============================================================
+   ENCODER (column-major) + DTMS  — 보존 + 역함수
+   ============================================================ */
+const dotBit=(lx,ly)=>lx*4+ly;
+function gridToHex(g){g=g||grid;let hex='';for(let cr=0;cr<CR;cr++)for(let cc=0;cc<CC;cc++){let b=0;for(let lx=0;lx<2;lx++)for(let ly=0;ly<4;ly++){const x=cc*2+lx,y=cr*4+ly;if(g[y*GW+x])b|=(1<<dotBit(lx,ly));}hex+=b.toString(16).padStart(2,'0').toUpperCase();}return hex;}
+function hexToGrid(hex){const g=new Uint8Array(N);let idx=0;for(let cr=0;cr<CR;cr++)for(let cc=0;cc<CC;cc++){const b=parseInt(hex.substr(idx*2,2),16)||0;idx++;for(let lx=0;lx<2;lx++)for(let ly=0;ly<4;ly++){if((b>>dotBit(lx,ly))&1){const x=cc*2+lx,y=cr*4+ly;g[y*GW+x]=1;}}}return g;}
+function dtmsJSONFromPages(){const n=(($('fname').value)||'Untitled').trim();
+  const items=pages.map((g,i)=>({page:i+1,title:n+(pages.length>1?(' '+(i+1)):''),graphic:{name:(i+1)+'.dtm',data:gridToHex(g)},text:{name:(i+1)+'.txt',data:'',plain:n},audio:{fileName:''}}));
+  return JSON.stringify({title:n,lang:'korean',lang_option:'1',device:'dotpad320',audioPath:'',items},null,2);}
+
+/* ============================================================
+   IMAGE → GRAY + ALPHA
+   ============================================================ */
+function renderGray(){
+  if(!srcImage){grayBuf=null;alphaBuf=null;return;}
+  const oc=document.createElement('canvas');oc.width=GW;oc.height=GH;const o=oc.getContext('2d');
+  const pad2=2, availW=GW-pad2*2, availH=GH-pad2*2;
+  const s=Math.min(availW/srcImage.width,availH/srcImage.height),dw=srcImage.width*s,dh=srcImage.height*s;
+  o.clearRect(0,0,GW,GH);o.drawImage(srcImage,(GW-dw)/2,(GH-dh)/2,dw,dh);
+  const d=o.getImageData(0,0,GW,GH).data;
+  grayBuf=new Uint8ClampedArray(N);alphaBuf=new Uint8ClampedArray(N);
+  for(let i=0;i<N;i++){const a=d[i*4+3];alphaBuf[i]=a;const af=a/255;grayBuf[i]=(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2])*af+255*(1-af);}
+}
+function analyzeImageType(){
+  let hasAlpha=false,white=0,dark=0,edges=0;const hist=new Array(256).fill(0);
+  for(let i=0;i<N;i++){if(alphaBuf[i]<250)hasAlpha=true;const v=grayBuf[i]|0;hist[v]++;if(v>225)white++;if(v<55)dark++;}
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const i=y*GW+x;if(x+1<GW&&Math.abs(grayBuf[i]-grayBuf[i+1])>40)edges++;if(y+1<GH&&Math.abs(grayBuf[i]-grayBuf[i+GW])>40)edges++;}
+  let acc=0,p5=0,p95=255;for(let v=0;v<256;v++){acc+=hist[v];if(!p5&&acc>=N*0.05)p5=v;if(acc>=N*0.95){p95=v;break;}}
+  const whiteR=white/N,darkR=dark/N,edgeR=edges/(2*N),spread=p95-p5;let type='photo';
+  if(hasAlpha)type='transparent';else if(whiteR>0.5&&darkR<0.4&&edgeR<0.22)type='lineart';else if(spread<70)type='lowcontrast';
+  return {hasAlpha,whiteR,darkR,edgeR,spread,type,label:({transparent:'투명 PNG',lineart:'선화·아이콘',lowcontrast:'저대비',photo:'사진'})[type]};
+}
+
+/* ============================================================
+   THRESHOLD METHODS  — 보존 + mean
+   ============================================================ */
+function otsu(g){const h=new Array(256).fill(0);for(const v of g)h[v|0]++;const NN=g.length;let sum=0;for(let i=0;i<256;i++)sum+=i*h[i];let sB=0,wB=0,mx=-1,t=128;for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=NN-wB;if(!wF)break;sB+=i*h[i];const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);if(b>mx){mx=b;t=i;}}return t;}
+function meanT(g){let s=0;for(const v of g)s+=v;return s/g.length;}
+function fillT(g,t,pol){const o=new Uint8Array(N);for(let i=0;i<N;i++){let on=g[i]<=t?1:0;if(pol)on^=1;o[i]=on;}return o;}
+function integral(g){const W=GW+1,I=new Float64Array(W*(GH+1)),I2=new Float64Array(W*(GH+1));for(let y=1;y<=GH;y++)for(let x=1;x<=GW;x++){const v=g[(y-1)*GW+(x-1)];I[y*W+x]=v+I[(y-1)*W+x]+I[y*W+x-1]-I[(y-1)*W+x-1];I2[y*W+x]=v*v+I2[(y-1)*W+x]+I2[y*W+x-1]-I2[(y-1)*W+x-1];}return{I,I2,W};}
+function box(II,x0,y0,x1,y1){const{I,I2,W}=II;const s=I[y1*W+x1]-I[y0*W+x1]-I[y1*W+x0]+I[y0*W+x0];const s2=I2[y1*W+x1]-I2[y0*W+x1]-I2[y1*W+x0]+I2[y0*W+x0];const n=(x1-x0)*(y1-y0),m=s/n,v=Math.max(0,s2/n-m*m);return{m,sd:Math.sqrt(v)};}
+function adaptiveFill(g,win,C,pol){const II=integral(g),o=new Uint8Array(N),r=win>>1;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const x0=Math.max(0,x-r),y0=Math.max(0,y-r),x1=Math.min(GW,x+r+1),y1=Math.min(GH,y+r+1);const{m}=box(II,x0,y0,x1,y1);let on=g[y*GW+x]<=(m-C)?1:0;if(pol)on^=1;o[y*GW+x]=on;}return o;}
+function sauvolaFill(g,win,k,pol){const II=integral(g),o=new Uint8Array(N),r=win>>1,R=128;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const x0=Math.max(0,x-r),y0=Math.max(0,y-r),x1=Math.min(GW,x+r+1),y1=Math.min(GH,y+r+1);const{m,sd}=box(II,x0,y0,x1,y1);const T=m*(1+k*((sd/R)-1));let on=g[y*GW+x]<=T?1:0;if(pol)on^=1;o[y*GW+x]=on;}return o;}
+function alphaMask(pol){const o=new Uint8Array(N);for(let i=0;i<N;i++){let on=alphaBuf[i]>=128?1:0;if(pol)on^=1;o[i]=on;}return o;}
+
+/* ============================================================
+   MORPHOLOGY + COMPONENTS + OUTLINE
+   ============================================================ */
+function nb(g,x,y,diag){let n=0;const d=diag?[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1]];for(const[a,b]of d){const nx=x+a,ny=y+b;if(nx>=0&&ny>=0&&nx<GW&&ny<GH&&g[ny*GW+nx])n++;}return n;}
+function dilate4(g){const o=new Uint8Array(N);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)o[y*GW+x]=(g[y*GW+x]||nb(g,x,y,false)>0)?1:0;return o;}
+function erode4(g){const o=new Uint8Array(N);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const i=y*GW+x;o[i]=(g[i]&&nb(g,x,y,false)===4)?1:0;}return o;}
+function denoiseG(g){const o=new Uint8Array(N);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)o[y*GW+x]=(g[y*GW+x]&&nb(g,x,y,true)>=2)?1:0;return o;}
+function components(g,diag){const lab=new Int16Array(N).fill(-1);const sizes=[];let id=0;const st=[];const dirs=diag?[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]:[[1,0],[-1,0],[0,1],[0,-1]];
+  for(let i=0;i<N;i++){if(g[i]&&lab[i]<0){let cnt=0;st.length=0;st.push(i);lab[i]=id;while(st.length){const p=st.pop();cnt++;const px=p%GW,py=(p/GW)|0;for(const[a,b]of dirs){const nx=px+a,ny=py+b;if(nx>=0&&ny>=0&&nx<GW&&ny<GH){const q=ny*GW+nx;if(g[q]&&lab[q]<0){lab[q]=id;st.push(q);}}}}sizes.push(cnt);id++;}}
+  return{lab,sizes,count:id};}
+function removeSmall(g,minSize){const{lab,sizes}=components(g,true);const o=new Uint8Array(N);for(let i=0;i<N;i++)if(g[i]&&sizes[lab[i]]>=minSize)o[i]=1;return o;}
+function cleanup(m,opts){opts=opts||{};return removeSmall(m,opts.minComp||minComp);}
+function boundary(m){const o=new Uint8Array(N);for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const i=y*GW+x;if(!m[i])continue;let edge=false;const d=[[1,0],[-1,0],[0,1],[0,-1]];for(const[a,b]of d){const nx=x+a,ny=y+b;if(nx<0||ny<0||nx>=GW||ny>=GH||!m[ny*GW+nx]){edge=true;break;}}if(edge)o[i]=1;}return o;}
+function outline1(m){return removeSmall(boundary(m),2);}
+function outline2(m){const o1=boundary(m);const inner=boundary(erode4(m));let o2=new Uint8Array(N);for(let i=0;i<N;i++)o2[i]=(o1[i]||inner[i])?1:0;let c1=0,c2=0;for(let i=0;i<N;i++){c1+=o1[i];c2+=o2[i];}if(c2<c1*1.25)return{grid:o1,fellback:true};return{grid:removeSmall(o2,2),fellback:false};}
+function applyOutline(m,mode){if(mode===1)return outline1(m);if(mode===2)return outline2(m).grid;return m;}
+
+function baseMask(t,meth,pol){
+  if(!grayBuf)return new Uint8Array(N);
+  if(meth==='alpha'&&imgMeta&&imgMeta.hasAlpha)return alphaMask(pol);
+  if(meth==='otsu')return fillT(grayBuf,otsu(grayBuf),pol);
+  if(meth==='mean')return fillT(grayBuf,meanT(grayBuf),pol);
+  if(meth==='sauvola')return sauvolaFill(grayBuf,15,0.2,pol);
+  if(meth==='adaptive')return adaptiveFill(grayBuf,9,8,pol);
+  return fillT(grayBuf,t,pol);
+}
+function rebuild(){ if(!grayBuf)return; let m=cleanup(baseMask(threshold,method,polarity)); grid=applyOutline(m,outline); pages[curPage]=grid; }
+
+/* ============================================================
+   TACTILE QUALITY SCORE
+   ============================================================ */
+function metricsOf(g){
+  let on=0,iso=0,ends=0;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){const i=y*GW+x;if(!g[i])continue;on++;const k=nb(g,x,y,true);if(k<1)iso++;else if(k===1)ends++;}
+  const{sizes,count}=components(g,true);const major=sizes.length?Math.max(...sizes):0;
+  let sx=0,sy=0;for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(g[y*GW+x]){sx+=x;sy+=y;}
+  const cx=on?sx/on:GW/2,cy=on?sy/on:GH/2;const centerOff=Math.hypot((cx-(GW-1)/2)/(GW/2),(cy-(GH-1)/2)/(GH/2));
+  return{on,iso,ends,count,major,density:on/N,majorFrac:on?major/on:0,centerOff};
+}
+function tactileQualityScore(g,bias){bias=bias||{};const m=metricsOf(g);if(m.on<8)return{score:8,grade:1,m};let s=100;const dn=m.density;
+  if(dn<0.05)s-=45;else if(dn<0.08)s-=18;else if(dn>0.5)s-=40;else if(dn>0.42)s-=16;
+  s-=Math.min(30,(m.iso/m.on)*120);s-=Math.min(18,(m.ends/m.on)*55);s-=Math.min(22,Math.max(0,m.count-3)*3);
+  s+=Math.min(8,(m.majorFrac-0.5)*16);s-=Math.min(10,m.centerOff*10);
+  if(bias.type==='lineart'&&bias.outline===0)s+=4;if(bias.type==='photo'&&bias.outline===1)s+=3;
+  s=Math.max(0,Math.min(100,s));let grade=1;if(s>=84)grade=4;else if(s>=68)grade=3;else if(s>=48)grade=2;return{score:s,grade,m};}
+const GRADE_TXT=['','낮음','보통','좋음','매우 좋음'];
+function gradeReason(g,m){if(g>=3){if(m.iso/Math.max(1,m.on)<0.08&&m.count<=4)return '외곽선이 연결되어 있고 작은 점이 적습니다.';return '형태가 또렷하고 손끝으로 구분하기 좋습니다.';}
+  if(m.density<0.06)return '핀이 너무 적어요. 촉각 선명도를 높여보세요.';if(m.density>0.45)return '너무 빽빽해요. 외곽선 1줄을 사용해 보세요.';if(m.iso/Math.max(1,m.on)>0.18)return '작은 점이 많아요. 작은 점 정리를 추천해요.';return '형태를 더 단순하게 다듬으면 좋아요.';}
+
+/* ============================================================
+   AUTO-SELECT (다중 후보 → 품질 비교)
+   ============================================================ */
+function autoSelect(){
+  imgMeta=Object.assign(imgMeta||{},analyzeImageType());
+  const methods=['otsu','sauvola','adaptive','mean'];if(imgMeta.hasAlpha)methods.unshift('alpha');
+  let best=null;
+  for(const meth of methods)for(const pol of [false,true]){
+    let m=baseMask(128,meth,pol);let raw=0;for(let i=0;i<N;i++)raw+=m[i];if(raw/N>0.62)continue;
+    m=cleanup(m,{minComp:imgMeta.type==='photo'?4:3});
+    for(const ol of [0,1]){const gg=applyOutline(m,ol);const q=tactileQualityScore(gg,{type:imgMeta.type,outline:ol});
+      let bonus=0;if(imgMeta.type==='transparent'&&meth==='alpha')bonus+=6;if(imgMeta.type==='lineart'&&meth==='otsu'&&ol===0)bonus+=4;if(imgMeta.type==='lowcontrast'&&(meth==='sauvola'||meth==='adaptive'))bonus+=5;if(imgMeta.type==='photo'&&ol===1)bonus+=3;
+      const score=q.score+bonus;if(!best||score>best.score)best={score,meth,pol,ol};}
   }
+  if(!best){const t=otsu(grayBuf);best={score:50,meth:'global',pol:false,ol:0};}
+  method=(best.meth==='alpha')?'alpha':best.meth;polarity=best.pol;outline=best.ol;
+  threshold=(best.meth==='mean')?Math.round(meanT(grayBuf)):otsu(grayBuf);
+  recoThreshold=threshold;recoOutline=outline;rebuild();return best;
 }
-function scheduleAutoSend() {
-  clearTimeout(autoSendTimer);
-  if (!connected || !$('autoSend').checked || !currentHex) return;
-  autoSendTimer = setTimeout(() => { if (currentHex) sendHex(currentHex, `→ Auto send · ${countPins(currentHex)} pins`); }, 180);
-}
-function countPins(hex) {
-  let n=0; for(let i=0;i<hex.length;i+=2) for(let p=0;p<8;p++) if((parseInt(hex.slice(i,i+2),16)>>p)&1) n++; return n;
-}
-$('btnSend').onclick = () => sendHex(currentHex, `→ Manual send · ${countPins(currentHex)} pins`);
-$('btnUp').onclick   = () => { sendHex('FF'.repeat(300),'↑ All Pins Up'); flashMsg('All Pins Up'); };
-$('btnDn').onclick   = () => { sendHex('00'.repeat(300),'↓ All Pins Down'); flashMsg('All Pins Down'); };
-$('autoSend').addEventListener('change', updateLiveBadge);
 
-// ── Image Processing ─────────────────────────────────────────────
-function buildGray(data) {
-  const g = new Float32Array(DOT_COLS * DOT_ROWS);
-  for (let i=0; i<g.length; i++) { const j=i*4; g[i]=0.299*data[j]+0.587*data[j+1]+0.114*data[j+2]; }
-  return g;
+/* ============================================================
+   AFTER CHANGE
+   ============================================================ */
+function afterChange(markDirty){if(markDirty!==false)setDirty(true);draw();updateScoreUI();updateHex();scheduleSend();}
+function countOn(g){g=g||grid;let n=0;for(let i=0;i<g.length;i++)n+=g[i];return n;}
+function updateHex(){$('hexOut').textContent='HEX '+gridToHex();}
+function updateScoreUI(){
+  const q=tactileQualityScore(grid,{type:imgMeta&&imgMeta.type,outline});const on=q.m.on;
+  if(appState==='ready'){const gEl=$('qGrade'),pEl=$('qPins'),rEl=$('qReason');
+    if(gEl){gEl.textContent='촉각 인지 예상: '+GRADE_TXT[q.grade];gEl.className='g s'+q.grade;}
+    if(pEl)pEl.textContent='활성 핀 '+on+'개';if(rEl)rEl.textContent=gradeReason(q.grade,q.m);}
+  $('sbPins').textContent=on;const sp=$('sbPerc');
+  if(!hasImage&&fileKind!=='tactile'){sp.textContent='촉각 인지 —';sp.className='perc';}
+  else{sp.textContent='촉각 인지 '+GRADE_TXT[q.grade];sp.className='perc '+(q.grade>=3?'good':q.grade===2?'mid':'warn');}
+  $('sbDot').textContent=dpStatusText();
+  updateToolStatus();
 }
-function applyBrightness(g, b) {
-  if (!b) return g;
-  return g.map(v => Math.max(0, Math.min(255, v+b)));
+function updateToolStatus(){
+  const el=$('sbTool'),dv=$('sbToolDiv');
+  if(appState==='ready'&&(tool==='pen'||tool==='eraser')){el.hidden=false;dv.hidden=false;el.textContent=(tool==='pen'?'펜 ':'지우개 ')+toolSettings[tool].size+'핀';}
+  else{el.hidden=true;dv.hidden=true;}
 }
-function applyContrast(g, c) {
-  if (!c) return g;
-  const f = (259*(c+255))/(255*(259-c));
-  return g.map(v => Math.max(0, Math.min(255, f*(v-128)+128)));
+
+/* ============================================================
+   DOTPAD LIVE (debounce + 중복방지 + last-wins)
+   ============================================================ */
+let sendT=null,lastSentHex=null,sendBusy=false;
+function scheduleSend(){if(loading||!liveOn||!connected||!sdk||!dotDevice)return;clearTimeout(sendT);sendT=setTimeout(doSend,100);}
+async function doSend(){const hex=gridToHex();if(hex===lastSentHex)return;if(sendBusy){clearTimeout(sendT);sendT=setTimeout(doSend,40);return;}
+  sendBusy=true;setDpState('sending');
+  try{sdk.displayGraphicData(hex,dotDevice,SDKMod.DisplayMode.GraphicMode);lastSentHex=hex;setDpState('sent');setClarityFb('반영 완료','sent');clearTimeout(window.__rv);window.__rv=setTimeout(()=>{if(connected)setDpState('connected');},900);}
+  catch(e){setDpState('error');setClarityFb('전송 실패','err');toast('DotPad 전송 실패','err');}
+  finally{sendBusy=false;}
 }
-function gaussBlur(g, passes) {
-  if (!passes) return g;
-  const w=DOT_COLS, h=DOT_ROWS, k=[.0625,.25,.375,.25,.0625];
-  let a = new Float32Array(g);
-  for (let p=0; p<passes; p++) {
-    const t = new Float32Array(w*h);
-    for (let y=0; y<h; y++) for (let x=0; x<w; x++) { let s=0; for (let d=-2;d<=2;d++) s+=a[y*w+Math.max(0,Math.min(w-1,x+d))]*k[d+2]; t[y*w+x]=s; }
-    for (let y=0; y<h; y++) for (let x=0; x<w; x++) { let s=0; for (let d=-2;d<=2;d++) s+=t[Math.max(0,Math.min(h-1,y+d))*w+x]*k[d+2]; a[y*w+x]=s; }
+function forceSend(){if(!liveOn||!connected)return;lastSentHex=null;scheduleSend();}
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+function setAppState(s){appState=s;document.body.dataset.state=s;const ready=(s==='ready');
+  document.querySelectorAll('.rail .tool').forEach(b=>b.disabled=!ready);
+  ['clarity','recoReset','outBtn','dtmsBtn','hexBtn','pngBtn','saveTopBtn'].forEach(id=>{const e=$(id);if(e)e.disabled=!ready;});
+  document.querySelectorAll('.qbtn').forEach(b=>b.disabled=!ready);
+  refreshModeGating();
+  $('saveHint').style.display=ready?'none':'block';
+  if(!ready)$('saveHint').textContent=s==='analyzing'?'변환 중입니다…':'이미지 또는 DTM·DTMS 파일을 불러오세요.';
+  if(!ready){$('toolCtx').classList.remove('show');}
+  setTimeout(layout,0);updateToolStatus();
+}
+
+/* ============================================================
+   DOTPAD STATE
+   ============================================================ */
+function dpStatusText(){return({disconnected:'DotPad 미연결',connecting:'DotPad 연결 중…',connected:liveOn?'실시간 반영 중':'DotPad 연결됨',sending:'DotPad에 반영 중…',sent:'반영 완료',error:'전송 실패'})[dpState];}
+function setDpState(s){dpState=s;const chip=$('chip');chip.className='chip '+(s==='connecting'?'connecting':(s==='connected'||s==='sending'||s==='sent')?s:s==='error'?'error':'');
+  $('chipText').textContent=dpStatusText();$('sbDot').textContent=dpStatusText();
+  const tog=$('liveToggle'),row=$('liveToggleRow'),cbtn=$('liveConnectBtn'),desc=$('liveDesc');
+  if(s==='disconnected'||s==='error'){connected=false;row.style.display='none';cbtn.style.display='';cbtn.textContent=(s==='error'?'다시 시도':'DotPad 연결');cbtn.disabled=false;tog.disabled=true;tog.setAttribute('aria-checked','false');desc.textContent=s==='error'?'전송에 실패했습니다. 다시 시도해 주세요.':'연결하면 조정 결과가 실시간으로 반영됩니다.';}
+  else if(s==='connecting'){cbtn.style.display='';cbtn.textContent='연결 중…';cbtn.disabled=true;row.style.display='none';desc.textContent='DotPad를 찾고 있습니다…';}
+  else{connected=true;cbtn.style.display='none';cbtn.disabled=false;row.style.display='flex';tog.disabled=false;tog.setAttribute('aria-checked',liveOn?'true':'false');desc.textContent=liveOn?'변경 사항을 실시간으로 보내고 있습니다.':'라이브 반영이 꺼져 있습니다.';}
+  const hc=$('connectBtn');
+  if(connected){hc.classList.remove('accent');hc.innerHTML='<svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>연결됨';}
+  else if(s==='connecting'){hc.textContent='연결 중…';}
+  else{hc.classList.add('accent');hc.innerHTML='<svg class="ic" viewBox="0 0 24 24"><path d="M8 7l8 5-5 4V4l5 4-8 5"/></svg>DotPad 연결';}
+}
+
+/* ============================================================
+   STATE RESET (새 파일 로드 시)
+   ============================================================ */
+function resetForNewFile(){
+  clearTimeout(sendT);sendT=null;lastSentHex=null;sendBusy=false;hoverBrush=null;
+  srcImage=null;grayBuf=null;alphaBuf=null;imgMeta=null;tactileMeta=null;pendingImg=null;
+  grid=new Uint8Array(N);pages=[];pageUndo=[];pageRedo=[];curPage=0;
+  threshold=128;polarity=false;method='global';outline=0;recoThreshold=128;recoOutline=0;
+  cursor={x:0,y:0};setClarityFb('','');
+  // 유지: connected, liveOn, sdk, dotDevice, dpState
+}
+function curUndo(){return pageUndo[curPage]||(pageUndo[curPage]=[]);}
+function curRedo(){return pageRedo[curPage]||(pageRedo[curPage]=[]);}
+
+/* ============================================================
+   FILE MODE GATING
+   ============================================================ */
+function refreshModeGating(){
+  document.body.dataset.filekind=fileKind||'';
+  const ready=(appState==='ready');
+  const isTac=fileKind==='tactile';
+  $('clarity').disabled=!ready||isTac;
+  $('recoReset').disabled=!ready||isTac;
+  document.querySelectorAll('#secOutline .seg button').forEach(b=>b.disabled=!ready||isTac);
+  document.querySelectorAll('.qbtn').forEach(b=>{const imgOnly=b.classList.contains('img-only');b.disabled=!ready||(isTac&&imgOnly);});
+  // pages section visibility
+  $('secPages').hidden=!(isTac&&pages.length>1);
+}
+
+/* ============================================================
+   IMAGE LOAD  (empty → analyzing → ready)
+   ============================================================ */
+function setFname(n){$('fname').value=n;}
+function startAnalyze(img,name){loading=true;pendingImg=img;pendingName=name||'이미지';$('analyzeName').textContent=pendingName;setAppState('analyzing');say('이미지를 분석하고 있어요');
+  setTimeout(()=>{if(appState==='analyzing'&&pendingImg===img)finishAnalyze(img,name);},600);}
+function finishAnalyze(img,name){
+  fileKind='image';srcImage=img;hasImage=true;renderGray();
+  const best=autoSelect();pages=[grid];curPage=0;pageUndo=[[]];pageRedo=[[]];
+  $('infoFile').textContent=(name||'이미지').slice(0,22);$('infoSize').textContent=img.naturalWidth+'×'+img.naturalHeight;$('infoType').textContent=imgMeta.label;
+  $('infoReco').textContent=({alpha:'알파',otsu:'Otsu',sauvola:'Sauvola',adaptive:'Adaptive',mean:'평균',global:'자동'})[best.meth]+' · '+(outline?outline+'줄':'채움');
+  $('method').value=(method==='alpha')?'global':method;syncSliders();syncOutlineSeg();updateOutlineDesc();buildAgentReco();
+  loading=false;setAppState('ready');rebuild();afterChange(false);setDirty(false);forceSend();
+  say('추천 결과가 준비됐어요');toast('촉각그래픽으로 자동 변환했어요','ok');
+}
+function buildAgentReco(){const reasons=[];
+  if(imgMeta.type==='transparent')reasons.push('투명 배경의 알파 경계를 기준으로 형태를 잡았어요');else if(imgMeta.type==='lineart')reasons.push('선의 연결성을 유지했어요');else if(imgMeta.type==='photo')reasons.push('배경을 정리하고 핵심 실루엣을 살렸어요');else if(imgMeta.type==='lowcontrast')reasons.push('국소 대비를 높여 형태를 또렷하게 했어요');
+  reasons.push('작은 점과 노이즈를 정리했어요');reasons.push(outline?('외곽선을 '+outline+'줄로 정리했어요'):'채움 실루엣을 중앙에 맞췄어요');
+  $('agentReco').innerHTML=`<div class="grade"><span class="g" id="qGrade">촉각 인지 예상</span><span class="pins" id="qPins"></span></div><div class="desc muted" id="qReason" style="margin:0 0 6px"></div>`+reasons.map(t=>`<div class="reco-card"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>${t}</div>`).join('');
+  $('agentLead').textContent='추천 결과가 준비됐어요.';}
+
+function loadImageFile(f){
+  if(!f)return;
+  if(f.size>20*1024*1024){toast('이미지 파일이 너무 큽니다(20MB 초과).','err');return;}
+  if(!/^image\//.test(f.type)&&!/\.(png|jpe?g|webp|svg)$/i.test(f.name)){toast('지원하지 않는 이미지 형식입니다. PNG·JPG·WEBP·SVG만 가능해요.','err');return;}
+  resetForNewFile();const nm=f.name.replace(/\.[^.]+$/,'')||'Untitled';setFname(nm);
+  const img=new Image();img.onload=()=>startAnalyze(img,f.name);img.onerror=()=>{toast('이미지를 열 수 없어요. 파일이 손상되었을 수 있습니다.','err');setAppState(hasImage?'ready':'empty');loading=false;};img.src=URL.createObjectURL(f);
+}
+function loadSample(){const c=document.createElement('canvas');c.width=240;c.height=160;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,240,160);g.strokeStyle='#000';g.lineWidth=12;g.lineJoin='round';g.beginPath();g.moveTo(60,150);g.lineTo(60,80);g.lineTo(120,35);g.lineTo(180,80);g.lineTo(180,150);g.closePath();g.stroke();g.strokeRect(105,108,30,42);const img=new Image();img.onload=()=>{resetForNewFile();setFname('샘플');startAnalyze(img,'샘플 이미지');};img.src=c.toDataURL();}
+
+/* ============================================================
+   TACTILE LOAD (DTM·DTMS) — 원본 핀 데이터 보존, 임계값 재적용 금지
+   ============================================================ */
+function cleanHex(s){return (s||'').replace(/[^0-9A-Fa-f]/g,'').toUpperCase();}
+function parseDTM(text){
+  const hex=cleanHex(text);
+  if(!hex.length)throw {code:'parse',msg:'DTM 파일에서 핀 데이터를 찾지 못했습니다.'};
+  if(hex.length!==HEXLEN){
+    if(hex.length===1536)throw {code:'res',msg:'96×64 해상도 DTM은 현재 버전(60×40)에서 지원하지 않습니다.'};
+    throw {code:'len',msg:`이 DTM 파일을 열 수 없습니다. 핀 데이터 길이가 60×40 규격(${HEXLEN}자)과 일치하지 않습니다(현재 ${hex.length}자).`};
   }
-  return a;
+  return {format:'DTM',version:'-',pages:[hexToGrid(hex)],names:['1']};
 }
-function sobel(g) {
-  const w=DOT_COLS, h=DOT_ROWS, e=new Float32Array(w*h);
-  const Kx=[-1,0,1,-2,0,2,-1,0,1], Ky=[-1,-2,-1,0,0,0,1,2,1];
-  for (let y=1; y<h-1; y++) for (let x=1; x<w-1; x++) {
-    let gx=0, gy=0;
-    for (let ky=-1; ky<=1; ky++) for (let kx=-1; kx<=1; kx++) { const v=g[(y+ky)*w+(x+kx)]; gx+=v*Kx[(ky+1)*3+(kx+1)]; gy+=v*Ky[(ky+1)*3+(kx+1)]; }
-    e[y*w+x]=Math.sqrt(gx*gx+gy*gy);
-  }
-  return e;
-}
-function dilate(bin, r) {
-  const w=DOT_COLS, h=DOT_ROWS, res=new Uint8Array(w*h);
-  for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
-    if (!bin[y*w+x]) continue;
-    for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++) { const ny=Math.max(0,Math.min(h-1,y+dy)), nx=Math.max(0,Math.min(w-1,x+dx)); res[ny*w+nx]=1; }
-  }
-  return res;
-}
-function erode(bin, r) {
-  const w=DOT_COLS, h=DOT_ROWS, res=new Uint8Array(w*h);
-  for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
-    let ok=true;
-    outer: for (let dy=-r; dy<=r; dy++) for (let dx=-r; dx<=r; dx++) { const ny=y+dy, nx=x+dx; if(ny<0||ny>=h||nx<0||nx>=w||!bin[ny*w+nx]){ok=false;break outer;} }
-    res[y*w+x]=ok?1:0;
-  }
-  return res;
-}
-
-// ── Render Pipeline ───────────────────────────────────────────────
-function scheduleRender() { clearTimeout(renderTimer); renderTimer = setTimeout(doRender, 25); }
-
-function doRender() {
-  if (!img) return;
-  const th         = +$('th').value;
-  const inv        = $('inv').checked;
-  const fit        = $('fit').checked;
-  const brightness = +$('bright').value;
-  const contrast   = +$('contrast').value;
-  const noisePasses= +$('noise').value;
-  const simpPasses = +$('simp').value;
-  const outlineOn  = $('outlineOn').checked;
-  const outLines   = +(document.querySelector('.seg-btn.active[data-lines]')?.dataset.lines||'1');
-  const outStr     = +$('outlineStr').value / 100;
-  const outMode    = $('outlineMode').value;
-
-  srcCtx.fillStyle = '#fff';
-  srcCtx.fillRect(0, 0, DOT_COLS, DOT_ROWS);
-  let dw=DOT_COLS, dh=DOT_ROWS, dx=0, dy=0;
-  if (fit) { const s=Math.min(DOT_COLS/img.width, DOT_ROWS/img.height); dw=img.width*s; dh=img.height*s; dx=(DOT_COLS-dw)/2; dy=(DOT_ROWS-dh)/2; }
-  srcCtx.drawImage(img, dx, dy, dw, dh);
-
-  const pxData = srcCtx.getImageData(0,0,DOT_COLS,DOT_ROWS).data;
-  let gray = buildGray(pxData);
-  gray = applyBrightness(gray, brightness);
-  gray = applyContrast(gray, contrast);
-  if (noisePasses) gray = gaussBlur(gray, noisePasses);
-
-  let bin = new Uint8Array(DOT_COLS * DOT_ROWS);
-  for (let i=0; i<bin.length; i++) { const dark = pxData[i*4+3]>40 && gray[i]<th; bin[i]=(inv?!dark:dark)?1:0; }
-
-  if (outlineOn) {
-    const edges = sobel(gray);
-    let maxE=1; for (let i=0; i<edges.length; i++) if(edges[i]>maxE) maxE=edges[i];
-    const eThresh = maxE*(1-Math.min(.95, outStr));
-    let eBin = new Uint8Array(DOT_COLS*DOT_ROWS);
-    for (let i=0; i<edges.length; i++) eBin[i]=edges[i]>eThresh?1:0;
-    if (outLines===2) eBin = dilate(eBin, 1);
-    if (outMode==='overlay')  for (let i=0; i<bin.length; i++) bin[i]=bin[i]|eBin[i];
-    else if (outMode==='outline') bin = eBin;
-    else if (outMode==='detail')  for (let i=0; i<bin.length; i++) bin[i]=eBin[i]?1:bin[i];
-  }
-
-  if (simpPasses) { const d=dilate(bin,simpPasses); bin=erode(d,simpPasses); }
-
-  let n=0;
-  const grid=[];
-  for (let y=0; y<DOT_ROWS; y++) { grid[y]=[]; for (let x=0; x<DOT_COLS; x++) { const on=bin[y*DOT_COLS+x]===1; grid[y][x]=on; if(on)n++; } }
-
-  const bytes=[];
-  for (let cy=0; cy<10; cy++) for (let cx=0; cx<30; cx++) {
-    let b=0; for (const {x,y,bit} of BIT_ORDER) if(grid[cy*4+y]?.[cx*2+x]) b|=1<<bit; bytes.push(b);
-  }
-  const hex=bytes.map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join('');
-  currentHex=hex;
-
-  $('hexOut').value=hex;
-  updatePinUI(n);
-  updateSaveBtns();
-  updateHints(n, inv);
-  renderGrid(grid, viewMode);
-  scheduleAutoSend();
-}
-
-function updatePinUI(n) {
-  const pct = Math.round(n/2400*100);
-  $('pinCount').textContent = n ? n.toLocaleString() : '0';
-  $('csPins').textContent = n ? n.toLocaleString() : '0';
-  $('pinPct').textContent = pct+'%';
-  $('csPct').textContent = pct+'%';
-  $('hdFile').title = `${$('fid').value} — ${n} pins`;
-}
-
-// ── Grid Renderer ─────────────────────────────────────────────────
-function renderGrid(grid, mode) {
-  $('emptyHint').classList.add('hidden');
-  const cw=DISP_W/DOT_COLS, ch=DISP_H/DOT_ROWS;
-  if (mode==='dots'||mode==='split') {
-    dotsCtx.fillStyle='#1A1A22';
-    dotsCtx.fillRect(0,0,DISP_W,DISP_H);
-    for (let y=0; y<DOT_ROWS; y++) for (let x=0; x<DOT_COLS; x++) {
-      dotsCtx.beginPath();
-      dotsCtx.arc(x*cw+cw/2, y*ch+ch/2, Math.min(cw,ch)*.40, 0, Math.PI*2);
-      dotsCtx.fillStyle = grid[y][x] ? '#EFEFEF' : '#2C2C3A';
-      dotsCtx.fill();
-    }
-  } else {
-    dotsCtx.fillStyle='#181820';
-    dotsCtx.fillRect(0,0,DISP_W,DISP_H);
-    for (let y=0; y<DOT_ROWS; y++) for (let x=0; x<DOT_COLS; x++) {
-      const cx=x*cw+cw/2, cy=y*ch+ch/2, r=Math.min(cw,ch)*.38;
-      if (grid[y][x]) {
-        dotsCtx.beginPath(); dotsCtx.arc(cx+.5,cy+.7,r*.95,0,Math.PI*2); dotsCtx.fillStyle='rgba(0,0,0,.35)'; dotsCtx.fill();
-        const g=dotsCtx.createRadialGradient(cx-r*.3,cy-r*.3,r*.05,cx,cy,r);
-        g.addColorStop(0,'#FFFDF4'); g.addColorStop(.3,'#F0D060'); g.addColorStop(1,'#9A6E20');
-        dotsCtx.beginPath(); dotsCtx.arc(cx,cy,r,0,Math.PI*2); dotsCtx.fillStyle=g; dotsCtx.fill();
-        dotsCtx.beginPath(); dotsCtx.arc(cx-r*.28,cy-r*.32,r*.18,0,Math.PI*2); dotsCtx.fillStyle='rgba(255,255,255,.48)'; dotsCtx.fill();
-      } else {
-        dotsCtx.beginPath(); dotsCtx.arc(cx,cy,r*.5,0,Math.PI*2); dotsCtx.fillStyle='#111118'; dotsCtx.fill();
-      }
-    }
-  }
-  if (gridVisible) drawGridOverlay();
-}
-
-function renderFromHex(hex) {
-  if (hex.length!==600) return;
-  currentHex=hex; $('hexOut').value=hex;
-  const grid=[];
-  for (let y=0; y<DOT_ROWS; y++) { grid[y]=[]; for (let x=0; x<DOT_COLS; x++) grid[y][x]=false; }
-  for (let cy=0; cy<10; cy++) for (let cx=0; cx<30; cx++) {
-    const b=parseInt(hex.slice((cy*30+cx)*2,(cy*30+cx)*2+2),16);
-    for (const {x,y,bit} of BIT_ORDER) if((b>>bit)&1) grid[cy*4+y][cx*2+x]=true;
-  }
-  let n=0; for (let y=0; y<DOT_ROWS; y++) for (let x=0; x<DOT_COLS; x++) if(grid[y][x]) n++;
-  updatePinUI(n); updateSaveBtns(); updateHints(n,false);
-  renderGrid(grid, viewMode); scheduleAutoSend();
-}
-
-function drawGridOverlay() {
-  const cw=DISP_W/DOT_COLS, ch=DISP_H/DOT_ROWS;
-  gridCtx.clearRect(0,0,DISP_W,DISP_H);
-  gridCtx.strokeStyle='rgba(255,255,255,.12)'; gridCtx.lineWidth=.5;
-  for (let x=0; x<=DOT_COLS; x++) { gridCtx.beginPath(); gridCtx.moveTo(x*cw,0); gridCtx.lineTo(x*cw,DISP_H); gridCtx.stroke(); }
-  for (let y=0; y<=DOT_ROWS; y++) { gridCtx.beginPath(); gridCtx.moveTo(0,y*ch); gridCtx.lineTo(DISP_W,y*ch); gridCtx.stroke(); }
-  gridCtx.strokeStyle='rgba(255,255,255,.3)'; gridCtx.lineWidth=.8;
-  for (let x=0; x<=30; x++) { gridCtx.beginPath(); gridCtx.moveTo(x*cw*2,0); gridCtx.lineTo(x*cw*2,DISP_H); gridCtx.stroke(); }
-  for (let y=0; y<=10; y++) { gridCtx.beginPath(); gridCtx.moveTo(0,y*ch*4); gridCtx.lineTo(DISP_W,y*ch*4); gridCtx.stroke(); }
-}
-
-// ── File Loading ──────────────────────────────────────────────────
-function loadFile(f) {
-  if (!f||!f.type.startsWith('image/')) return;
-  const url=URL.createObjectURL(f);
-  const im=new Image();
-  im.onload=()=>{
-    img=im; $('uploadThumb').src=url; $('drop').classList.add('has-img');
-    $('uploadFName').textContent=f.name;
-    const m=f.name.match(/([a-zA-Z가-힣]+)/);
-    if (m) $('fid').value=m[1].toLowerCase().replace(/[^a-z0-9]/g,'');
-    $('hdFileName').textContent=f.name;
-    clearImgActive();
-    saveToRecent({name:f.name, url});
-    scheduleRender();
-  };
-  im.src=url;
-}
-function loadUrl(url, name) {
-  const im=new Image(); im.crossOrigin='anonymous';
-  im.onload=()=>{ img=im; $('uploadThumb').src=url; $('drop').classList.add('has-img'); $('uploadFName').textContent=name||''; $('hdFileName').textContent=name||'Preset'; scheduleRender(); };
-  im.onerror=()=>log(`⚠️ Image load failed: ${url}`);
-  im.src=url;
-}
-
-// Drop zone
-const dropEl=$('drop');
-dropEl.onclick=()=>$('fileInput').click();
-dropEl.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') $('fileInput').click(); });
-$('fileInput').onchange=e=>loadFile(e.target.files[0]);
-['dragover','dragenter'].forEach(ev=>dropEl.addEventListener(ev,e=>{e.preventDefault();dropEl.classList.add('over');}));
-['dragleave','drop'].forEach(ev=>dropEl.addEventListener(ev,e=>{e.preventDefault();dropEl.classList.remove('over');}));
-dropEl.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
-
-// DTM/DTMS load
-$('btnLoadDtm').onclick=()=>$('dtmInput').click();
-$('btnLoadDtms').onclick=()=>$('dtmsInput').click();
-$('dtmInput').onchange=e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=ev=>{
-    const hex=ev.target.result.trim().toUpperCase();
-    if (/^[0-9A-F]{600}$/.test(hex)) { img=null; $('fid').value=f.name.replace(/\.dtm$/i,''); $('drop').classList.remove('has-img'); $('hdFileName').textContent=f.name; renderFromHex(hex); log(`📂 DTM loaded: ${f.name}`); }
-    else log(`❌ DTM error: expected 600 hex chars, got ${hex.length}`);
-  }; r.readAsText(f); e.target.value='';
-};
-$('dtmsInput').onchange=e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=ev=>{
-    try {
-      const json=JSON.parse(ev.target.result); const hex=json.items?.[0]?.graphic?.data;
-      if (hex&&/^[0-9A-F]{600}$/i.test(hex)) { img=null; $('fid').value=json.title||f.name.replace(/\.dtms$/i,''); $('drop').classList.remove('has-img'); $('hdFileName').textContent=f.name; renderFromHex(hex.toUpperCase()); log(`📂 DTMS loaded: ${f.name}`); }
-      else log(`❌ DTMS error: no valid graphic.data found`);
-    } catch(e) { log(`❌ DTMS parse error: ${e.message}`); }
-  }; r.readAsText(f); e.target.value='';
-};
-
-// ── Save / Export ─────────────────────────────────────────────────
-function getSaveName() { return ($('fid').value||'tactile').trim().replace(/\s+/g,'_')||'tactile'; }
-function updateSaveBtns() {
-  const ok=currentHex.length===600;
-  ['btnSavePreset','btnDlDtm','btnDlDtms','btnSavePreset2','btnDlDtm2','btnDlDtms2'].forEach(id=>$(id).disabled=!ok);
-}
-function dl(content, name, type) {
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); URL.revokeObjectURL(a.href);
-}
-function flashMsg(msg) {
-  const el=$('csFlash'); el.textContent='✓ '+msg; el.classList.add('show');
-  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200);
-}
-function downloadDtm() {
-  if(!currentHex) return; const n=getSaveName(); dl(currentHex,n+'.dtm','text/plain'); flashMsg('DTM saved'); log(`💾 DTM: ${n}.dtm`);
-}
-function downloadDtms() {
-  if(!currentHex) return; const n=getSaveName();
-  const json={title:n,lang:'korean',lang_option:'1',device:'dotpad320',audioPath:'',items:[{page:1,title:n,graphic:{name:'1.dtm',data:currentHex},text:{name:'1.txt',data:'',plain:n},audio:{fileName:''}}]};
-  dl(JSON.stringify(json,null,2),n+'.dtms','application/json'); flashMsg('DTMS saved'); log(`💾 DTMS: ${n}.dtms`);
-}
-['btnDlDtm','btnDlDtm2'].forEach(id=>$(id).onclick=downloadDtm);
-['btnDlDtms','btnDlDtms2'].forEach(id=>$(id).onclick=downloadDtms);
-
-function getImgDataUrl() {
-  if(!img) return null;
-  try { const c=document.createElement('canvas'); c.width=img.naturalWidth||60; c.height=img.naturalHeight||40; c.getContext('2d').drawImage(img,0,0); return c.toDataURL('image/png'); } catch{return null;}
-}
-function openSaveForm() {
-  const f=$('saveForm'); f.classList.toggle('show'); if(f.classList.contains('show')){$('saveFormName').value=$('fid').value||''; $('saveFormName').focus();}
-}
-['btnSavePreset','btnSavePreset2'].forEach(id=>$(id).onclick=openSaveForm);
-$('saveFormCancel').onclick=()=>$('saveForm').classList.remove('show');
-$('saveFormOk').onclick=doSave;
-$('saveFormName').addEventListener('keydown',e=>{if(e.key==='Enter')doSave();if(e.key==='Escape')$('saveForm').classList.remove('show');});
-function doSave() {
-  const name=$('saveFormName').value.trim(); if(!name){$('saveFormName').focus();return;}
-  const dataUrl=getImgDataUrl(); if(!dataUrl){log('⚠️ No image source available.');return;}
-  const p={id:'custom_'+Date.now(),ko:name,sub:'My Preset',th:+$('th').value,outlineOn:$('outlineOn').checked,outlineStr:+$('outlineStr').value,outlineMode:$('outlineMode').value,noise:+$('noise').value,simp:+$('simp').value,dataUrl,isCustom:true};
-  const arr=loadCustomPresets(); arr.push(p); saveCustomPresets(arr);
-  $('saveForm').classList.remove('show'); flashMsg(`Preset "${name}" saved`); log(`⭐ Preset saved: "${name}"`);
-  if(activeCat==='custom'||activeCat==='all') buildPresetList(activeCat);
-}
-$('copyHex').onclick=()=>{ if(!currentHex) return; navigator.clipboard.writeText(currentHex).then(()=>flashMsg('HEX copied')); };
-$('copyLine').onclick=()=>{ if(!currentHex) return; navigator.clipboard.writeText(`  ${($('fid').value||'tactile').trim()}: '${currentHex}',`).then(()=>flashMsg('Code line copied')); };
-
-// ── Recent Files ─────────────────────────────────────────────────
-function loadRecent(){ try{return JSON.parse(localStorage.getItem(STORAGE_RECENT)||'[]');}catch{return [];} }
-function saveToRecent(item){
-  let a=loadRecent().filter(r=>r.name!==item.name); a.unshift(item); a=a.slice(0,5);
-  try{localStorage.setItem(STORAGE_RECENT,JSON.stringify(a));}catch{} buildRecentList();
-}
-function buildRecentList(){
-  const arr=loadRecent(), el=$('recentList');
-  if(!arr.length){el.innerHTML='<div class="empty-note">최근 작업 없음</div>';return;}
-  el.innerHTML=arr.map(r=>`<div class="recent-item" data-url="${r.url}" data-name="${r.name}"><img class="recent-thumb" src="${r.url}" alt="${r.name}"/><span class="recent-name">${r.name}</span></div>`).join('');
-  el.querySelectorAll('.recent-item').forEach(el=>el.onclick=()=>loadUrl(el.dataset.url,el.dataset.name));
-}
-
-// ── Image Presets ─────────────────────────────────────────────────
-const PRESET_CATEGORIES = {
-  dinosaurs:{ label:'공룡', items:[
-    {id:'tyrannosaurusRex',   ko:'티라노사우루스',     sub:'T-Rex',              th:200,url:'./assets/dinosaurs/tyrannosaurus-rex.png'},
-    {id:'velociraptor',       ko:'벨로키랍토르',       sub:'Velociraptor',        th:200,url:'./assets/dinosaurs/velociraptor.png'},
-    {id:'brachiosaurus',      ko:'브라키오사우루스',   sub:'Brachiosaurus',       th:200,url:'./assets/dinosaurs/brachiosaurus.png'},
-    {id:'triceratops',        ko:'트리케라톱스',       sub:'Triceratops',         th:200,url:'./assets/dinosaurs/triceratops.png'},
-    {id:'stegosaurus',        ko:'스테고사우루스',     sub:'Stegosaurus',         th:200,url:'./assets/dinosaurs/stegosaurus.png'},
-    {id:'spinosaurus',        ko:'스피노사우루스',     sub:'Spinosaurus',         th:200,url:'./assets/dinosaurs/spinosaurus.png'},
-    {id:'ankylosaurus',       ko:'안킬로사우루스',     sub:'Ankylosaurus',        th:200,url:'./assets/dinosaurs/ankylosaurus.png'},
-    {id:'parasaurolophus',    ko:'파라사우롤로푸스',   sub:'Parasaurolophus',     th:200,url:'./assets/dinosaurs/parasaurolophus.png'},
-    {id:'pachycephalosaurus', ko:'파키케팔로사우루스', sub:'Pachycephalosaurus',  th:200,url:'./assets/dinosaurs/pachycephalosaurus.png'},
-    {id:'dilophosaurus',      ko:'딜로포사우루스',     sub:'Dilophosaurus',       th:200,url:'./assets/dinosaurs/dilophosaurus.png'},
-  ]},
-  fossils:{ label:'화석', items:[
-    {id:'fossilSkull',       ko:'두개골',       sub:'Skull',            th:200,url:'./assets/icons/fossils/fossil-skull.png'},
-    {id:'fossilAmmonite',    ko:'암모나이트',   sub:'Ammonite',         th:200,url:'./assets/icons/fossils/fossil-ammonite.png'},
-    {id:'fossilFish',        ko:'물고기 화석',  sub:'Fish',             th:200,url:'./assets/icons/fossils/fossil-fish.png'},
-    {id:'fossilFootprint',   ko:'발자국',       sub:'Footprint',        th:200,url:'./assets/icons/fossils/fossil-footprint.png'},
-    {id:'fossilLeaf',        ko:'나뭇잎 화석',  sub:'Leaf',             th:200,url:'./assets/icons/fossils/fossil-leaf.png'},
-    {id:'fossilClaw',        ko:'발톱 화석',    sub:'Claw',             th:200,url:'./assets/icons/fossils/fossil-claw.png'},
-    {id:'fossilTooth',       ko:'이빨 화석',    sub:'Tooth',            th:200,url:'./assets/icons/fossils/fossil-tooth.png'},
-    {id:'fossilRib',         ko:'갈비뼈',       sub:'Rib',              th:200,url:'./assets/icons/fossils/fossil-rib.png'},
-    {id:'fossilVertebra',    ko:'척추뼈',       sub:'Vertebra',         th:200,url:'./assets/icons/fossils/fossil-vertebra.png'},
-    {id:'fossilBone',        ko:'뼈 조각',      sub:'Bone Fragment',    th:200,url:'./assets/icons/fossils/fossil-bone-fragment.png'},
-    {id:'fossilSkeleton',    ko:'부분 골격',    sub:'Partial Skeleton', th:200,url:'./assets/icons/fossils/fossil-partial-skeleton.png'},
-    {id:'fossilLegfoot',     ko:'다리뼈',       sub:'Leg & Foot',       th:200,url:'./assets/icons/fossils/fossil-legfoot.png'},
-    {id:'artifactMedallion', ko:'메달리온',     sub:'Medallion',        th:200,url:'./assets/icons/fossils/artifact-medallion.png'},
-    {id:'artifactPottery',   ko:'도자기',       sub:'Pottery',          th:200,url:'./assets/icons/fossils/artifact-pottery.png'},
-  ]},
-  tools:{ label:'도구', items:[
-    {id:'toolBrush',   ko:'붓',     sub:'Brush',    th:180,url:'./assets/icons/tools/icon-brush.png'},
-    {id:'toolHammer',  ko:'망치',   sub:'Hammer',   th:180,url:'./assets/icons/tools/icon-hammer.png'},
-    {id:'toolPickaxe', ko:'곡괭이', sub:'Pickaxe',  th:180,url:'./assets/icons/tools/icon-pickaxe.png'},
-    {id:'toolShovel',  ko:'삽',     sub:'Shovel',   th:180,url:'./assets/icons/tools/icon-shovel.png'},
-    {id:'toolChisel',  ko:'끌',     sub:'Chisel',   th:180,url:'./assets/icons/tools/icon-chisel.png'},
-    {id:'toolTrowel',  ko:'흙손',   sub:'Trowel',   th:180,url:'./assets/icons/tools/icon-trowel.png'},
-    {id:'toolSieve',   ko:'체',     sub:'Sieve',    th:180,url:'./assets/icons/tools/icon-sieve.png'},
-    {id:'toolCompass', ko:'나침반', sub:'Compass',  th:180,url:'./assets/icons/tools/icon-compass.png'},
-    {id:'toolMag',     ko:'돋보기', sub:'Magnifier',th:180,url:'./assets/icons/tools/icon-magnifier.png'},
-    {id:'toolMap',     ko:'지도',   sub:'Map',      th:180,url:'./assets/icons/tools/icon-map.png'},
-  ]},
-  characters:{ label:'탐험가', items:[
-    {id:'explorerIdle',  ko:'대기',  sub:'Idle',    th:180,url:'./assets/characters/explorer-idle.png'},
-    {id:'explorerDig',   ko:'발굴',  sub:'Digging', th:180,url:'./assets/characters/explorer-digging.png'},
-    {id:'explorerWalk',  ko:'걷기',  sub:'Walking', th:180,url:'./assets/characters/explorer-walking.png'},
-    {id:'explorerFound', ko:'발견',  sub:'Found',   th:180,url:'./assets/characters/explorer-found.png'},
-    {id:'explorerThink', ko:'관찰',  sub:'Think',   th:180,url:'./assets/characters/explorer-thinking.png'},
-    {id:'explorerJump',  ko:'점프',  sub:'Jump',    th:180,url:'./assets/characters/explorer-jumping.png'},
-  ]},
-};
-function loadCustomPresets(){try{return JSON.parse(localStorage.getItem(STORAGE_IMG)||'[]');}catch{return[];}}
-function saveCustomPresets(arr){try{localStorage.setItem(STORAGE_IMG,JSON.stringify(arr));}catch{}}
-function delCustomPreset(id){saveCustomPresets(loadCustomPresets().filter(p=>p.id!==id));buildPresetList(activeCat);}
-function clearImgActive(){document.querySelectorAll('.preset-item').forEach(e=>e.classList.remove('active'));activeImgPresetId=null;}
-function getAllPresets(cat){
-  let items=[];
-  if(cat==='all'||cat==='custom') loadCustomPresets().forEach(p=>items.push({...p,_cat:'custom'}));
-  if(cat!=='custom') Object.entries(PRESET_CATEGORIES).forEach(([k,c])=>{if(cat==='all'||cat===k) c.items.forEach(p=>items.push({...p,_cat:k}));});
-  return items;
-}
-function buildCatTabs(){
-  const tabs=$('catTabs');
-  const cats=[{key:'all',label:'전체'},{key:'custom',label:'⭐ 내 것'},...Object.entries(PRESET_CATEGORIES).map(([k,v])=>({key:k,label:v.label}))];
-  tabs.innerHTML=cats.map(c=>`<button class="cat-tab${c.key===activeCat?' active':''}" data-cat="${c.key}">${c.label}</button>`).join('');
-  tabs.querySelectorAll('.cat-tab').forEach(b=>b.onclick=()=>{activeCat=b.dataset.cat;buildCatTabs();buildPresetList(activeCat);});
-}
-function buildPresetList(cat){
-  const list=$('presetList'), items=getAllPresets(cat);
-  if(!items.length){list.innerHTML='<div class="empty-note">프리셋 없음</div>';return;}
-  list.innerHTML=items.map(p=>`
-    <div class="preset-item${p.id===activeImgPresetId?' active':''}" data-id="${p.id}" role="button" tabindex="0" aria-label="${p.ko} 프리셋">
-      ${p.dataUrl?`<img class="p-thumb" src="${p.dataUrl}" alt="${p.ko}"/>`:`<img class="p-thumb" src="${p.url}" alt="${p.ko}" crossorigin="anonymous"/>`}
-      <div class="p-labels"><div class="p-ko">${p.ko}</div><div class="p-sub">${p.sub}</div></div>
-      ${p.isCustom?`<button class="p-del show" data-id="${p.id}" aria-label="${p.ko} 삭제" title="삭제">×</button>`:''}
-    </div>`).join('');
-  list.querySelectorAll('.preset-item').forEach(el=>{
-    const activate=e=>{
-      if(e.target.classList.contains('p-del')) return;
-      const p=getAllPresets('all').find(x=>x.id===el.dataset.id); if(!p) return;
-      activeImgPresetId=p.id; clearImgActive(); el.classList.add('active');
-      $('th').value=p.th; $('thNum').value=p.th; updateQuickBtns(p.th);
-      if(p.isCustom){
-        if(p.outlineOn!==undefined){$('outlineOn').checked=p.outlineOn;toggleOutlineSub();}
-        if(p.outlineStr!==undefined){$('outlineStr').value=p.outlineStr;$('outlineStrVal').textContent=(p.outlineStr/100).toFixed(1);}
-        if(p.outlineMode!==undefined) $('outlineMode').value=p.outlineMode;
-        if(p.noise!==undefined){$('noise').value=p.noise;$('noiseVal').textContent=p.noise;}
-        if(p.simp!==undefined){$('simp').value=p.simp;$('simpVal').textContent=p.simp;}
-      }
-      $('fid').value=(p.id.startsWith('custom_')?p.ko:p.id).replace(/[^a-zA-Z0-9가-힣]/g,'').toLowerCase()||'tactile';
-      $('hdFileName').textContent=p.ko;
-      if(p.dataUrl){const im=new Image();im.onload=()=>{img=im;$('uploadThumb').src=p.dataUrl;$('drop').classList.add('has-img');$('uploadFName').textContent=p.ko;scheduleRender();};im.src=p.dataUrl;}
-      else if(p.url) loadUrl(p.url,p.ko);
-    };
-    el.onclick=activate;
-    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')activate(e);});
+function parseDTMS(text){
+  let json;try{json=JSON.parse(text);}catch(e){throw {code:'corrupt',msg:'손상된 DTMS 파일입니다. JSON 구조를 해석할 수 없습니다.'};}
+  const items=json.items;
+  if(!Array.isArray(items)||!items.length)throw {code:'corrupt',msg:'이 DTMS 파일에 페이지(items) 데이터가 없습니다.'};
+  const pgs=[],names=[];
+  items.forEach((it,i)=>{
+    const hx=cleanHex(it&&it.graphic&&it.graphic.data);
+    if(hx.length===1536)throw {code:'res',msg:'96×64 해상도 DTMS는 현재 버전(60×40)에서 지원하지 않습니다.'};
+    if(hx.length!==HEXLEN)throw {code:'len',msg:`이 DTMS 파일을 열 수 없습니다. ${i+1}페이지 핀 데이터 길이가 60×40 규격과 일치하지 않습니다.`};
+    pgs.push(hexToGrid(hx));names.push((it&&it.title)||String(i+1));
   });
-  list.querySelectorAll('.p-del').forEach(b=>b.onclick=e=>{e.stopPropagation();if(confirm(`"${b.dataset.id}" 프리셋을 삭제할까요?`)) delCustomPreset(b.dataset.id);});
+  return {format:'DTMS',version:(json.version||json.lang_option?String(json.version||'1'):'-'),pages:pgs,names,device:json.device,title:json.title};
 }
-
-// ── Settings Presets ──────────────────────────────────────────────
-const SETTINGS_PRESETS=[
-  {id:'basic',    name:'Basic Tactile',  desc:'Standard binary conversion',       th:128,inv:false,outline:false,oStr:100,oLines:1,oMode:'overlay',noise:0,simp:0},
-  {id:'highCon',  name:'High Contrast',  desc:'Sharp edges, clean silhouette',     th:200,inv:false,outline:false,oStr:100,oLines:1,oMode:'overlay',noise:1,simp:0},
-  {id:'softShape',name:'Soft Shape',     desc:'Low threshold, gentle forms',       th:90, inv:false,outline:false,oStr:80, oLines:1,oMode:'overlay',noise:1,simp:1},
-  {id:'boldOut',  name:'Bold Outline',   desc:'2-line outline, easy to feel',      th:160,inv:false,outline:true, oStr:150,oLines:2,oMode:'overlay',noise:0,simp:0},
-  {id:'outline1', name:'1-Line Outline', desc:'Fine outline for detailed shapes',  th:160,inv:false,outline:true, oStr:120,oLines:1,oMode:'overlay',noise:0,simp:0},
-  {id:'outline2', name:'2-Line Outline', desc:'Thick outline, tactile emphasis',   th:160,inv:false,outline:true, oStr:150,oLines:2,oMode:'overlay',noise:0,simp:0},
-  {id:'lowNoise', name:'Low Noise',      desc:'Denoised, simplified output',       th:190,inv:false,outline:false,oStr:100,oLines:1,oMode:'overlay',noise:2,simp:2},
-  {id:'objDetail',name:'Object Detail',  desc:'Texture-rich, detail priority',     th:110,inv:false,outline:true, oStr:80, oLines:1,oMode:'detail', noise:1,simp:0},
-];
-function buildSpList(){
-  const list=$('spList');
-  list.innerHTML=SETTINGS_PRESETS.map(p=>`
-    <div class="sp-item${p.id===activeSpId?' active':''}" data-id="${p.id}" role="button" tabindex="0" aria-label="${p.name} 설정 프리셋 적용">
-      <div><div class="sp-name">${p.name}</div><div class="sp-desc">${p.desc}</div></div>
-      <span class="sp-tag">Th:${p.th}</span>
-    </div>`).join('');
-  list.querySelectorAll('.sp-item').forEach(el=>{
-    const apply=()=>{
-      const p=SETTINGS_PRESETS.find(s=>s.id===el.dataset.id); if(!p) return;
-      activeSpId=p.id;
-      $('th').value=p.th; $('thNum').value=p.th; updateQuickBtns(p.th);
-      $('inv').checked=p.inv;
-      $('bright').value=0; $('brightVal').textContent='0';
-      $('contrast').value=0; $('contrastVal').textContent='0';
-      $('outlineOn').checked=p.outline; toggleOutlineSub();
-      $('outlineStr').value=p.oStr; $('outlineStrVal').textContent=(p.oStr/100).toFixed(1);
-      $('outlineMode').value=p.oMode;
-      $('noise').value=p.noise; $('noiseVal').textContent=p.noise;
-      $('simp').value=p.simp; $('simpVal').textContent=p.simp;
-      document.querySelectorAll('.seg-btn[data-lines]').forEach(b=>b.classList.toggle('active',+b.dataset.lines===p.oLines));
-      buildSpList(); scheduleRender();
-    };
-    el.onclick=apply;
-    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')apply();});
-  });
+function loadTactileFile(f){
+  if(!f)return;
+  if(f.size>8*1024*1024){toast('파일이 너무 큽니다(8MB 초과).','err');return;}
+  const isDtms=/\.dtms$/i.test(f.name)||/json/i.test(f.type);
+  const isDtm=/\.dtm$/i.test(f.name);
+  if(!isDtms&&!isDtm){toast('지원하지 않는 파일 형식입니다. DTM·DTMS만 가능해요.','err');return;}
+  const rd=new FileReader();
+  rd.onerror=()=>toast('파일을 읽지 못했습니다.','err');
+  rd.onload=ev=>{try{
+      const parsed=isDtms?parseDTMS(ev.target.result):parseDTM(ev.target.result);
+      applyTactile(parsed,f.name);
+    }catch(err){const msg=(err&&err.msg)||'파일을 해석하지 못했습니다.';toast(msg,'err');say(msg);
+      // 기존 작업/연결 유지: 상태 변경 없음
+    }};
+  rd.readAsText(f);
 }
-
-// ── Control Wiring ────────────────────────────────────────────────
-function updateQuickBtns(val){document.querySelectorAll('.q-btn[data-th]').forEach(b=>b.classList.toggle('active',+b.dataset.th===+val));}
-document.querySelectorAll('.q-btn[data-th]').forEach(b=>b.onclick=()=>{$('th').value=$('thNum').value=b.dataset.th;updateQuickBtns(b.dataset.th);scheduleRender();});
-
-// Auto Best: Otsu's method on current image
-function autoBestThreshold() {
-  if (!img) { log('이미지를 먼저 불러오세요.'); return; }
-  const fit = $('fit').checked;
-  const brightness = +$('bright').value;
-  const contrast   = +$('contrast').value;
-  srcCtx.fillStyle = '#fff';
-  srcCtx.fillRect(0, 0, DOT_COLS, DOT_ROWS);
-  let dw=DOT_COLS, dh=DOT_ROWS, dx=0, dy=0;
-  if (fit) { const s=Math.min(DOT_COLS/img.width,DOT_ROWS/img.height); dw=img.width*s; dh=img.height*s; dx=(DOT_COLS-dw)/2; dy=(DOT_ROWS-dh)/2; }
-  srcCtx.drawImage(img, dx, dy, dw, dh);
-  let gray = buildGray(srcCtx.getImageData(0,0,DOT_COLS,DOT_ROWS).data);
-  gray = applyBrightness(gray, brightness);
-  gray = applyContrast(gray, contrast);
-  // Otsu's method
-  const hist = new Float64Array(256);
-  for (let i=0; i<gray.length; i++) hist[Math.min(255,Math.max(0,gray[i]|0))]++;
-  const total = gray.length;
-  let sum=0; for (let i=0;i<256;i++) sum+=i*hist[i];
-  let sumB=0, wB=0, maxVar=0, best=128;
-  for (let t=0; t<256; t++) {
-    wB+=hist[t]; if(!wB) continue;
-    const wF=total-wB; if(!wF) break;
-    sumB+=t*hist[t];
-    const mB=sumB/wB, mF=(sum-sumB)/wF;
-    const v=wB*wF*(mB-mF)*(mB-mF);
-    if(v>maxVar){maxVar=v;best=t;}
-  }
-  $('th').value=$('thNum').value=best;
-  updateQuickBtns(best);
-  scheduleRender();
-  log(`Auto Best: Threshold ${best} (Otsu)`);
+function applyTactile(parsed,filename){
+  loading=true;resetForNewFile();
+  fileKind='tactile';hasImage=true;tactileMeta=parsed;
+  pages=parsed.pages.map(p=>Uint8Array.from(p));curPage=0;pageUndo=pages.map(()=>[]);pageRedo=pages.map(()=>[]);
+  grid=pages[0];
+  setFname((parsed.title||filename.replace(/\.[^.]+$/,''))||'Untitled');
+  $('tFile').textContent=filename.slice(0,22);$('tFormat').textContent=parsed.format;$('tRes').textContent='60×40';
+  $('tPages').textContent=String(parsed.pages.length);$('tVersion').textContent=parsed.version||'-';$('tStatus').textContent='완료';
+  // agent reco for tactile
+  $('agentLead').textContent='원본 촉각 데이터를 불러왔어요.';
+  $('agentReco').innerHTML=`<div class="grade"><span class="g s3" id="qGrade">${parsed.format} · 60×40 · ${parsed.pages.length}페이지</span><span class="pins" id="qPins"></span></div><div class="desc muted" id="qReason" style="margin:0 0 6px">원본 핀 데이터를 손상 없이 그대로 불러왔습니다. 펜·지우개로 편집할 수 있어요.</div>`;
+  dtmsBtnLabel();updatePageUI();
+  loading=false;setAppState('ready');afterChange(false);setDirty(false);forceSend();
+  say(`${parsed.format} 불러오기 완료, ${parsed.pages.length}페이지`);toast(`${parsed.format} 파일을 불러왔어요`,'ok');
 }
-$('btnAutoBest').onclick=autoBestThreshold;
+function dtmsBtnLabel(){const b=$('dtmsBtn');if(fileKind==='tactile'&&tactileMeta&&tactileMeta.format==='DTM'&&pages.length===1){b.textContent='DTM 저장';b.title='DTM 파일로 저장';}else{b.textContent='DTMS 저장';b.title='DTMS 파일로 저장';}}
 
-$('th').addEventListener('input',()=>{ $('thNum').value=$('th').value; updateQuickBtns($('th').value); scheduleRender(); });
-$('thNum').addEventListener('input',()=>{
-  const v=Math.max(0,Math.min(255,+$('thNum').value||0));
-  $('th').value=v; updateQuickBtns(v); scheduleRender();
+/* ---------- page navigation ---------- */
+function updatePageUI(){const multi=fileKind==='tactile'&&pages.length>1;$('secPages').hidden=!multi;$('pageInd').textContent=(curPage+1)+' / '+pages.length;$('prevPage').disabled=curPage<=0;$('nextPage').disabled=curPage>=pages.length-1;}
+function gotoPage(p){if(p<0||p>=pages.length)return;curPage=p;grid=pages[curPage];updatePageUI();draw();updateScoreUI();updateHex();forceSend();say('페이지 '+(curPage+1));}
+$('prevPage').onclick=()=>gotoPage(curPage-1);
+$('nextPage').onclick=()=>gotoPage(curPage+1);
+
+/* ============================================================
+   FILE INPUTS + MENU + GUARD
+   ============================================================ */
+const imageInput=$('imageFileInput'),tactileInput=$('tactileFileInput');
+function pickImage(){imageInput.value='';imageInput.click();}
+function pickTactile(){tactileInput.value='';tactileInput.click();}
+imageInput.addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)guardUnsaved(()=>loadImageFile(f));});
+tactileInput.addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)guardUnsaved(()=>loadTactileFile(f));});
+
+// header load menu
+const loadMenu=$('loadMenu'),loadMenuBtn=$('loadMenuBtn');
+function toggleMenu(open){const o=open===undefined?loadMenu.hidden:open;loadMenu.hidden=!o;loadMenuBtn.setAttribute('aria-expanded',o?'true':'false');if(o)loadMenu.querySelector('button').focus();}
+loadMenuBtn.onclick=()=>toggleMenu();
+document.addEventListener('click',e=>{if(!e.target.closest('.menuwrap'))toggleMenu(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')toggleMenu(false);});
+$('miImage').onclick=()=>{toggleMenu(false);pickImage();};
+$('miTactile').onclick=()=>{toggleMenu(false);pickTactile();};
+$('emptyImageBtn').onclick=pickImage;
+$('emptyTactileBtn').onclick=pickTactile;
+$('replaceImgBtn').onclick=pickImage;
+$('loadTactileBtn2').onclick=pickTactile;
+$('replaceAnalyze').onclick=pickImage;
+$('cancelAnalyze').onclick=()=>{pendingImg=null;loading=false;setAppState(hasImage?'ready':'empty');};
+document.querySelectorAll('.samplechip').forEach(b=>b.addEventListener('click',()=>guardUnsaved(()=>loadSample(b.dataset.sample))));
+
+// drag & drop (image + dtm/dtms)
+['dragenter','dragover'].forEach(ev=>$('canvasArea').addEventListener(ev,e=>{e.preventDefault();$('emptyOv').classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>$('canvasArea').addEventListener(ev,e=>{e.preventDefault();$('emptyOv').classList.remove('drag');}));
+$('canvasArea').addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;if(/\.(dtm|dtms)$/i.test(f.name))guardUnsaved(()=>loadTactileFile(f));else guardUnsaved(()=>loadImageFile(f));});
+
+// unsaved-changes guard (accessible modal)
+let guardAction=null;const guardModal=$('guardModal');
+function guardUnsaved(proceed){if(!dirty||!hasImage){proceed();return;}guardAction=proceed;guardModal.classList.add('show');$('guardSave').focus();}
+function closeGuard(){guardModal.classList.remove('show');guardAction=null;}
+$('guardCancel').onclick=closeGuard;
+$('guardProceed').onclick=()=>{const a=guardAction;closeGuard();if(a)a();};
+$('guardSave').onclick=()=>{doSave();const a=guardAction;closeGuard();if(a)a();};
+guardModal.addEventListener('click',e=>{if(e.target===guardModal)closeGuard();});
+guardModal.addEventListener('keydown',e=>{if(e.key==='Escape')closeGuard();});
+
+/* ============================================================
+   CLARITY SLIDER
+   ============================================================ */
+function clarityLabel(t){return t<95?'단순':t>170?'또렷하게':'균형';}
+function syncSliders(){$('clarity').value=threshold;$('clarityVal').textContent=threshold;$('rawth').value=threshold;$('recoLabel').textContent=clarityLabel(recoThreshold);}
+function setClarityFb(t,kind){const e=$('clarityFb');if(!e)return;e.textContent=t;e.className='fb'+(kind?' '+kind:'');}
+$('clarity').addEventListener('input',e=>{if(fileKind==='tactile')return;threshold=+e.target.value;method='global';$('method').value='global';$('clarityVal').textContent=threshold;$('rawth').value=threshold;rebuild();afterChange();setClarityFb(connected&&liveOn?'DotPad에 반영 중':'미리보기 반영 중',connected&&liveOn?'sending':'');});
+$('recoReset').onclick=()=>{if(fileKind==='tactile')return;threshold=recoThreshold;method='global';$('method').value='global';outline=recoOutline;syncSliders();syncOutlineSeg();updateOutlineDesc();rebuild();afterChange();toast('추천값으로 되돌렸어요');};
+
+/* ============================================================
+   OUTLINE SEGMENTED
+   ============================================================ */
+function syncOutlineSeg(){document.querySelectorAll('#secOutline .seg button').forEach(b=>b.setAttribute('aria-pressed',(+b.dataset.outline===outline)?'true':'false'));}
+function updateOutlineDesc(){$('outlineDesc').textContent=outline===0?'채움 실루엣을 유지합니다.':outline===1?'실제 외곽 경계를 1핀 두께로, 끊긴 선과 노이즈를 정리합니다.':'1줄 외곽선을 통제된 방향으로 1핀 확장합니다.';}
+document.querySelector('#secOutline .seg').addEventListener('click',e=>{const b=e.target.closest('button[data-outline]');if(!b||b.disabled||fileKind==='tactile')return;const want=+b.dataset.outline;
+  if(want===2){const m=cleanup(baseMask(threshold,method,polarity));if(outline2(m).fellback){toast('이 이미지는 2줄이 뭉개져 1줄을 추천해요');outline=1;}else outline=2;}else outline=want;
+  syncOutlineSeg();updateOutlineDesc();rebuild();afterChange();say('외곽선 '+(outline?outline+'줄':'없음'));});
+
+/* ============================================================
+   QUICK ADJUST + AGENT COMMANDS
+   ============================================================ */
+function pushUndo(){curUndo().push(grid.slice());if(curUndo().length>60)curUndo().shift();curRedo().length=0;updateUndoButtons();}
+function applyOp(op){
+  if(!hasImage)return;
+  if(fileKind==='tactile'&&op!=='invert'){toast('이 기능은 이미지 변환 결과에만 적용돼요');return;}
+  pushUndo();
+  if(op==='auto'){autoSelect();syncSliders();syncOutlineSeg();updateOutlineDesc();toast('자동으로 맞췄어요');}
+  else if(op==='denoise'){grid=removeSmall(denoiseG(grid),Math.max(minComp,3));pages[curPage]=grid;toast('작은 점을 정리했어요');}
+  else if(op==='outline'){outline=Math.min(2,outline+1);if(outline===2){const m=cleanup(baseMask(threshold,method,polarity));if(outline2(m).fellback)outline=1;}syncOutlineSeg();updateOutlineDesc();rebuild();toast('외곽선을 강조했어요');}
+  else if(op==='invert'){if(fileKind==='tactile'){for(let i=0;i<N;i++)grid[i]=grid[i]?0:1;pages[curPage]=grid;}else{polarity=!polarity;rebuild();}toast('올림/내림을 반전했어요');}
+  else if(op==='simpler'){grid=removeSmall(denoiseG(grid),Math.max(minComp+1,4));pages[curPage]=grid;toast('더 단순하게 정리했어요');}
+  afterChange();
+}
+document.querySelectorAll('.qbtn').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)applyOp(b.dataset.op);}));
+document.querySelectorAll('.chipbtn').forEach(b=>b.addEventListener('click',()=>applyOp(b.dataset.cmd)));
+function routeCommand(t){t=t.toLowerCase();if(/외곽|outline|선만|테두리/.test(t))return 'outline';if(/단순|간단|simpl/.test(t))return 'simpler';if(/점|노이즈|정리|denoise|깨끗/.test(t))return 'denoise';if(/반전|invert|뒤집|올림|내림/.test(t))return 'invert';if(/자동|추천|auto|맞춰|맞춤/.test(t))return 'auto';return null;}
+$('askGo').onclick=()=>{const v=$('askInput').value.trim();if(!v)return;const op=routeCommand(v);if(op)applyOp(op);else toast('이해하지 못했어요. 칩으로 시도해 보세요');$('askInput').value='';};
+$('askInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('askGo').click();});
+
+/* ============================================================
+   TOOLS / THICKNESS / BRUSH / POINTER  (Pointer Events)
+   ============================================================ */
+function curSize(){return toolSettings[tool]?toolSettings[tool].size:1;}
+function brushCells(gx,gy,size,fx,fy){const out=[];if(size<=1){out.push([gx,gy]);return out;}
+  if(size===2){const bx=(fx<0.5?gx-1:gx),by=(fy<0.5?gy-1:gy);for(let dx=0;dx<2;dx++)for(let dy=0;dy<2;dy++)out.push([bx+dx,by+dy]);return out;}
+  const r=Math.floor(size/2);for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(size>3&&(dx*dx+dy*dy>r*r+0.5))continue;out.push([gx+dx,gy+dy]);}return out;}
+function bres(x0,y0,x1,y1){const pts=[];let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,err=dx-dy;for(;;){pts.push([x0,y0]);if(x0===x1&&y0===y1)break;const e2=2*err;if(e2>-dy){err-=dy;x0+=sx;}if(e2<dx){err+=dx;y0+=sy;}}return pts;}
+function setPin(x,y,v){if(x>=0&&y>=0&&x<GW&&y<GH)grid[y*GW+x]=v?1:0;}
+function strokeApply(x0,y0,x1,y1,val,fx,fy){const line=bres(x0,y0,x1,y1);for(let i=0;i<line.length;i++){const last=(i===line.length-1);const cells=brushCells(line[i][0],line[i][1],curSize(),last?fx:0.5,last?fy:0.5);for(const[cx,cy]of cells)setPin(cx,cy,val);}}
+function selectTool(t){tool=t;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t?'true':'false'));
+  const ctx2=$('toolCtx');
+  if(t==='pen'||t==='eraser'){ctx2.classList.add('show');$('toolCtxLbl').innerHTML=(t==='pen'?'펜 도구':'지우개 도구')+'<span class="sub">두께</span>';syncSizeGrp();$('sizeGrp').setAttribute('aria-label',(t==='pen'?'펜':'지우개')+' 두께');}
+  else ctx2.classList.remove('show');
+  hoverBrush=null;draw();updateToolStatus();
+  say(({move:'이동 도구',pen:'펜 도구, 현재 두께 '+curSize()+'핀',eraser:'지우개 도구, 현재 두께 '+curSize()+'핀'})[t]);}
+function syncSizeGrp(){const sz=curSize();document.querySelectorAll('#sizeGrp button').forEach(b=>b.setAttribute('aria-checked',(+b.dataset.size===sz)?'true':'false'));}
+function setSize(n){if(tool!=='pen'&&tool!=='eraser')return;const max=advSizes?5:3;n=Math.max(1,Math.min(max,n));toolSettings[tool].size=n;syncSizeGrp();updateToolStatus();hoverBrush=null;draw();say((tool==='pen'?'펜':'지우개')+' 두께 '+n+'핀');}
+$('rail').addEventListener('click',e=>{const b=e.target.closest('.tool[data-tool]');if(b&&!b.disabled)selectTool(b.dataset.tool);});
+$('sizeGrp').addEventListener('click',e=>{const b=e.target.closest('button[data-size]');if(b)setSize(+b.dataset.size);});
+$('sizeGrp').addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowUp'){e.preventDefault();setSize(curSize()+1);}else if(e.key==='ArrowLeft'||e.key==='ArrowDown'){e.preventDefault();setSize(curSize()-1);}});
+
+function updateUndoButtons(){$('undoBtn').disabled=appState!=='ready'||!curUndo().length;$('redoBtn').disabled=appState!=='ready'||!curRedo().length;}
+$('undoBtn').onclick=()=>{if(!curUndo().length)return;curRedo().push(grid.slice());grid=curUndo().pop();pages[curPage]=grid;updateUndoButtons();afterChange();say('실행 취소');};
+$('redoBtn').onclick=()=>{if(!curRedo().length)return;curUndo().push(grid.slice());grid=curRedo().pop();pages[curPage]=grid;updateUndoButtons();afterChange();say('다시 실행');};
+$('clearBtn').onclick=()=>{pushUndo();grid=new Uint8Array(N);pages[curPage]=grid;afterChange();say('전체 지우기');};
+
+function cellAt(ev){const r=pad.getBoundingClientRect();const lx=(ev.clientX-r.left-off)/cell,ly=(ev.clientY-r.top-off)/cell;return{x:Math.max(0,Math.min(GW-1,Math.floor(lx))),y:Math.max(0,Math.min(GH-1,Math.floor(ly))),fx:lx-Math.floor(lx),fy:ly-Math.floor(ly)};}
+let drawing=false,pv=1,lastC=null,strokeChanged=false;
+pad.addEventListener('pointerdown',ev=>{if(tool==='move'||!hasImage||appState!=='ready')return;ev.preventDefault();pad.setPointerCapture(ev.pointerId);
+  const c=cellAt(ev);cursor=c;drawing=true;strokeChanged=false;hoverBrush=null;
+  curUndo().push(grid.slice());if(curUndo().length>60)curUndo().shift();curRedo().length=0;
+  pv=tool==='pen'?1:0;strokeApply(c.x,c.y,c.x,c.y,pv,c.fx,c.fy);lastC=c;strokeChanged=true;draw();updateScoreUI();updateHex();scheduleSend();});
+pad.addEventListener('pointermove',ev=>{const c=cellAt(ev);
+  if(drawing){cursor=c;strokeApply(lastC.x,lastC.y,c.x,c.y,pv,c.fx,c.fy);lastC=c;strokeChanged=true;draw();updateScoreUI();updateHex();scheduleSend();}
+  else if((tool==='pen'||tool==='eraser')&&hasImage&&appState==='ready'){hoverBrush={cells:brushCells(c.x,c.y,curSize(),c.fx,c.fy),kind:tool};draw();}});
+function endStroke(){if(!drawing)return;drawing=false;lastC=null;if(strokeChanged){setDirty(true);updateUndoButtons();forceSend();}else{curUndo().pop();}}
+pad.addEventListener('pointerup',endStroke);
+pad.addEventListener('pointercancel',()=>{if(drawing){drawing=false;lastC=null;if(strokeChanged){updateUndoButtons();}else curUndo().pop();}});
+pad.addEventListener('pointerleave',()=>{if(!drawing&&hoverBrush){hoverBrush=null;draw();}});
+pad.addEventListener('keydown',ev=>{const k=ev.key;const mv=(dx,dy)=>{cursor.x=Math.max(0,Math.min(GW-1,cursor.x+dx));cursor.y=Math.max(0,Math.min(GH-1,cursor.y+dy));draw();say(`${cursor.x}, ${cursor.y} · ${grid[cursor.y*GW+cursor.x]?'올림':'내림'}`);};
+  if(k==='ArrowRight'){ev.preventDefault();mv(1,0)}else if(k==='ArrowLeft'){ev.preventDefault();mv(-1,0)}else if(k==='ArrowDown'){ev.preventDefault();mv(0,1)}else if(k==='ArrowUp'){ev.preventDefault();mv(0,-1)}
+  else if(k===' '||k==='Enter'){ev.preventDefault();curUndo().push(grid.slice());curRedo().length=0;const v=grid[cursor.y*GW+cursor.x]?0:1;setPin(cursor.x,cursor.y,v);pages[curPage]=grid;updateUndoButtons();afterChange();}});
+
+/* ============================================================
+   GLOBAL SHORTCUTS
+   ============================================================ */
+document.addEventListener('keydown',ev=>{
+  const tag=(document.activeElement&&document.activeElement.tagName)||'';
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+  if(appState!=='ready')return;
+  const k=ev.key.toLowerCase();
+  if((ev.ctrlKey||ev.metaKey)&&k==='z'){ev.preventDefault();(ev.shiftKey?$('redoBtn'):$('undoBtn')).click();return;}
+  if((ev.ctrlKey||ev.metaKey)&&k==='y'){ev.preventDefault();$('redoBtn').click();return;}
+  if(ev.ctrlKey||ev.metaKey||ev.altKey)return;
+  if(k==='p'){selectTool('pen');}
+  else if(k==='e'){selectTool('eraser');}
+  else if(k==='m'){selectTool('move');}
+  else if((tool==='pen'||tool==='eraser')&&'12345'.includes(k)){setSize(+k);}
+  else if(k===']'&&(tool==='pen'||tool==='eraser')){setSize(curSize()+1);}
+  else if(k==='['&&(tool==='pen'||tool==='eraser')){setSize(curSize()-1);}
 });
 
-$('bright').addEventListener('input',()=>{ $('brightVal').textContent=$('bright').value; scheduleRender(); });
-$('contrast').addEventListener('input',()=>{ $('contrastVal').textContent=$('contrast').value; scheduleRender(); });
-$('noise').addEventListener('input',()=>{ $('noiseVal').textContent=$('noise').value; scheduleRender(); });
-$('simp').addEventListener('input',()=>{ $('simpVal').textContent=$('simp').value; scheduleRender(); });
-$('inv').addEventListener('change',scheduleRender);
-$('fit').addEventListener('change',scheduleRender);
-$('outlineStr').addEventListener('input',()=>{ $('outlineStrVal').textContent=(+$('outlineStr').value/100).toFixed(1); scheduleRender(); });
-$('outlineMode').addEventListener('change',scheduleRender);
-function toggleOutlineSub(){$('outlineSub').classList.toggle('hidden',!$('outlineOn').checked);}
-$('outlineOn').addEventListener('change',()=>{toggleOutlineSub();scheduleRender();});
-document.querySelectorAll('.seg-btn[data-lines]').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.seg-btn[data-lines]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); scheduleRender();
-});
-// Grid toggle (both in toolbar and right panel)
-function setGrid(on){
-  gridVisible=on; $('btnGrid').classList.toggle('active',on); $('btnGrid').setAttribute('aria-pressed',on);
-  $('gridCv').classList.toggle('show',on); $('gridToggle').checked=on;
-  if(on) drawGridOverlay(); else gridCtx.clearRect(0,0,DISP_W,DISP_H);
-}
-$('btnGrid').onclick=()=>setGrid(!gridVisible);
-$('gridToggle').addEventListener('change',()=>setGrid($('gridToggle').checked));
+/* ============================================================
+   EXPERT
+   ============================================================ */
+$('method').addEventListener('change',e=>{if(fileKind==='tactile')return;method=e.target.value;rebuild();afterChange();say('변환 방식 변경');});
+$('rawth').addEventListener('input',e=>{if(fileKind==='tactile')return;threshold=Math.max(0,Math.min(255,+e.target.value||0));$('clarity').value=Math.max(20,Math.min(240,threshold));$('clarityVal').textContent=threshold;if(method==='global')rebuild();afterChange();});
+$('minComp').addEventListener('input',e=>{if(fileKind==='tactile')return;minComp=Math.max(1,Math.min(40,+e.target.value||3));rebuild();afterChange();});
+$('advSize').addEventListener('change',e=>{advSizes=e.target.value==='1';
+  const grp=$('sizeGrp');grp.querySelectorAll('button[data-size="4"],button[data-size="5"]').forEach(b=>b.remove());
+  if(advSizes){[4,5].forEach(n=>{const b=document.createElement('button');b.setAttribute('role','radio');b.setAttribute('aria-checked','false');b.dataset.size=n;b.textContent=n+'핀';grp.appendChild(b);});}
+  syncSizeGrp();toast(advSizes?'고급 두께(4·5핀) 사용':'고급 두께 해제');});
 
-// View mode
-document.querySelectorAll('.view-btn').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.view-btn').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); viewMode=b.dataset.mode;
-  const sp=viewMode==='split';
-  $('origPane').style.display=sp?'flex':'none';
-  $('splitDiv').style.display=sp?'block':'none';
-  if(img) scheduleRender();
-});
+/* ============================================================
+   SAVE / EXPORT
+   ============================================================ */
+function dl(content,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function saveName(){return (($('fname').value)||'Untitled').trim();}
+function doSave(){if(!hasImage)return;
+  if(fileKind==='tactile'&&tactileMeta&&tactileMeta.format==='DTM'&&pages.length===1){dl(gridToHex(),saveName()+'.dtm','text/plain');toast('DTM으로 저장했어요','ok');}
+  else{dl(dtmsJSONFromPages(),saveName()+'.dtms','application/json');toast('DTMS로 저장했어요','ok');}
+  setDirty(false);}
+$('dtmsBtn').onclick=$('saveTopBtn').onclick=doSave;
+$('hexBtn').onclick=async()=>{try{await navigator.clipboard.writeText(gridToHex());toast('HEX를 복사했어요','ok');}catch(e){toast('복사 실패 — 전문가 설정에서 확인하세요','err');}};
+$('pngBtn').onclick=()=>{const sc=8,c=document.createElement('canvas');c.width=GW*sc;c.height=GH*sc;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.fillStyle='#23283A';for(let y=0;y<GH;y++)for(let x=0;x<GW;x++)if(grid[y*GW+x]){g.beginPath();g.arc(x*sc+sc/2,y*sc+sc/2,sc*0.4,0,7);g.fill();}c.toBlob(b=>{dl(b,saveName()+'.png','image/png');toast('PNG로 저장했어요','ok');});};
+$('outBtn').onclick=()=>{if(!connected){toast('먼저 DotPad를 연결하세요');return;}lastSentHex=null;doSend();toast('DotPad로 보냈어요','ok');};
 
-// Zoom
-function setZoom(z){ zoom=Math.max(.3,Math.min(3,z)); $('canvasStage').style.transform=`scale(${zoom})`; $('zoomVal').textContent=Math.round(zoom*100)+'%'; }
-$('btnZoomIn').onclick=()=>setZoom(zoom+.2);
-$('btnZoomOut').onclick=()=>setZoom(zoom-.2);
-function fitZoom(){ const vp=$('viewport'); const s=Math.min(vp.clientWidth/(DISP_W+48),vp.clientHeight/(DISP_H+48),1.5); setZoom(Math.floor(s*10)/10); }
-$('btnZoomFit').onclick=$('btnZoomFit2').onclick=fitZoom;
-$('btnResetZoom').onclick=()=>setZoom(1);
-$('viewport').addEventListener('wheel',e=>{ if(e.ctrlKey||e.metaKey){e.preventDefault();setZoom(zoom-e.deltaY*.003);}},{passive:false});
+/* ============================================================
+   LIVE TOGGLE + CONNECT
+   ============================================================ */
+$('liveToggle').onclick=()=>{if($('liveToggle').disabled)return;liveOn=!liveOn;$('liveToggle').setAttribute('aria-checked',liveOn?'true':'false');setDpState(connected?'connected':'disconnected');updateScoreUI();if(liveOn&&connected)forceSend();say('라이브 반영 '+(liveOn?'켬':'끔'));};
+function doConnect(){if(connected||!sdk)return;connect();}
+$('connectBtn').onclick=doConnect;$('liveConnectBtn').onclick=doConnect;
+async function connect(){try{const sc=new SDKMod.DotPadScanner();const dev=await sc.startBleScan();if(!dev)return;setDpState('connecting');dotDevice=await sdk.connectBleDevice(dev);if(!dotDevice)setDpState('error');}catch(e){setDpState('error');}}
+async function tryAuto(){if(!navigator.bluetooth||!navigator.bluetooth.getDevices)return;try{const ds=await navigator.bluetooth.getDevices();const dp=ds.find(d=>(d.name||'').toLowerCase().startsWith('dotpad'));if(!dp)return;setDpState('connecting');dotDevice=await sdk.connectBleDevice(dp);}catch(e){}}
+function onMsg(device,code){const C=SDKMod.DataCodes;if(code===C.Connected){connected=true;liveOn=true;setDpState('connected');say('DotPad 연결됨');forceSend();updateScoreUI();}else if(code===C.Disconnected){connected=false;dotDevice=null;lastSentHex=null;setDpState('disconnected');updateScoreUI();}}
+function onKey(){}
+function initDotPad(){if(!navigator.bluetooth){disableConnect('BLE 미지원','Chrome 또는 Edge에서 HTTPS 환경으로 열면 DotPad 연결을 사용할 수 있습니다.');}else if(!window.isSecureContext){disableConnect('HTTPS 필요','Chrome 또는 Edge에서 HTTPS 환경으로 열면 DotPad 연결을 사용할 수 있습니다.');}else if(!SDKMod){disableConnect('SDK 없음','DotPadSDK-3_0_0.js를 같은 폴더에 두고 다시 열어주세요.');}else{sdk=new SDKMod.DotPadSDK();sdk.setCallBack(onMsg,onKey);tryAuto();}}
+function disableConnect(label,desc){const hc=$('connectBtn');hc.disabled=true;hc.classList.remove('accent');hc.textContent=label;const lc=$('liveConnectBtn');lc.disabled=true;lc.textContent=label;$('liveDesc').textContent=desc;$('chipText').textContent=label;$('chip').className='chip error';$('sbDot').textContent=label;}
 
-// Accordion
-function initSec(hdId,bodyId,open=true){
-  const hd=$(hdId),body=$(bodyId);
-  if(!open){body.classList.add('closed');hd.classList.remove('open');}
-  hd.onclick=()=>{const c=body.classList.toggle('closed');hd.classList.toggle('open',!c);};
-}
-initSec('hd-import','body-import');
-initSec('hd-recent','body-recent');
-initSec('hd-imgpreset','body-imgpreset');
-initSec('hd-spreset','body-spreset');
-initSec('hd-proc','body-proc');
-initSec('hd-tactile','body-tactile');
-initSec('hd-outline','body-outline');
-initSec('hd-canvas','body-canvas',false);
-initSec('hd-save','body-save');
-initSec('hd-log','body-log',false);
-$('btnClearLog').onclick=()=>{ $('logEl').textContent=''; };
+/* ---------- dirty ---------- */
+function setDirty(v){dirty=v;$('dirty').classList.toggle('on',v);}
+$('fname').addEventListener('input',()=>setDirty(true));
 
-// Hints
-function updateHints(n,inv){
-  const b=$('hintBanner');
-  if(n>1800){b.className='hint-banner warn';$('hintEmoji').textContent='⚠️';$('hintText').textContent='핀이 너무 많습니다. Tactile Clarity를 오른쪽(Clear Shape)으로 조절하세요.';}
-  else if(n>0&&n<60){b.className='hint-banner warn';$('hintEmoji').textContent='💡';$('hintText').textContent=inv?'형태가 너무 흐립니다 — 반전(Invert)을 꺼보세요.':'형태가 너무 흐립니다 — Tactile Clarity를 왼쪽(Less Detail)으로 조절하거나 Auto Best를 눌러보세요.';}
-  else if(n>=60&&n<150){b.className='hint-banner info';$('hintEmoji').textContent='💡';$('hintText').textContent='Lines are thin — try 2-Line Outline or Bold Outline preset.';}
-  else b.className='hint-banner';
-}
-
-// ── Init ──────────────────────────────────────────────────────────
-buildCatTabs(); buildPresetList('all'); buildRecentList(); buildSpList();
-toggleOutlineSub(); updateSaveBtns(); uiDisconnected(); updateLiveBadge();
-log('Dot Tactile Studio ready.'); log('Upload an image or select a preset to begin.');
+/* ============================================================
+   MOBILE + INIT
+   ============================================================ */
+$('mobtab').onclick=()=>{const p=$('panel');const open=p.classList.toggle('open');$('mobtab').setAttribute('aria-expanded',open?'true':'false');$('mobtab').textContent=open?'조정 패널 닫기 ▼':'조정 패널 열기 ▲';};
+window.addEventListener('resize',layout);
+setAppState('empty');layout();updateScoreUI();updateUndoButtons();
+import('./DotPadSDK-3_0_0.js').then(m=>{SDKMod=m;}).catch(e=>{console.warn('SDK 미로드 → 시뮬레이터',e);}).finally(initDotPad);
 </script>
 </body>
 </html>
