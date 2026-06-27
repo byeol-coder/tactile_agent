@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -907,19 +905,50 @@ function gradeReason(g,m){if(g>=3){if(m.iso/Math.max(1,m.on)<0.08&&m.count<=4)re
    ============================================================ */
 function autoSelect(){
   imgMeta=Object.assign(imgMeta||{},analyzeImageType());
-  const methods=['otsu','sauvola','adaptive','mean'];if(imgMeta.hasAlpha)methods.unshift('alpha');
-  let best=null;
-  for(const meth of methods)for(const pol of [false,true]){
-    let m=baseMask(128,meth,pol);let raw=0;for(let i=0;i<N;i++)raw+=m[i];if(raw/N>0.62)continue;
-    m=cleanup(m,{minComp:imgMeta.type==='photo'?4:3});
-    for(const ol of [0,1]){const gg=applyOutline(m,ol);const q=tactileQualityScore(gg,{type:imgMeta.type,outline:ol});
-      let bonus=0;if(imgMeta.type==='transparent'&&meth==='alpha')bonus+=6;if(imgMeta.type==='lineart'&&meth==='otsu'&&ol===0)bonus+=4;if(imgMeta.type==='lowcontrast'&&(meth==='sauvola'||meth==='adaptive'))bonus+=5;if(imgMeta.type==='photo'&&ol===1)bonus+=3;
-      const score=q.score+bonus;if(!best||score>best.score)best={score,meth,pol,ol};}
+  const type=imgMeta.type;
+
+  /* ── 이미지 타입별 즉시 선택 (브루트포스 제거, ~20배 빠름) ── */
+  let meth,pol=false,ol=0;
+
+  if(imgMeta.hasAlpha){
+    // 투명 PNG: alpha 마스크로 바로 결정
+    const alphaM=alphaMask(false);
+    const onCnt=alphaM.reduce((s,v)=>s+v,0);
+    pol=onCnt/N>0.65; // 불투명 영역이 65% 이상이면 반전
+    meth='alpha'; ol=type==='lineart'?1:0;
+  } else if(type==='lineart'){
+    // 선화: Otsu + 윤곽 없음
+    meth='otsu'; pol=false; ol=0;
+    const t=otsu(grayBuf);
+    const m=fillT(grayBuf,t,false);
+    const on=m.reduce((s,v)=>s+v,0);
+    if(on/N>0.6) pol=true; // 어두운 배경이면 반전
+  } else if(type==='lowcontrast'){
+    // 저대비: Sauvola가 최적이지만 느림 → adaptive로 대체(더 빠름)
+    meth='adaptive'; pol=false; ol=0;
+  } else if(type==='photo'){
+    // 사진: Otsu + 윤곽선 1줄
+    meth='otsu'; pol=false; ol=1;
+    const t=otsu(grayBuf);
+    const m=fillT(grayBuf,t,false);
+    const on=m.reduce((s,v)=>s+v,0);
+    if(on/N>0.7) pol=true;
+  } else {
+    // 일반(global): Otsu
+    meth='otsu'; pol=false; ol=0;
+    const t=otsu(grayBuf);
+    const m=fillT(grayBuf,t,false);
+    const on=m.reduce((s,v)=>s+v,0);
+    if(on/N>0.65) pol=true;
   }
-  if(!best){const t=otsu(grayBuf);best={score:50,meth:'global',pol:false,ol:0};}
-  method=(best.meth==='alpha')?'alpha':best.meth;polarity=best.pol;outline=best.ol;
-  threshold=(best.meth==='mean')?Math.round(meanT(grayBuf)):otsu(grayBuf);
-  recoThreshold=threshold;recoOutline=outline;rebuild();return best;
+
+  method=(meth==='alpha')?'alpha':meth;
+  polarity=pol; outline=ol;
+  threshold=(meth==='mean')?Math.round(meanT(grayBuf)):otsu(grayBuf);
+  recoThreshold=threshold; recoOutline=outline;
+  rebuild();
+  const q=tactileQualityScore(grid,{type,outline});
+  return {score:q.score,meth,pol,ol};
 }
 
 /* ============================================================
@@ -1393,41 +1422,6 @@ draw=function(){
     }
   }
   if(tool!=='move'&&hasImage&&!hoverBrush){ctx.strokeStyle='#FF4D00';ctx.lineWidth=2;ctx.strokeRect(off+cursor.x*cell+1,off+cursor.y*cell+1,cell-2,cell-2);}
-};
-
-/* ── autoSelect fix ── */
-autoSelect=function(){
-  imgMeta=Object.assign(imgMeta||{},analyzeImageType());
-  if(imgMeta.hasAlpha){
-    const ag=[];
-    for(let i=0;i<N;i++) if(alphaBuf[i]>=128) ag.push(grayBuf[i]);
-    let t=128;
-    if(ag.length>20){
-      const h=new Array(256).fill(0); ag.forEach(v=>h[v|0]++);
-      const NN=ag.length; let sum=0;
-      for(let i=0;i<256;i++) sum+=i*h[i];
-      let sB=0,wB=0,mx=-1; t=128;
-      for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=NN-wB;if(!wF)break;sB+=i*h[i];const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);if(b>mx){mx=b;t=i;}}
-    }
-    const test=new Uint8Array(N);
-    for(let i=0;i<N;i++) test[i]=(alphaBuf[i]>=128&&grayBuf[i]<=t)?1:0;
-    const on=test.reduce((a,v)=>a+v,0);
-    if(on/N>0.40) t=Math.min(t,Math.round(t*0.62));
-    threshold=t;
-    const _bm=baseMask;
-    baseMask=function(th,meth,pol){
-      if(meth==='alpha_gray'||meth==='alpha'){const o=new Uint8Array(N);for(let i=0;i<N;i++)o[i]=(alphaBuf[i]>=128&&grayBuf[i]<=th)?1:0;if(pol)for(let i=0;i<N;i++)o[i]^=1;return o;}
-      return _bm(th,meth,pol);
-    };
-    method='alpha_gray';polarity=false;outline=0;recoThreshold=threshold;recoOutline=0;
-    rebuild();return{score:100,meth:'alpha_gray',pol:false,ol:0};
-  }
-  const t=otsu(grayBuf);let finalT=t,pol=false;
-  const tm=fillT(grayBuf,t,false);let on=0;for(let i=0;i<N;i++)on+=tm[i];
-  const d=on/N;
-  if(d>0.75)pol=true;else if(d>0.50)finalT=Math.round(t*0.70);
-  method='global';polarity=pol;outline=0;threshold=finalT;recoThreshold=finalT;recoOutline=0;
-  rebuild();return{score:100,meth:'global',pol,ol:0};
 };
 
 /* ── quality sync ── */
