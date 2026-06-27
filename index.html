@@ -309,6 +309,30 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .pin-ctrl-btn:disabled{opacity:.35;cursor:not-allowed}
 .pin-ctrl-btn svg{flex-shrink:0}
 
+
+/* ── AI 추천 칩 ── */
+.ai-ch{padding:4px 10px;border-radius:999px;border:1.5px solid var(--orange);
+  background:var(--orange-bg);color:var(--orange);font-size:10px;font-weight:600;
+  cursor:pointer;transition:all .1s;white-space:nowrap}
+.ai-ch:hover{background:var(--orange);color:#fff}
+
+/* ── 점 밀도 상태 카드 ── */
+#densityStateCard[data-state="good"]{border-color:rgba(21,128,61,.3);background:var(--green-bg)}
+#densityStateCard[data-state="warn"]{border-color:rgba(161,98,7,.3);background:var(--amber-bg)}
+#densityStateCard[data-state="bad"]{border-color:rgba(185,28,28,.3);background:var(--red-bg)}
+
+/* ── 경고 배너 ── */
+.density-warn-banner{background:var(--amber-bg);border:1px solid rgba(161,98,7,.25);
+  border-radius:var(--r-l);padding:8px 12px;margin-bottom:0;
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.density-warn-text{font-size:11px;font-weight:500;color:var(--amber)}
+.density-warn-btn{padding:4px 10px;border-radius:6px;border:none;background:var(--amber);
+  color:#fff;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap}
+
+/* ── 성공 배너 ── */
+.density-ok-banner{background:var(--green-bg);border:1px solid rgba(21,128,61,.2);
+  border-radius:var(--r-l);padding:7px 12px;font-size:11px;font-weight:500;color:var(--green)}
+
 /* responsive */
 @media(max-width:900px){
   html,body{height:auto;overflow-x:hidden;overflow-y:auto}
@@ -372,7 +396,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <div>
       <div class="brand-name">Dot Canvas <span>AI</span></div>
       <div class="file-input-wrap">
-        <input type="text" id="fname" value="Untitled tactile graphic" aria-label="파일 이름" spellcheck="false"/>
+        <input type="text" id="fname" value="새 촉각그래픽" aria-label="파일 이름" spellcheck="false"/>
         <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>
       </div>
     </div>
@@ -382,7 +406,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <div class="ai-bar-ico">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0BAB0" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     </div>
-    <input id="aiPrompt" placeholder="이미지를 촉각그래픽으로 단순화해줘…" aria-label="AI 프롬프트"/>
+    <input id="aiPrompt" placeholder="Dot Pad용 촉각그래픽으로 변환해보세요…" aria-label="AI 프롬프트"/>
   </div>
 
 
@@ -390,11 +414,11 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   <div class="hdr-actions">
     <button class="hdr-btn primary" id="hdrOutputBtn" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      <span>DotPad 전송</span>
+      <span>Dot Pad로 보내기</span>
     </button>
     <button class="hdr-btn secondary" id="hdrExportBtn" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span>내보내기</span>
+      <span>↓  저장</span>
     </button>
   </div>
 </header>
@@ -407,13 +431,13 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <!-- 이동 (01-move) -->
     <button class="tr-btn active" data-tool="move" aria-pressed="true" title="이동 (M)">
       <svg viewBox="0 0 40 40"><path d="M19.996 30.56V9.43M23.17 27.39L20 30.56l-3.17-3.17M23.17 12.6L20 9.43l-3.17 3.17M27.39 23.17L30.56 20l-3.17-3.17M30.56 20H9.43M12.6 23.17L9.43 20l3.17-3.17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="tr-label">Move</span>
+      <span class="tr-label">선택</span>
     </button>
 
     <!-- 선택 (03-rectangle-selection) -->
     <button class="tr-btn" data-tool="select" aria-pressed="false" title="영역 선택 (S)">
       <svg viewBox="0 0 40 40"><path d="M9.54 16.83V14.18C9.54 11.55 11.64 9.43 14.25 9.43H16.86M23.13 9.43H25.75C28.35 9.43 30.45 11.55 30.45 14.18v2.65M30.45 24.22v1.59C30.45 28.44 28.35 30.56 25.75 30.56H24.18M16.86 30.56H14.25C11.64 30.56 9.54 28.44 9.54 25.81V23.17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="tr-label">Select</span>
+      <span class="tr-label">선택</span>
     </button>
 
     <div class="tr-sep" aria-hidden="true"></div>
@@ -421,19 +445,19 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <!-- 펜 (04-pen) -->
     <button class="tr-btn" data-tool="pen" aria-pressed="false" title="그리기 (D)">
       <svg viewBox="0 0 40 40"><path d="M14.71 30.53L28.43 30.56M17.83 14.71H11.58M14.71 9.43C12.99 9.43 11.58 10.84 11.58 12.55V26.24C11.58 26.72 11.78 27.43 12.02 27.85L12.89 29.28C13.88 30.94 15.52 30.94 16.52 29.28l.87-1.44C17.63 27.43 17.83 26.72 17.83 26.24V12.55C17.83 10.84 16.42 9.43 14.71 9.43Z" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/></svg>
-      <span class="tr-label">Draw</span>
+      <span class="tr-label">펜</span>
     </button>
 
     <!-- 지우개 (08-eraser) -->
     <button class="tr-btn" data-tool="eraser" aria-pressed="false" title="지우기 (E)">
       <svg viewBox="0 0 40 40"><path d="M16.85 30.56H29.44M10.46 25.88L14.14 29.6C14.73 30.19 15.53 30.53 16.37 30.53c.83 0 1.63-.34 2.22-.93l10.94-11.04c.59-.6.92-1.4.92-2.25 0-.84-.33-1.65-.92-2.25L25.85 10.36C25.26 9.76 24.46 9.43 23.63 9.43c-.84 0-1.64.33-2.22.93L10.46 21.4C9.87 22 9.54 22.8 9.54 23.64c0 .84.33 1.65.92 2.24Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="tr-label">Erase</span>
+      <span class="tr-label">지우개</span>
     </button>
 
     <!-- 채우기 (09-fill) -->
     <button class="tr-btn" data-tool="fill" aria-pressed="false" title="채우기 (F)">
       <svg viewBox="0 0 40 40"><path d="M28.61 24.07L25 27.74C22.46 30.32 21.6 30.28 19.09 27.74L13.28 21.83C11.25 19.77 10.74 18.4 13.28 15.82L16.89 12.15C19.59 9.4 20.77 10.09 22.8 12.15L28.61 18.06C31.11 20.61 31.32 21.32 28.61 24.07ZM12.51 25.37l.69 1.16C14.17 28.18 13.41 29.52 11.52 29.52S8.88 28.18 9.85 26.53l.69-1.16C11.09 24.46 11.97 24.46 12.51 25.37Z" stroke="currentColor" stroke-width="1.34" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.36 20.62C24.83 16.81 20.3 21.13 12.53 19.49L12 19.61" stroke="currentColor" stroke-width="1.34" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="tr-label">Fill</span>
+      <span class="tr-label" style="color:var(--subtle)">채우기</span>
     </button>
 
     <div class="tr-sep" aria-hidden="true"></div>
@@ -441,13 +465,13 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <!-- Undo (12-undo) -->
     <button class="tr-btn" id="undoBtn2" title="실행 취소 (⌘Z)" disabled>
       <svg viewBox="0 0 40 40"><path fill-rule="evenodd" clip-rule="evenodd" d="M23.38 16.74C26.04 16.74 28.15 18.82 28.15 21.31S26.04 25.89 23.38 25.89H14.26C13.75 25.89 13.34 26.31 13.34 26.82S13.75 27.75 14.26 27.75H23.38C27 27.75 30 24.89 30 21.31S27 14.88 23.38 14.88H10.85C10.34 14.88 9.92 15.3 9.92 15.81S10.34 16.74 10.85 16.74H23.38Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M14.13 12.28C13.77 11.91 13.19 11.9 12.82 12.26L9.9 15.08C9.72 15.25 9.62 15.49 9.62 15.74S9.72 16.24 9.9 16.41L12.82 19.23C13.19 19.58 13.77 19.57 14.13 19.21S14.48 18.25 14.11 17.9L11.88 15.74 14.11 13.59C14.48 13.24 14.49 12.65 14.13 12.28Z" fill="currentColor"/></svg>
-      <span class="tr-label">Undo</span>
+      <span class="tr-label">되돌리기</span>
     </button>
 
     <!-- Redo (13-redo) -->
     <button class="tr-btn" id="redoBtn2" title="다시 실행 (⌘⇧Z)" disabled>
       <svg viewBox="0 0 40 40"><path fill-rule="evenodd" clip-rule="evenodd" d="M16.43 16.87C13.77 16.87 11.66 18.95 11.66 21.44S13.77 26.02 16.43 26.02H25.55C26.06 26.02 26.47 26.44 26.47 26.95S26.06 27.88 25.55 27.88H16.43C12.81 27.88 9.81 25.02 9.81 21.44S12.81 15.01 16.43 15.01H28.96C29.48 15.01 29.89 15.43 29.89 15.94S29.48 16.87 28.96 16.87H16.43Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M25.68 12.41C26.03 12.04 26.62 12.03 26.99 12.39L29.9 15.21C30.08 15.38 30.19 15.62 30.19 15.87S30.08 16.37 29.9 16.54L26.99 19.36C26.62 19.71 26.03 19.7 25.68 19.34S25.33 18.38 25.7 18.03L27.93 15.87 25.7 13.72C25.33 13.37 25.32 12.78 25.68 12.41Z" fill="currentColor"/></svg>
-      <span class="tr-label">Redo</span>
+      <span class="tr-label" style="opacity:.5">Redo</span>
     </button>
 
     <div class="tr-sep" aria-hidden="true"></div>
@@ -467,14 +491,14 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <!-- Clear (eraser 변형) -->
     <button class="tr-btn danger" id="clearBtn2" title="전체 지우기">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-      <span class="tr-label">Clear</span>
+      <span class="tr-label">전체지우기</span>
     </button>
   </aside>
 
   <!-- CANVAS -->
   <main class="canvas-area" id="canvasArea" data-view="after">
     <div class="canvas-meta" id="canvasMeta">
-      <span class="canvas-meta-label" id="canvasMetaLabel">편집 모드 · 60×40</span>
+      <span class="canvas-meta-label" id="canvasMetaLabel">Dot Pad 촉각 미리보기 · 60×40</span>
     </div>
 
     <div class="dot-grid-wrap" id="dotGridWrap" style="position:relative">
@@ -489,8 +513,8 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
               <div class="ai-spinner" aria-hidden="true"></div>
             </div>
             <div class="analyze-body">
-              <p class="converting-title" id="analyzeTitle">촉각그래픽 변환 중</p>
-              <p class="converting-sub" id="analyzeName">AI가 최적 변환 방식을 찾고 있어요</p>
+              <p class="converting-title" id="analyzeTitle">AI 촉각 변환 중</p>
+              <p class="converting-sub" id="analyzeName">주요 윤곽과 핵심 구조를 분석하고 있어요</p>
               <div class="conv-bar"><div class="conv-bar-fill" id="convBarFill"></div></div>
             </div>
             <button class="ov-link" id="cancelAnalyze" style="pointer-events:all">취소</button>
@@ -506,12 +530,12 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
       <div class="ov-ico">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </div>
-      <p class="ov-title">이미지를 올려보세요</p>
-      <p class="ov-sub">AI가 즉시 최적 촉각 그래픽으로 변환해드려요</p>
+      <p class="ov-title">촉각그래픽을 만들어보세요</p>
+      <p class="ov-sub">이미지를 가져오면 AI가 Dot Pad에 최적화된<br>촉각그래픽으로 자동 변환해드려요</p>
       <div class="ov-ctas">
         <label for="imageFileInput" class="ov-cta primary" tabindex="0" role="button" onclick="document.getElementById('imageFileInput').click();return false;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          파일 선택
+          이미지 가져오기
         </label>
         <label for="tactileFileInput" class="ov-cta secondary" tabindex="0" role="button">DTM·DTMS</label>
       </div>
@@ -522,7 +546,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   <!-- RIGHT PANEL -->
   <aside class="right-panel" aria-label="Tactile Inspector">
     <div class="rp-header">
-      <div class="rp-label">Tactile Inspector</div>
+      <div class="rp-label">촉각 품질 분석</div>
     </div>
     <div class="rp-scroll">
 
@@ -538,9 +562,9 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
             aria-label="점 농도 조절" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%"/>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:3px">
-          <span style="font-size:10px;color:var(--subtle)">연하게</span>
+          <span style="font-size:10px;color:var(--subtle)">적게 (단순)</span>
           <span style="font-size:12px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums" id="thValDisplay">50%</span>
-          <span style="font-size:10px;color:var(--subtle)">진하게</span>
+          <span style="font-size:10px;color:var(--subtle)">많게 (선명)</span>
         </div>
         <div class="th-actions">
           <button class="th-adj" id="thMinus">−1</button>
@@ -550,43 +574,63 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
         </div>
       </div>
 
-      <!-- dot count -->
-      <div class="stat-card">
+      <!-- 점 밀도 상태 카드 (사용자 친화, 스펙 §10) -->
+      <div id="densityStateCard" style="background:var(--surface);border-radius:var(--r-l);padding:10px 12px;border:1.5px solid var(--border)">
+        <div style="font-size:10px;font-weight:700;color:var(--subtle);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">점 밀도</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span id="densityStateLabel" style="font-size:18px;font-weight:700;color:var(--ink)">—</span>
+          <span id="densityStateDesc" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+        <!-- 게이지 -->
+        <div style="height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden">
+          <div id="densityFill2" style="height:4px;border-radius:2px;width:0%;transition:width .3s,background .3s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:9px;color:var(--subtle)">부족</span>
+          <span style="font-size:9px;color:var(--subtle)">적정</span>
+          <span style="font-size:9px;color:var(--subtle)">많음</span>
+        </div>
+      </div>
+
+      <!-- dot count (개발자용 — 기본 숨김) -->
+      <div class="stat-card" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <div class="stat-num"><span id="qDotCount">—</span><span class="stat-num-unit">핀</span></div>
-            <div class="stat-sub" id="qDotSub">/ 2,400 · —%</div>
+            <div class="stat-num" style="display:none"><span id="qDotCount">—</span><span class="stat-num-unit">핀</span></div>
+            <div class="stat-sub" id="qDotSub" style="font-size:9px;color:var(--subtle)"></div>
           </div>
           <div id="miniPreview" aria-hidden="true" style="opacity:.7"></div>
         </div>
         <div class="density-bar"><div class="density-fill" id="densityFill" style="width:0%"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:4px">
-          <span style="font-size:9px;color:var(--subtle)">Low</span>
-          <span style="font-size:9px;color:var(--subtle)">Balanced</span>
-          <span style="font-size:9px;color:var(--subtle)">High</span>
+          <span style="font-size:9px;color:var(--subtle)">부족</span>
+          <span style="font-size:9px;color:var(--subtle)">표준 변환</span>
+          <span style="font-size:9px;color:var(--subtle)">많음</span>
         </div>
       </div>
 
       <!-- quality metrics -->
       <div>
-        <div class="insp-row"><span class="insp-key">Tactile Clarity</span><span class="pill pill-neutral" id="qClarity">—</span></div>
-        <div class="insp-row"><span class="insp-key">Dot Density</span><span class="pill pill-neutral" id="qDensity">—</span></div>
-        <div class="insp-row"><span class="insp-key">Finger Readability</span><span class="pill pill-neutral" id="qReadability">—</span></div>
-        <div class="insp-row"><span class="insp-key">Structure</span><span class="pill pill-neutral" id="qStructure">—</span></div>
+        <div class="insp-row"><span class="insp-key">판독성</span><span class="pill pill-neutral" id="qClarity">—</span></div>
+        <div class="insp-row"><span class="insp-key">점 밀도</span><span class="pill pill-neutral" id="qDensity">—</span></div>
+        <div class="insp-row"><span class="insp-key">손가락 구분</span><span class="pill pill-neutral" id="qReadability">—</span></div>
+        <div class="insp-row"><span class="insp-key">구조 표현</span><span class="pill pill-neutral" id="qStructure">—</span></div>
       </div>
 
       <!-- AI feedback -->
       <div>
-        <div class="sec-title" class="sec-title-wrap">AI Feedback</div>
-        <div class="ai-empty" id="aiFeedbackEmpty">이미지를 업로드하거나 샘플을 변환하면 AI 피드백이 표시돼요.</div>
+        <div class="sec-title" class="sec-title-wrap">AI 추천</div>
+        <div class="ai-empty" id="aiFeedbackEmpty">이미지를 가져오면 AI가 주요 윤곽과 핵심 구조를 분석해 Dot Pad용 촉각그래픽으로 변환합니다.</div>
         <div class="ai-feedback" id="aiFeedbackCard" style="display:none">
           <div class="ai-fb-head">
             <div class="ai-fb-dot">
               <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5M8 10.5v.4"/></svg>
             </div>
-            <span class="ai-fb-tag">AI 분석 완료</span>
+            <span class="ai-fb-tag">AI 추천</span>
           </div>
           <p class="ai-fb-text" id="aiFeedbackText"></p>
+          <!-- 추천 수정 칩 (상태별 동적 생성) -->
+          <div id="aiChips" style="display:none;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
         </div>
       </div>
 
@@ -614,10 +658,10 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
         <div class="sec-title" class="sec-title-wrap">DotPad</div>
         <div class="dp-row" id="connRow" role="button" tabindex="0">
           <span class="dp-dot" id="connDot"></span>
-          <span class="dp-lbl" id="connText">연결되지 않음</span>
+          <span class="dp-lbl" id="connText">Dot Pad 연결 안 됨</span>
         </div>
         <div class="live-row">
-          <span class="live-lbl" id="liveHint">연결 후 라이브 반영 가능</span>
+          <span class="live-lbl" id="liveHint">연결하면 Dot Pad에서 직접 확인할 수 있어요</span>
           <button class="sw" id="liveSwitch" role="switch" aria-checked="false" aria-label="라이브 반영" disabled></button>
         </div>
       </div>
@@ -630,8 +674,8 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             .dtms 저장
           </button>
-          <button class="exp-btn ghost" id="pngBtn" disabled>PNG 내보내기</button>
-          <button class="exp-btn ghost" id="hexBtn" disabled>HEX 복사</button>
+          <button class="exp-btn ghost" id="pngBtn" disabled>PNG 저장</button>
+          <button class="exp-btn ghost dev-opt" id="hexBtn" disabled style="font-size:10px;color:var(--subtle)">개발자 옵션 ▾</button>
         </div>
       </div>
 
@@ -643,7 +687,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 <div class="bottom-bar">
   <div class="bb-status">
     <span class="bb-dot" id="bbDot"></span>
-    <span class="bb-text" id="bbStatus">Not Connected</span>
+    <span class="bb-text" id="bbStatus">Dot Pad 연결 안 됨</span>
   </div>
   <div class="bb-sep"></div>
   <div class="bb-page">
@@ -652,11 +696,11 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <button class="bb-page-btn" id="nextPage" disabled>›</button>
   </div>
   <div class="bb-spacer"></div>
-  <button class="bb-btn" id="exportJsonBtn" disabled>
+  <button class="bb-btn" id="exportJsonBtn" disabled style="display:none">
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     Export JSON
   </button>
-  <button class="bb-btn" id="exportPngBtn" disabled>Export PNG</button>
+  <button class="bb-btn" id="exportPngBtn" disabled>PNG 저장</button>
 </div>
 
 <!-- toast -->
@@ -1806,7 +1850,7 @@ ge('thPlus')?.addEventListener('click', ()=>{
   if(sl) sliderSetValue(+sl.value + 1);
 });
 ge('thAuto')?.addEventListener('click', ()=>{
-  if(!grayBuf){ toast('이미지를 먼저 올려주세요'); return; }
+  if(!grayBuf){ toast('이미지를 먼저 가져와주세요'); return; }
   const t = otsu(grayBuf);
   sliderSetValue(t);
   toast('자동 임계값 ' + thPct(t) + '%');
@@ -1829,11 +1873,11 @@ ge('clarity')?.addEventListener('input', function(){
 
 /* ── quality sync ── */
 const AI_MSGS={
-  transparent:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
-  lineart:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
-  lowcontrast:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
-  photo:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
-  default:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.'
+  transparent:'배경을 제거하고 주요 윤곽을 남겼어요. 손끝으로 형태를 구분하기 좋은 상태예요.',
+  lineart:'선화를 감지했어요. 주요 윤곽선을 핀으로 직접 변환했어요.',
+  lowcontrast:'대비가 낮은 이미지를 감지했어요. 핵심 구조를 찾아 변환했어요.',
+  photo:'사진을 감지했어요. 주요 윤곽과 핵심 구조를 중심으로 단순화했어요.',
+  default:'AI가 주요 윤곽과 핵심 구조를 분석해 손가락으로 읽기 쉬운 형태로 정리했어요.'
 };
 const CONV_MODE_MSG={
   simple:'핵심 윤곽선만 추출해요.',
@@ -1853,17 +1897,46 @@ function syncQuality(){
   const sc=tactileQualityScore(grid,{type:imgMeta&&imgMeta.type,outline});
   const g=Math.min(4,Math.max(1,sc.grade));
 
-  // stat card
+  // 0핀 상태: AI 분석 완료처럼 보이면 안 됨 (스펙 §6)
+  if(pins===0){
+    const ae=ge('aiFeedbackEmpty');
+    if(ae)ae.textContent='변환 결과가 비어 있어요. 윤곽을 다시 감지하거나 점 밀도를 조금 높여보세요.';
+    const ac=ge('aiFeedbackCard');if(ac)ac.style.display='none';
+    const ae2=ge('aiFeedbackEmpty');if(ae2)ae2.style.display='block';
+    resetQuality();return;
+  }
+  // stat card (숨겨진 개발자용)
   const qd=ge('qDotCount');if(qd)qd.textContent=pins.toLocaleString();
   const qs=ge('qDotSub');if(qs)qs.textContent='/ 2,400 · '+fill+'%';
   const df=ge('densityFill');
   if(df){df.style.width=Math.min(100,fill)+'%';df.style.background=fill<15?'#15803D':fill<40?'#FF9500':'#DC2626';}
+  // 점 밀도 상태 카드 (사용자 친화, 스펙 §10)
+  const dsc=ge('densityStateCard');
+  const dsl=ge('densityStateLabel');
+  const dsd=ge('densityStateDesc');
+  const df2=ge('densityFill2');
+  if(dsl&&dsd&&dsc){
+    let dlabel,ddesc,dstate,dcolor;
+    if(fill===0){dlabel='—';ddesc='아직 생성되지 않음';dstate='';dcolor='#CCC';}
+    else if(fill<10){dlabel='부족해요';ddesc='점이 너무 적어요';dstate='bad';dcolor='#B91C1C';}
+    else if(fill<35){dlabel='적정';ddesc='손가락으로 구분하기 좋아요';dstate='good';dcolor='#15803D';}
+    else if(fill<50){dlabel='조금 많아요';ddesc='줄이는 것을 권장해요';dstate='warn';dcolor='#A16207';}
+    else{dlabel='점이 많아요';ddesc='손가락 구분이 어려울 수 있어요';dstate='bad';dcolor='#B91C1C';}
+    dsl.textContent=dlabel;dsl.style.color=dcolor;
+    dsd.textContent=ddesc;
+    dsc.dataset.state=dstate;
+    if(df2){df2.style.width=Math.min(100,fill)+'%';df2.style.background=dcolor;}
+  }
 
   // pills
-  pill(ge('qClarity'),g>=3?'Good':g===2?'Needs work':'Poor',g>=3?'good':g===2?'warn':'bad');
-  pill(ge('qDensity'),fill<15?'Low':fill<40?'Balanced':'High',fill>=10&&fill<=40?'good':fill<10?'neutral':'warn');
-  pill(ge('qReadability'),g>=3?'Good':'Warning',g>=3?'good':'warn');
-  pill(ge('qStructure'),sc.m&&sc.m.on>N*.4?'Filled':sc.m&&sc.m.on>N*.15?'Mixed':'Outline','neutral');
+  // 한국어 상태값 + 점 밀도 기준 (스펙 §10)
+  const fillState=fill<10?'부족':fill<35?'적정':fill<50?'조금 많음':'높음';
+  const fillCls=fill<10?'warn':fill<35?'good':fill<50?'warn':'bad';
+  pill(ge('qClarity'),g>=3?'좋음':g===2?'주의':'다시 확인 필요',g>=3?'good':g===2?'warn':'bad');
+  pill(ge('qDensity'),fillState,fillCls);
+  pill(ge('qReadability'),g>=3?'좋음':g===2?'주의':'확인 필요',g>=3?'good':g===2?'warn':'bad');
+  const structVal=fill>40?'면 채움':fill>15?'윤곽 + 핵심 구조':'윤곽 중심';
+  pill(ge('qStructure'),structVal,'neutral');
 
   // AI feedback
   const aiFeedbackEmpty=ge('aiFeedbackEmpty');
@@ -1871,18 +1944,33 @@ function syncQuality(){
   const aiTxt=ge('aiFeedbackText');
   if(imgMeta&&aiTxt){
     const base=AI_MSGS[imgMeta.type]||AI_MSGS.default;
-    const modeLabel=currentMode?CONV_MODE_MSG[currentMode]:'';
-    aiTxt.textContent=base+(modeLabel?' '+modeLabel:'')+' '+GW+'×'+GH+' · '+pins.toLocaleString()+'핀';
+    // 상태별 추가 설명 (스펙 §8)
+    let extra='';
+    if(fill>=50) extra=' 점 밀도가 높아 일부 영역이 넓은 면처럼 느껴질 수 있어요. 윤곽 중심으로 단순화해보세요.';
+    else if(fill<10) extra=' 점이 너무 적어 윤곽이 끊겨 보일 수 있어요. 점 밀도를 조금 높여보세요.';
+    else extra=' 현재 점 밀도는 Dot Pad에서 손가락으로 구분하기에 적정한 수준이에요.';
+    aiTxt.textContent=base+extra;
     if(aiFeedbackEmpty)aiFeedbackEmpty.style.display='none';
     if(aiFeedbackCard)aiFeedbackCard.style.display='block';
+    // 추천 수정 칩 동적 생성
+    const chipsEl=ge('aiChips');
+    if(chipsEl){
+      chipsEl.style.display='flex';
+      let chips=[];
+      if(fill>=50) chips=['윤곽 중심으로 변환','점 밀도 낮추기','면 채움 줄이기'];
+      else if(fill<10) chips=['윤곽 다시 감지','점 밀도 높이기','핵심 구조 강조'];
+      else chips=['윤곽 중심으로 변환','점 밀도 낮추기','디테일 정리'];
+      const opMap={'윤곽 중심으로 변환':'simpler','점 밀도 낮추기':'simpler','면 채움 줄이기':'simpler',
+                   '윤곽 다시 감지':'auto','점 밀도 높이기':'denoise','핵심 구조 강조':'denoise',
+                   '디테일 정리':'denoise'};
+      chipsEl.innerHTML=chips.map(c=>`<button class="ai-ch" data-cmd="${opMap[c]||'simpler'}">${c}</button>`).join('');
+      chipsEl.querySelectorAll('.ai-ch').forEach(b=>b.addEventListener('click',()=>applyOp(b.dataset.cmd)));
+    }
   }
 
   // canvas meta
   const lbl=ge('canvasMetaLabel');
-  if(lbl){
-    const modeLabel={simple:'Simple mode',balanced:'Balanced mode',detail:'Detail mode'}[currentMode]||'Tactile conversion';
-    lbl.textContent=modeLabel+' · Dot Pad '+GW+'×'+GH;
-  }
+  if(lbl) lbl.textContent='Dot Pad 촉각 미리보기 · 60×40';
 
   // res chip
   const rc=ge('resChip');if(rc)rc.textContent=GW+'×'+GH;
@@ -1900,7 +1988,7 @@ function resetQuality(){
   const qs=ge('qDotSub');if(qs)qs.textContent='/ 2,400 · 0%';
   const df=ge('densityFill');if(df)df.style.width='0%';
   // 변환 전에도 기본 안내 표시 (너무 흐리지 않게)
-  const pills={qClarity:'대기 중',qDensity:'대기 중',qReadability:'대기 중',qStructure:'대기 중'};
+  const pills={qClarity:'—',qDensity:'—',qReadability:'—',qStructure:'—'};
   Object.entries(pills).forEach(([id,txt])=>{
     const el=ge(id);if(el){el.textContent=txt;el.className='pill pill-neutral';}
   });
@@ -1908,7 +1996,11 @@ function resetQuality(){
   const aiFeedbackCard=ge('aiFeedbackCard');
   if(aiFeedbackEmpty)aiFeedbackEmpty.style.display='';
   if(aiFeedbackCard)aiFeedbackCard.style.display='none';
-  const lbl=ge('canvasMetaLabel');if(lbl)lbl.textContent='Dot Pad 60×40 · 빈 캔버스';
+  const lbl=ge('canvasMetaLabel');if(lbl)lbl.textContent='Dot Pad 촉각 미리보기 · 60×40';
+  // 빈 상태 ai-empty 문구
+  const ae=ge('aiFeedbackEmpty');
+  if(ae)ae.textContent='이미지를 가져오면 AI가 주요 윤곽과 핵심 구조를 분석해 Dot Pad용 촉각그래픽으로 변환합니다.';
+  const ac=ge('aiChips');if(ac)ac.style.display='none';
   syncBtns(false);
 }
 
@@ -2028,6 +2120,7 @@ q('.tool-rail').addEventListener('click',e=>{
 
 /* ── save / export ── */
 ge('hdrOutputBtn')?.addEventListener('click',()=>ge('outBtn')?.click());
+/* hdrExportBtn → 저장 (PNG+dtms 드롭다운 아님, PNG 저장으로 단순화) */
 ge('hdrExportBtn')?.addEventListener('click',()=>exportPNGFn());
 ge('dtmsBtn')?.addEventListener('click',()=>ge('saveTopBtn')?.click());
 ge('pngBtn')?.addEventListener('click',()=>exportPNGFn());
