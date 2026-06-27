@@ -1,8 +1,12 @@
-<!DOCTYPE html>
+cd /workspaces/tactile_agent
+git add index.html
+git commit -m "UI 정돈 + 파비콘 + Simple/Balanced/Detail 제거 + 툴바 버그 근본 수정"
+git push origin main<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzFBMUExQSIvPgogIDxjaXJjbGUgY3g9IjkiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iOSIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IiNGRjREMDAiLz4KICA8Y2lyY2xlIGN4PSIyMyIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjIuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMiIvPgogIDxjaXJjbGUgY3g9IjE2IiBjeT0iMjMiIHI9IjIuNSIgZmlsbD0id2hpdGUiLz4KICA8Y2lyY2xlIGN4PSIyMyIgY3k9IjIzIiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+"/>
 <title>Dot Canvas AI — 촉각그래픽 제작 스튜디오</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -46,7 +50,7 @@ svg{display:block;flex-shrink:0}
 /* ── HEADER ── */
 .app-header{
   height:52px;background:var(--white);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0
+  display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0
 }
 .brand{display:flex;align-items:center;gap:9px;min-width:160px}
 .brand-mark{width:30px;height:30px;border-radius:9px;background:var(--ink);
@@ -58,14 +62,14 @@ svg{display:block;flex-shrink:0}
 .file-input-wrap input:focus{background:var(--surface);outline:1px solid var(--border2)}
 
 /* ai prompt bar */
-.ai-bar{flex:1;position:relative;max-width:440px}
+.ai-bar{flex:1;position:relative;max-width:560px}
 .ai-bar-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none}
 .ai-bar input{width:100%;height:34px;padding:0 12px 0 32px;border-radius:10px;
   border:1.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--ink)}
 .ai-bar input:focus{border-color:var(--border2);background:var(--white)}
 
 /* mode selector */
-.mode-seg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.mode-seg{display:none;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
 .mode-btn{height:26px;padding:0 11px;border-radius:7px;font-size:11px;font-weight:600;
   color:var(--muted);transition:all .1s;white-space:nowrap}
 .mode-btn.active{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -99,7 +103,7 @@ svg{display:block;flex-shrink:0}
 .tr-btn:disabled{opacity:.3;cursor:not-allowed}
 .tr-btn.danger:not(.active){color:var(--red)}
 .tr-btn.danger:hover{background:var(--red-bg)}
-.tr-sep{width:38px;height:1px;background:var(--border);margin:5px 0;flex-shrink:0}
+.tr-sep{width:36px;height:1px;background:var(--border);margin:6px 0;flex-shrink:0}
 
 /* ── CANVAS AREA ── */
 .canvas-area{
@@ -108,7 +112,7 @@ svg{display:block;flex-shrink:0}
   background:var(--bg);padding:16px 20px;overflow:hidden;position:relative
 }
 .canvas-meta{
-  margin-bottom:12px;display:flex;align-items:center;gap:10px
+  margin-bottom:10px;display:flex;align-items:center;gap:10px
 }
 .canvas-meta-label{font-size:11px;font-weight:500;color:var(--muted);
   letter-spacing:.05em;text-transform:uppercase}
@@ -170,7 +174,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 }
 .rp-header{padding:14px 16px 0;margin-bottom:2px}
 .rp-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
-.rp-scroll{flex:1;overflow-y:auto;padding:10px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.rp-scroll{flex:1;overflow-y:auto;padding:12px 16px 24px;display:flex;flex-direction:column;gap:16px}
 
 /* stat card */
 .stat-card{background:var(--surface);border-radius:var(--r-l);padding:10px 12px}
@@ -182,7 +186,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
 /* inspector rows */
 .insp-row{display:flex;justify-content:space-between;align-items:center;
-  padding:7px 0;border-bottom:1px solid #F5F2ED}
+  padding:8px 0;border-bottom:1px solid #F0EDE8}
 .insp-row:last-child{border-bottom:none}
 .insp-key{font-size:12px;color:var(--text);font-weight:600}
 .pill{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px}
@@ -204,6 +208,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   font-size:12px;color:var(--muted);line-height:1.7;border:1px solid var(--border)}
 
 /* section title */
+.sec-title-wrap{margin-bottom:8px}
 .sec-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
 
 /* dotpad section */
@@ -235,8 +240,8 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
 /* ── BOTTOM BAR ── */
 .bottom-bar{
-  height:44px;background:var(--white);border-top:1px solid var(--border);
-  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0
+  height:46px;background:var(--white);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0
 }
 .bb-status{display:flex;align-items:center;gap:6px}
 .bb-dot{width:7px;height:7px;border-radius:50%;background:var(--subtle)}
@@ -383,11 +388,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <input id="aiPrompt" placeholder="이미지를 촉각그래픽으로 단순화해줘…" aria-label="AI 프롬프트"/>
   </div>
 
-  <div class="mode-seg" role="group" aria-label="변환 모드">
-    <button class="mode-btn active" data-mode="simple">Simple</button>
-    <button class="mode-btn" data-mode="balanced">Balanced</button>
-    <button class="mode-btn" data-mode="detail">Detail</button>
-  </div>
+
 
   <div class="hdr-actions">
     <button class="hdr-btn primary" id="hdrOutputBtn" disabled>
@@ -530,7 +531,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- 점 농도 슬라이더 -->
       <div>
-        <div class="sec-title" style="margin-bottom:8px">점 농도 조절</div>
+        <div class="sec-title" class="sec-title-wrap">점 농도 조절</div>
         <div class="th-slider-wrap">
           <div class="th-track" id="thTrack">
             <div class="th-fill" id="thFill" style="width:50%"></div>
@@ -579,7 +580,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- AI feedback -->
       <div>
-        <div class="sec-title" style="margin-bottom:8px">AI Feedback</div>
+        <div class="sec-title" class="sec-title-wrap">AI Feedback</div>
         <div class="ai-empty" id="aiFeedbackEmpty">이미지를 업로드하거나 샘플을 변환하면 AI 피드백이 표시돼요.</div>
         <div class="ai-feedback" id="aiFeedbackCard" style="display:none">
           <div class="ai-fb-head">
@@ -594,7 +595,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- 핀 빠른 편집 -->
       <div>
-        <div class="sec-title" style="margin-bottom:8px">핀 제어</div>
+        <div class="sec-title" class="sec-title-wrap">핀 제어</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
           <button class="pin-ctrl-btn" id="btnAllUp" disabled title="모든 핀을 올립니다 (전체 채움)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12l4-4 4 4"/></svg>
@@ -613,7 +614,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- DotPad -->
       <div>
-        <div class="sec-title" style="margin-bottom:8px">DotPad</div>
+        <div class="sec-title" class="sec-title-wrap">DotPad</div>
         <div class="dp-row" id="connRow" role="button" tabindex="0">
           <span class="dp-dot" id="connDot"></span>
           <span class="dp-lbl" id="connText">연결되지 않음</span>
@@ -626,7 +627,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- export -->
       <div>
-        <div class="sec-title" style="margin-bottom:8px">저장 / 내보내기</div>
+        <div class="sec-title" class="sec-title-wrap">저장 / 내보내기</div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="exp-btn accent" id="dtmsBtn" disabled>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -1341,7 +1342,7 @@ function brushCells(gx,gy,size,fx,fy){const out=[];if(size<=1){out.push([gx,gy])
 function bres(x0,y0,x1,y1){const pts=[];let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,err=dx-dy;for(;;){pts.push([x0,y0]);if(x0===x1&&y0===y1)break;const e2=2*err;if(e2>-dy){err-=dy;x0+=sx;}if(e2<dx){err+=dx;y0+=sy;}}return pts;}
 function setPin(x,y,v){if(x>=0&&y>=0&&x<GW&&y<GH)grid[y*GW+x]=v?1:0;}
 function strokeApply(x0,y0,x1,y1,val,fx,fy){const line=bres(x0,y0,x1,y1);for(let i=0;i<line.length;i++){const last=(i===line.length-1);const cells=brushCells(line[i][0],line[i][1],curSize(),last?fx:0.5,last?fy:0.5);for(const[cx,cy]of cells)setPin(cx,cy,val);}}
-function selectTool(t){tool=t;document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t?'true':'false'));
+function selectTool(t){tool=t;/* select/fill은 drawing 상태 초기화 */if(t==='select'||t==='fill'){drawing=false;hoverBrush=null;}document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool===t?'true':'false'));
   const ctx2=$('toolCtx');
   if(t==='pen'||t==='eraser'){ctx2.classList.add('show');$('toolCtxLbl').innerHTML=(t==='pen'?'펜 도구':'지우개 도구')+'<span class="sub">두께</span>';syncSizeGrp();$('sizeGrp').setAttribute('aria-label',(t==='pen'?'펜':'지우개')+' 두께');}
   else ctx2.classList.remove('show');
@@ -1360,13 +1361,13 @@ $('clearBtn').onclick=()=>{pushUndo();grid=new Uint8Array(N);pages[curPage]=grid
 
 function cellAt(ev){const r=pad.getBoundingClientRect();const lx=(ev.clientX-r.left-off)/cell,ly=(ev.clientY-r.top-off)/cell;return{x:Math.max(0,Math.min(GW-1,Math.floor(lx))),y:Math.max(0,Math.min(GH-1,Math.floor(ly))),fx:lx-Math.floor(lx),fy:ly-Math.floor(ly)};}
 let drawing=false,pv=1,lastC=null,strokeChanged=false;
-pad.addEventListener('pointerdown',ev=>{if(tool==='move'||!hasImage||appState!=='ready')return;ev.preventDefault();pad.setPointerCapture(ev.pointerId);
+pad.addEventListener('pointerdown',ev=>{if(tool==='move'||tool==='select'||tool==='fill'||!hasImage||appState!=='ready')return;ev.preventDefault();pad.setPointerCapture(ev.pointerId);
   const c=cellAt(ev);cursor=c;drawing=true;strokeChanged=false;hoverBrush=null;
   curUndo().push(grid.slice());if(curUndo().length>60)curUndo().shift();curRedo().length=0;
   pv=tool==='pen'?1:0;strokeApply(c.x,c.y,c.x,c.y,pv,c.fx,c.fy);lastC=c;strokeChanged=true;draw();updateScoreUI();updateHex();scheduleSend();});
 pad.addEventListener('pointermove',ev=>{const c=cellAt(ev);
   if(drawing){cursor=c;strokeApply(lastC.x,lastC.y,c.x,c.y,pv,c.fx,c.fy);lastC=c;strokeChanged=true;draw();updateScoreUI();updateHex();scheduleSend();}
-  else if((tool==='pen'||tool==='eraser')&&hasImage&&appState==='ready'){hoverBrush={cells:brushCells(c.x,c.y,curSize(),c.fx,c.fy),kind:tool};draw();}});
+  else if((tool==='pen'||tool==='eraser')&&hasImage&&appState==='ready'){hoverBrush={cells:brushCells(c.x,c.y,curSize(),c.fx,c.fy),kind:tool};draw();}else if(tool==='select'||tool==='fill'){hoverBrush=null;}});
 function endStroke(){if(!drawing)return;drawing=false;lastC=null;if(strokeChanged){setDirty(true);updateUndoButtons();forceSend();}else{curUndo().pop();}}
 pad.addEventListener('pointerup',endStroke);
 pad.addEventListener('pointercancel',()=>{if(drawing){drawing=false;lastC=null;if(strokeChanged){updateUndoButtons();}else curUndo().pop();}});
@@ -1555,28 +1556,29 @@ draw=function(){
 };
 
 /* ── 7. 포인터 이벤트 확장 (select/fill) ──────────────────── */
+/* 엔진 pointerdown이 select/fill early return → 이 핸들러가 처리 */
 pad.addEventListener('pointerdown',ev=>{
   if(appState!=='ready'||!hasImage)return;
   if(tool==='select'){
     ev.preventDefault();
-    ev.stopImmediatePropagation();
     const c=cellAt(ev);
     selBox={x0:c.x,y0:c.y,x1:c.x,y1:c.y};
     selBuffer=null;
+    pad.setPointerCapture(ev.pointerId);
     draw();
   } else if(tool==='fill'){
     ev.preventDefault();
-    ev.stopImmediatePropagation();
     const c=cellAt(ev);
-    pushUndo();
-    const val=grid[c.y*GW+c.x]?0:1; // 클릭한 곳 반대로 채움
+    curUndo().push(grid.slice());if(curUndo().length>60)curUndo().shift();curRedo().length=0;
+    const val=grid[c.y*GW+c.x]?0:1;
     floodFill(c.x,c.y,val);
     draw();afterChange();
   }
-},{capture:true}); // capture:true로 엔진 기본 핸들러보다 먼저 실행
+});
 
 pad.addEventListener('pointermove',ev=>{
-  if(tool==='select'&&selBox&&ev.buttons){
+  if(!ev.buttons) return;
+  if(tool==='select'&&selBox){
     const c=cellAt(ev);
     selBox.x1=c.x; selBox.y1=c.y;
     draw();
@@ -1585,13 +1587,11 @@ pad.addEventListener('pointermove',ev=>{
 
 pad.addEventListener('pointerup',ev=>{
   if(tool==='select'&&selBox){
-    // 선택 완료: 선택 영역 정규화
     const x0=Math.min(selBox.x0,selBox.x1);
     const y0=Math.min(selBox.y0,selBox.y1);
     const x1=Math.max(selBox.x0,selBox.x1);
     const y1=Math.max(selBox.y0,selBox.y1);
     selBox={x0,y0,x1,y1};
-    // 선택 영역 복사
     selBuffer=[];
     for(let y=y0;y<=y1;y++){
       const row=[];
@@ -2015,14 +2015,8 @@ q('.tool-rail').addEventListener('click',e=>{
   const tb=e.target.closest('.tr-btn[data-tool]');
   if(tb&&!tb.disabled&&appState==='ready'){
     const t=tb.dataset.tool;
-    // 모든 도구를 selectTool로 통일 (select, fill도 엔진에 등록)
+    // 모든 도구 엔진 selectTool로 통일 처리
     if(typeof selectTool==='function') selectTool(t);
-    // select/fill은 엔진 selectTool이 무시할 수 있으므로 직접 tool 변수 설정
-    if(t==='select'||t==='fill'){
-      try{ tool=t; }catch(e2){}
-      // 전역 tool 변수가 const라면 window.tool 시도
-      try{ window.tool=t; }catch(e2){}
-    }
     syncToolBar();return;
   }
   if(e.target.closest('#undoBtn2')){ge('undoBtn')?.click();syncToolBar();return;}
@@ -2033,19 +2027,7 @@ q('.tool-rail').addEventListener('click',e=>{
   }
 });
 
-/* ── mode buttons ── */
-qa('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
-  currentMode=b.dataset.mode;
-  qa('.mode-btn').forEach(x=>x.classList.toggle('active',x===b));
-  // re-convert if image loaded
-  if(hasImage&&grayBuf){
-    const modeMap={simple:80,balanced:128,detail:185};
-    threshold=modeMap[currentMode]||128;
-    const rv=ge('rawth');if(rv)rv.value=threshold;
-    const rm=ge('method');if(rm)rm.value='global';
-    method='global';rebuild();afterChange(false);syncQuality();
-  }
-}));
+/* mode buttons removed */
 
 /* ── save / export ── */
 ge('hdrOutputBtn')?.addEventListener('click',()=>ge('outBtn')?.click());
