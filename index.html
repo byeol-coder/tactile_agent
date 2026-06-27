@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -132,7 +134,7 @@ svg{display:block;flex-shrink:0}
 #emptyOv{background:rgba(244,241,232,.82);backdrop-filter:blur(1px)}
 /* 변환 중: 그리드 완전히 보임, 작은 카드만 */
 #analyzeOv{background:transparent;pointer-events:none;align-items:center;justify-content:center}
-body[data-state="empty"] #emptyOv{display:flex}
+body[data-state="empty"] #emptyOv{display:flex!important}
 body[data-state="analyzing"] #analyzeOv{display:flex}
 .ov-ico{width:52px;height:52px;border-radius:16px;background:var(--white);
   display:grid;place-items:center;margin-bottom:4px;
@@ -445,23 +447,6 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
         <canvas id="pad" tabindex="0" role="application" aria-label="DotPad 60×40 촉각 그리드"></canvas>
         <img id="beforeImg" alt="원본 이미지"/>
 
-        <!-- empty overlay -->
-        <div class="ov" id="emptyOv">
-          <div class="ov-ico">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </div>
-          <p class="ov-title">이미지를 올려보세요</p>
-          <p class="ov-sub">AI가 즉시 최적 촉각 그래픽으로 변환해드려요</p>
-          <div class="ov-ctas">
-            <label for="imageFileInput" class="ov-cta primary" tabindex="0" role="button">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              파일 선택
-            </label>
-            <label for="tactileFileInput" class="ov-cta secondary" tabindex="0" role="button">DTM·DTMS</label>
-          </div>
-          <button class="ov-link" id="sampleBtn">또는 샘플로 시작</button>
-        </div>
-
         <!-- analyzing overlay: 소형 카드, 그리드 계속 보임 -->
         <div class="ov" id="analyzeOv">
           <div class="analyze-card">
@@ -477,6 +462,25 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- empty overlay: canvas-area 전체에 걸쳐 표시 -->
+    <div id="emptyOv" style="display:none;position:absolute;inset:0;z-index:20;
+      background:rgba(244,241,232,.88);backdrop-filter:blur(1px);
+      flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px">
+      <div class="ov-ico">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p class="ov-title">이미지를 올려보세요</p>
+      <p class="ov-sub">AI가 즉시 최적 촉각 그래픽으로 변환해드려요</p>
+      <div class="ov-ctas">
+        <label for="imageFileInput" class="ov-cta primary" tabindex="0" role="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          파일 선택
+        </label>
+        <label for="tactileFileInput" class="ov-cta secondary" tabindex="0" role="button">DTM·DTMS</label>
+      </div>
+      <button class="ov-link" id="sampleBtn">또는 샘플로 시작</button>
     </div>
   </main>
 
@@ -822,7 +826,7 @@ function dtmsJSONFromPages(){const n=(($('fname').value)||'Untitled').trim();
    ============================================================ */
 function renderGray(){
   if(!srcImage){grayBuf=null;alphaBuf=null;return;}
-  const oc=document.createElement('canvas');oc.width=GW;oc.height=GH;const o=oc.getContext('2d');
+  const oc=document.createElement('canvas');oc.width=GW;oc.height=GH;const o=oc.getContext('2d',{willReadFrequently:true});
   const pad2=2, availW=GW-pad2*2, availH=GH-pad2*2;
   const s=Math.min(availW/srcImage.width,availH/srcImage.height),dw=srcImage.width*s,dh=srcImage.height*s;
   o.clearRect(0,0,GW,GH);o.drawImage(srcImage,(GW-dw)/2,(GH-dh)/2,dw,dh);
@@ -1051,8 +1055,8 @@ function refreshModeGating(){
    ============================================================ */
 function setFname(n){$('fname').value=n;}
 function startAnalyze(img,name){loading=true;pendingImg=img;pendingName=name||'이미지';$('analyzeName').textContent=(name||'이미지').slice(0,20);setAppState('analyzing');say('이미지를 분석하고 있어요');
-  /* 속도 최적화: 즉시 실행 (requestAnimationFrame으로 UI 업데이트 후 바로 처리) */
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(appState==='analyzing'&&pendingImg===img)finishAnalyze(img,name);}));}
+  /* 속도 최적화: UI paint 후 즉시 처리 */
+  setTimeout(()=>{if(appState==='analyzing'&&pendingImg===img)finishAnalyze(img,name);},0);}
 function finishAnalyze(img,name){
   fileKind='image';srcImage=img;hasImage=true;renderGray();
   const best=autoSelect();pages=[grid];curPage=0;pageUndo=[[]];pageRedo=[[]];
@@ -1073,7 +1077,18 @@ function loadImageFile(f){
   if(f.size>20*1024*1024){toast('이미지 파일이 너무 큽니다(20MB 초과).','err');return;}
   if(!/^image\//.test(f.type)&&!/\.(png|jpe?g|webp|svg)$/i.test(f.name)){toast('지원하지 않는 이미지 형식입니다. PNG·JPG·WEBP·SVG만 가능해요.','err');return;}
   resetForNewFile();const nm=f.name.replace(/\.[^.]+$/,'')||'Untitled';setFname(nm);
-  const img=new Image();img.onload=()=>startAnalyze(img,f.name);img.onerror=()=>{toast('이미지를 열 수 없어요. 파일이 손상되었을 수 있습니다.','err');setAppState(hasImage?'ready':'empty');loading=false;};img.src=URL.createObjectURL(f);
+  const img=new Image();
+  const url=URL.createObjectURL(f);
+  img.src=url;
+  /* decode()로 디코딩 완료 즉시 처리 — onload보다 빠름 */
+  img.decode().then(()=>{
+    URL.revokeObjectURL(url);
+    startAnalyze(img,f.name);
+  }).catch(()=>{
+    URL.revokeObjectURL(url);
+    img.onload=()=>startAnalyze(img,f.name);
+    img.onerror=()=>{toast('이미지를 열 수 없어요.','err');setAppState(hasImage?'ready':'empty');loading=false;};
+  });
 }
 function loadSample(){const c=document.createElement('canvas');c.width=240;c.height=160;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,240,160);g.strokeStyle='#000';g.lineWidth=12;g.lineJoin='round';g.beginPath();g.moveTo(60,150);g.lineTo(60,80);g.lineTo(120,35);g.lineTo(180,80);g.lineTo(180,150);g.closePath();g.stroke();g.strokeRect(105,108,30,42);const img=new Image();img.onload=()=>{resetForNewFile();setFname('샘플');startAnalyze(img,'샘플 이미지');};img.src=c.toDataURL();}
 
