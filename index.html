@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -54,7 +56,7 @@ svg{display:block;flex-shrink:0}
 .brand-name{font-size:14px;font-weight:700;letter-spacing:-.02em}
 .brand-name span{color:var(--orange)}
 .file-input-wrap{font-size:10px;color:var(--subtle);display:flex;align-items:center;gap:4px;cursor:pointer}
-.file-input-wrap input{background:none;border:none;color:var(--muted);font-size:10px;width:120px;padding:1px 4px;border-radius:3px}
+.file-input-wrap input{background:none;border:none;color:var(--muted);font-size:10px;width:110px;padding:1px 4px;border-radius:3px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
 .file-input-wrap input:focus{background:var(--surface);outline:1px solid var(--border2)}
 
 /* ai prompt bar */
@@ -90,7 +92,7 @@ svg{display:block;flex-shrink:0}
 }
 .tr-btn{
   width:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;padding:7px 4px;border-radius:10px;color:var(--muted);transition:all .1s
+  gap:4px;padding:7px 4px;border-radius:10px;color:#7A7670;transition:all .1s
 }
 .tr-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .tr-btn .tr-label{font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
@@ -127,7 +129,11 @@ svg{display:block;flex-shrink:0}
 /* overlays */
 .ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
   justify-content:center;gap:10px;text-align:center;padding:24px;
-  background:rgba(247,246,243,.93);backdrop-filter:blur(3px);z-index:10;border-radius:14px}
+  border-radius:14px;z-index:10}
+/* 빈 상태: 반투명 (뒤에 dot grid 보임) */
+#emptyOv{background:rgba(244,241,232,.82);backdrop-filter:blur(1px)}
+/* 변환 중: 그리드 완전히 보임, 작은 카드만 */
+#analyzeOv{background:transparent;pointer-events:none;align-items:center;justify-content:center}
 body[data-state="empty"] #emptyOv{display:flex}
 body[data-state="analyzing"] #analyzeOv{display:flex}
 .ov-ico{width:52px;height:52px;border-radius:16px;background:var(--white);
@@ -165,7 +171,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   display:flex;flex-direction:column;overflow:hidden;flex-shrink:0
 }
 .rp-header{padding:14px 16px 0;margin-bottom:2px}
-.rp-label{font-size:10px;font-weight:700;color:var(--subtle);letter-spacing:.07em;text-transform:uppercase}
+.rp-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
 .rp-scroll{flex:1;overflow-y:auto;padding:10px 16px 20px;display:flex;flex-direction:column;gap:14px}
 
 /* stat card */
@@ -180,7 +186,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .insp-row{display:flex;justify-content:space-between;align-items:center;
   padding:7px 0;border-bottom:1px solid #F5F2ED}
 .insp-row:last-child{border-bottom:none}
-.insp-key{font-size:12px;color:var(--muted);font-weight:500}
+.insp-key{font-size:12px;color:var(--text);font-weight:600}
 .pill{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px}
 .pill-good{background:var(--green-bg);color:var(--green)}
 .pill-warn{background:var(--amber-bg);color:var(--amber)}
@@ -197,10 +203,10 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .ai-fb-tag{font-size:11px;font-weight:700;color:var(--orange);letter-spacing:.03em}
 .ai-fb-text{font-size:12px;color:#6B4530;line-height:1.75}
 .ai-empty{background:var(--surface);border-radius:var(--r-l);padding:12px;
-  font-size:12px;color:var(--subtle);line-height:1.7}
+  font-size:12px;color:var(--muted);line-height:1.7;border:1px solid var(--border)}
 
 /* section title */
-.sec-title{font-size:10px;font-weight:700;color:var(--subtle);letter-spacing:.07em;text-transform:uppercase}
+.sec-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
 
 /* dotpad section */
 .dp-row{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer}
@@ -208,10 +214,10 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .dp-dot.on{background:var(--green);box-shadow:0 0 6px rgba(21,128,61,.5)}
 .dp-dot.busy{background:#F59E0B;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.dp-lbl{font-size:12px;font-weight:600;color:var(--muted)}
+.dp-lbl{font-size:12px;font-weight:600;color:var(--text)}
 .dp-row:hover .dp-lbl{color:var(--text)}
 .live-row{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
-.live-lbl{font-size:11px;color:var(--subtle)}
+.live-lbl{font-size:11px;color:var(--muted)}
 .sw{width:32px;height:18px;border-radius:999px;background:var(--border2);
   position:relative;cursor:pointer;border:none;transition:background .15s;flex-shrink:0}
 .sw::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;
@@ -237,7 +243,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .bb-status{display:flex;align-items:center;gap:6px}
 .bb-dot{width:7px;height:7px;border-radius:50%;background:var(--subtle)}
 .bb-dot.connected{background:var(--green);box-shadow:0 0 5px rgba(21,128,61,.5)}
-.bb-text{font-size:11px;font-weight:600;color:var(--subtle)}
+.bb-text{font-size:11px;font-weight:700;color:var(--text)}
 .bb-sep{width:1px;height:20px;background:var(--border)}
 .bb-page{display:flex;align-items:center;gap:7px}
 .bb-page-btn{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);
@@ -245,7 +251,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .bb-page-btn:disabled{color:var(--border);cursor:not-allowed}
 .bb-page-label{font-size:11px;color:var(--muted);min-width:52px;text-align:center}
 .bb-spacer{flex:1}
-.bb-btn{height:30px;padding:0 12px;border-radius:8px;border:1.5px solid var(--border);
+.bb-btn{height:30px;padding:0 12px;border-radius:8px;border:1.5px solid var(--border2);
   background:var(--surface);font-size:11px;font-weight:600;color:var(--text);
   display:flex;align-items:center;gap:5px;white-space:nowrap}
 .bb-btn:hover{background:var(--white);border-color:var(--border2)}
@@ -294,6 +300,26 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   .mode-seg{display:none}
   .right-panel .rp-scroll{padding:10px 12px}
 }
+
+/* ── 변환 중 분석 카드 (캔버스 위에 작게 떠 있음) ── */
+.analyze-card{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,.95);
+  border:1px solid var(--border2);
+  border-radius:14px;padding:14px 18px;
+  box-shadow:0 4px 20px rgba(0,0,0,.1);
+  pointer-events:all;max-width:320px;
+}
+.analyze-spinner-wrap{flex-shrink:0}
+.analyze-body{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.analyze-body .converting-title{font-size:13px;font-weight:700;color:var(--ink)}
+.analyze-body .converting-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.analyze-body .conv-bar{margin-top:4px}
+/* scanning animation dots */
+@keyframes scan-pulse{
+  0%,100%{opacity:.25}
+  50%{opacity:1}
+}
 </style>
 </head>
 <body data-state="empty">
@@ -317,7 +343,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <div>
       <div class="brand-name">Dot Canvas <span>AI</span></div>
       <div class="file-input-wrap">
-        <input type="text" id="fname" value="Untitled" aria-label="파일 이름" spellcheck="false"/>
+        <input type="text" id="fname" value="Untitled tactile graphic" aria-label="파일 이름" spellcheck="false"/>
         <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>
       </div>
     </div>
@@ -438,14 +464,18 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
           <button class="ov-link" id="sampleBtn">또는 샘플로 시작</button>
         </div>
 
-        <!-- analyzing overlay -->
+        <!-- analyzing overlay: 소형 카드, 그리드 계속 보임 -->
         <div class="ov" id="analyzeOv">
-          <div class="converting-wrap">
-            <div class="ai-spinner" aria-hidden="true"></div>
-            <p class="converting-title" id="analyzeTitle">이미지 분석 중</p>
-            <p class="converting-sub" id="analyzeName">AI가 최적 변환 방식을 찾고 있어요</p>
-            <div class="conv-bar"><div class="conv-bar-fill" id="convBarFill"></div></div>
-            <button class="ov-link" id="cancelAnalyze">취소</button>
+          <div class="analyze-card">
+            <div class="analyze-spinner-wrap">
+              <div class="ai-spinner" aria-hidden="true"></div>
+            </div>
+            <div class="analyze-body">
+              <p class="converting-title" id="analyzeTitle">촉각그래픽 변환 중</p>
+              <p class="converting-sub" id="analyzeName">AI가 최적 변환 방식을 찾고 있어요</p>
+              <div class="conv-bar"><div class="conv-bar-fill" id="convBarFill"></div></div>
+            </div>
+            <button class="ov-link" id="cancelAnalyze" style="pointer-events:all">취소</button>
           </div>
         </div>
       </div>
@@ -991,8 +1021,9 @@ function refreshModeGating(){
    IMAGE LOAD  (empty → analyzing → ready)
    ============================================================ */
 function setFname(n){$('fname').value=n;}
-function startAnalyze(img,name){loading=true;pendingImg=img;pendingName=name||'이미지';$('analyzeName').textContent=pendingName;setAppState('analyzing');say('이미지를 분석하고 있어요');
-  setTimeout(()=>{if(appState==='analyzing'&&pendingImg===img)finishAnalyze(img,name);},600);}
+function startAnalyze(img,name){loading=true;pendingImg=img;pendingName=name||'이미지';$('analyzeName').textContent=(name||'이미지').slice(0,20);setAppState('analyzing');say('이미지를 분석하고 있어요');
+  /* 속도 최적화: 즉시 실행 (requestAnimationFrame으로 UI 업데이트 후 바로 처리) */
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(appState==='analyzing'&&pendingImg===img)finishAnalyze(img,name);}));}
 function finishAnalyze(img,name){
   fileKind='image';srcImage=img;hasImage=true;renderGray();
   const best=autoSelect();pages=[grid];curPage=0;pageUndo=[[]];pageRedo=[[]];
@@ -1326,27 +1357,40 @@ draw=function(){
   const ax=off+(GW/2)*cell+.5, ay=off+(GH/2)*cell+.5;
   ctx.beginPath();ctx.moveTo(ax,off);ctx.lineTo(ax,h-off);ctx.stroke();
   ctx.beginPath();ctx.moveTo(off,ay);ctx.lineTo(w-off,ay);ctx.stroke();
-  // dots
-  const rOn=cell*.38, rOff=cell*.16;
+  // dots — 개선된 대비
+  const rOn=cell*.40, rOff=cell*.20;
   for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
     const on=grid[y*GW+x];
     const cx2=off+x*cell+cell/2, cy2=off+y*cell+cell/2;
     if(on){
-      ctx.fillStyle='#1A1A1A';
+      // 활성 점: 진한 차콜 + 입체 하이라이트
+      ctx.fillStyle='#1C1C1E';
       ctx.beginPath();ctx.arc(cx2,cy2,rOn,0,7);ctx.fill();
-      ctx.fillStyle='rgba(255,255,255,.1)';
-      ctx.beginPath();ctx.arc(cx2-rOn*.22,cy2-rOn*.28,rOn*.45,0,7);ctx.fill();
+      // 볼록한 느낌의 하이라이트
+      const grad=ctx.createRadialGradient(cx2-rOn*.18,cy2-rOn*.22,0,cx2,cy2,rOn);
+      grad.addColorStop(0,'rgba(255,255,255,.18)');
+      grad.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=grad;
+      ctx.beginPath();ctx.arc(cx2,cy2,rOn,0,7);ctx.fill();
     }else{
-      ctx.fillStyle='#C4BDB4';
+      // 비활성 점: #DED8CF로 충분히 보이게
+      ctx.fillStyle='#DED8CF';
       ctx.beginPath();ctx.arc(cx2,cy2,rOff,0,7);ctx.fill();
     }
   }
-  // hover
+  // hover — dot 단위 강조
   if(hoverBrush){
-    ctx.fillStyle=hoverBrush.kind==='eraser'?'rgba(185,28,28,.15)':'rgba(255,77,0,.18)';
-    ctx.strokeStyle=hoverBrush.kind==='eraser'?'rgba(185,28,28,.55)':'rgba(255,77,0,.6)';
-    ctx.lineWidth=1.4;
-    for(const[x,y] of hoverBrush.cells){if(x<0||y<0||x>=GW||y>=GH)continue;ctx.fillRect(off+x*cell+1,off+y*cell+1,cell-2,cell-2);ctx.strokeRect(off+x*cell+1.5,off+y*cell+1.5,cell-3,cell-3);}
+    for(const[x,y] of hoverBrush.cells){
+      if(x<0||y<0||x>=GW||y>=GH)continue;
+      const hcx=off+x*cell+cell/2,hcy=off+y*cell+cell/2;
+      const isErase=hoverBrush.kind==='eraser';
+      // hover dot highlight
+      ctx.fillStyle=isErase?'rgba(185,28,28,.25)':'rgba(255,77,0,.28)';
+      ctx.strokeStyle=isErase?'rgba(185,28,28,.7)':'rgba(255,77,0,.75)';
+      ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.arc(hcx,hcy,rOn*1.1,0,7);ctx.fill();
+      ctx.beginPath();ctx.arc(hcx,hcy,rOn*1.1,0,7);ctx.stroke();
+    }
   }
   if(tool!=='move'&&hasImage&&!hoverBrush){ctx.strokeStyle='#FF4D00';ctx.lineWidth=2;ctx.strokeRect(off+cursor.x*cell+1,off+cursor.y*cell+1,cell-2,cell-2);}
 };
@@ -1388,11 +1432,11 @@ autoSelect=function(){
 
 /* ── quality sync ── */
 const AI_MSGS={
-  transparent:'투명 배경 PNG를 감지했어요. 형태 외곽을 핀으로 표현했어요.',
-  lineart:'선화·아이콘을 감지했어요. 선을 핀으로 직접 변환했어요.',
-  lowcontrast:'저대비 이미지를 감지했어요. 국소 임계값으로 세부를 살렸어요.',
-  photo:'사진을 감지했어요. 주요 윤곽선을 추출했어요.',
-  default:'AI가 이미지를 분석해 최적 변환 방식을 선택했어요.'
+  transparent:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
+  lineart:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
+  lowcontrast:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
+  photo:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.',
+  default:'배경 요소는 줄이고, 주요 윤곽과 핵심 내부 구조를 Dot Pad 60×40에 맞게 단순화했어요.'
 };
 const CONV_MODE_MSG={
   simple:'핵심 윤곽선만 추출해요.',
@@ -1438,7 +1482,10 @@ function syncQuality(){
 
   // canvas meta
   const lbl=ge('canvasMetaLabel');
-  if(lbl)lbl.textContent=(currentMode?currentMode.charAt(0).toUpperCase()+currentMode.slice(1)+' conversion':'Tactile conversion')+' · '+GW+'×'+GH;
+  if(lbl){
+    const modeLabel={simple:'Simple mode',balanced:'Balanced mode',detail:'Detail mode'}[currentMode]||'Tactile conversion';
+    lbl.textContent=modeLabel+' · Dot Pad '+GW+'×'+GH;
+  }
 
   // res chip
   const rc=ge('resChip');if(rc)rc.textContent=GW+'×'+GH;
@@ -1452,17 +1499,19 @@ function syncQuality(){
 }
 
 function resetQuality(){
-  const qd=ge('qDotCount');if(qd)qd.textContent='—';
-  const qs=ge('qDotSub');if(qs)qs.textContent='/ 2,400 · —%';
+  const qd=ge('qDotCount');if(qd)qd.textContent='0';
+  const qs=ge('qDotSub');if(qs)qs.textContent='/ 2,400 · 0%';
   const df=ge('densityFill');if(df)df.style.width='0%';
-  ['qClarity','qDensity','qReadability','qStructure'].forEach(id=>{
-    const el=ge(id);if(el){el.textContent='—';el.className='pill pill-neutral';}
+  // 변환 전에도 기본 안내 표시 (너무 흐리지 않게)
+  const pills={qClarity:'대기 중',qDensity:'대기 중',qReadability:'대기 중',qStructure:'대기 중'};
+  Object.entries(pills).forEach(([id,txt])=>{
+    const el=ge(id);if(el){el.textContent=txt;el.className='pill pill-neutral';}
   });
   const aiFeedbackEmpty=ge('aiFeedbackEmpty');
   const aiFeedbackCard=ge('aiFeedbackCard');
   if(aiFeedbackEmpty)aiFeedbackEmpty.style.display='';
   if(aiFeedbackCard)aiFeedbackCard.style.display='none';
-  const lbl=ge('canvasMetaLabel');if(lbl)lbl.textContent='편집 모드 · '+GW+'×'+GH;
+  const lbl=ge('canvasMetaLabel');if(lbl)lbl.textContent='Dot Pad 60×40 · 빈 캔버스';
   syncBtns(false);
 }
 
@@ -1486,6 +1535,9 @@ setAppState=function(s){
     // AI badge
     const badge=q('.ai-done-badge');
     if(badge)badge.style.display=ready?'inline-flex':'none';
+    // scanning animation
+    if(s==='analyzing') startScanAnimation();
+    else stopScanAnimation();
     // mobile scroll
     if(s==='analyzing')mobileStartAnalyzing();
     if(s==='ready')mobileOnReady();
@@ -1634,6 +1686,35 @@ setTimeout(()=>{
 let _timers=[];
 function isMob(){return window.innerWidth<=900;}
 function scrollTo2(el,off2=12){if(!el)return;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off2,behavior:'smooth'});}
+
+/* ── 변환 중 scanning animation ── */
+let _scanTimer=null;
+function startScanAnimation(){
+  stopScanAnimation();
+  let t=0;
+  _scanTimer=setInterval(()=>{
+    if(appState!=='analyzing'){stopScanAnimation();return;}
+    // 랜덤 점 몇 개를 깜빡이는 효과를 캔버스에 직접 그림
+    if(!pad||!ctx)return;
+    const w=GW*cell+off*2,h=GH*cell+off*2;
+    // 일부 랜덤 셀에 스캔 점 표시
+    const n=Math.floor(GW*GH*.03); // 3% 랜덤
+    for(let i=0;i<n;i++){
+      const rx=Math.floor(Math.random()*GW);
+      const ry=Math.floor(Math.random()*GH);
+      const cx2=off+rx*cell+cell/2,cy2=off+ry*cell+cell/2;
+      const rOn2=cell*.40;
+      // 점 순차적으로 켜졌다 꺼짐
+      const alpha=0.3+0.5*Math.sin(t*0.15+rx*0.3+ry*0.2);
+      ctx.fillStyle=`rgba(255,77,0,${alpha})`;
+      ctx.beginPath();ctx.arc(cx2,cy2,rOn2*.8,0,7);ctx.fill();
+    }
+    t++;
+  },60);
+}
+function stopScanAnimation(){
+  if(_scanTimer){clearInterval(_scanTimer);_scanTimer=null;}
+}
 
 function mobileStartAnalyzing(){
   if(!isMob())return;
