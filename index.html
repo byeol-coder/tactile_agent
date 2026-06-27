@@ -3,834 +3,557 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5"/>
-<title>Dot Canvas — 촉각그래픽 AI 에디터</title>
+<title>Dot Canvas AI — 촉각그래픽 제작 스튜디오</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
-/* ══════════════════════════════════════════════════════
-   DESIGN TOKENS
-   Dark editor chrome · Ivory canvas island · Teal AI signature
-══════════════════════════════════════════════════════ */
 :root{
-  /* chrome — 블루-그레이 다크. 칠흑 대신 "밤하늘" 톤으로 숨 쉬게 */
-  --chrome:        #13151C;
-  --panel:         #1C2030;
-  --panel2:        #242838;
-  --hover:         #2E3347;
-  --active:        #383E55;
-  --border:        rgba(255,255,255,.10);
-  --border2:       rgba(255,255,255,.18);
-  /* text */
-  --t-hi:          #F4F2EF;
-  --t-mid:         #AAA5B0;
-  --t-lo:          #686475;
-  /* accent */
-  --orange:        #FF5A1F;
-  --orange-dim:    rgba(255,90,31,.18);
-  --orange-glow:   0 0 24px rgba(255,90,31,.4);
-  /* AI signature */
-  --teal:          #00C2A8;
-  --teal-dim:      rgba(0,194,168,.14);
-  --teal-glow:     0 0 20px rgba(0,194,168,.35);
-  /* canvas */
-  --canvas-bg:     #F5F2EC;
-  --dot-off:       rgba(120,112,104,.18);
-  --dot-on:        #1A1816;
-  /* status */
-  --green:         #22C55E;
-  --green-dim:     rgba(34,197,94,.14);
-  --blue:          #3B82F6;
-  --blue-dim:      rgba(59,130,246,.14);
-  --red:           #EF4444;
-  --font-ui:       'Inter','Noto Sans KR',system-ui,sans-serif;
-  --font-ko:       'Noto Sans KR','Inter',system-ui,sans-serif;
-  --r-s:4px; --r-m:8px; --r-l:12px; --r-xl:16px; --r-2xl:20px;
+  --bg:        #F7F6F3;
+  --white:     #FFFFFF;
+  --surface:   #FAFAF8;
+  --border:    #ECEAE4;
+  --border2:   #E0DDD6;
+  --ink:       #1A1A1A;
+  --text:      #3A3835;
+  --muted:     #9A9590;
+  --subtle:    #C0BAB2;
+  --orange:    #FF4D00;
+  --orange-d:  #E84400;
+  --orange-bg: #FFF5F0;
+  --green:     #15803D;
+  --green-bg:  #EDFAF1;
+  --red:       #B91C1C;
+  --red-bg:    #FEF2F2;
+  --amber-bg:  #FEF9E7;
+  --amber:     #A16207;
+  --font:      'Inter','Noto Sans KR',system-ui,sans-serif;
+  --r-s:4px; --r-m:8px; --r-l:12px; --r-xl:16px; --r-2xl:22px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--chrome);color:var(--t-hi);
-  font-family:var(--font-ui);font-size:13px;line-height:1.5;
-  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);
+  font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;overflow:hidden}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+input,select{font-family:inherit;outline:none}
 svg{display:block;flex-shrink:0}
-input,select,textarea{font-family:inherit}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 #legacy{display:none!important}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-/* ══════════════════════════════════════════════════════
-   TITLE BAR (macOS-feel)
-══════════════════════════════════════════════════════ */
-.title-bar{
-  height:44px;background:var(--panel);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;
-  user-select:none
+/* ── HEADER ── */
+.app-header{
+  height:52px;background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0
 }
-.win-btns{display:flex;gap:6px;align-items:center}
-.wb{width:12px;height:12px;border-radius:50%;flex-shrink:0;cursor:default}
-.wb-red{background:#FF5F57}.wb-yellow{background:#FEBC2E}.wb-green{background:#28C840}
-.title-bar-center{flex:1;display:flex;align-items:center;justify-content:center;gap:8px}
-.file-name{font-size:13px;font-weight:500;color:var(--t-mid);display:flex;align-items:center;gap:6px}
-.file-name input{background:none;border:none;color:var(--t-hi);font-size:13px;font-weight:500;
-  width:140px;text-align:center;padding:2px 6px;border-radius:var(--r-s)}
-.file-name input:focus{outline:1px solid var(--border2);background:var(--hover)}
-.dirty-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);
-  display:none;flex-shrink:0}
-body[data-dirty="true"] .dirty-dot{display:block}
-.tb-divider{width:1px;height:20px;background:var(--border)}
-/* AI status chip */
-.ai-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
-  background:var(--teal-dim);border:1px solid rgba(0,194,168,.2);
-  font-size:11px;font-weight:600;color:var(--teal);white-space:nowrap}
-.ai-chip-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0}
-.ai-chip-dot.pulse{animation:teal-pulse 1.4s ease infinite}
-@keyframes teal-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-/* title bar right */
-.tb-right{display:flex;align-items:center;gap:8px}
-.tb-btn{height:28px;padding:0 12px;border-radius:var(--r-m);font-size:12px;font-weight:500;
-  color:var(--t-mid);border:1px solid var(--border);background:var(--panel2);
-  display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .1s}
-.tb-btn:hover{background:var(--hover);color:var(--t-hi);border-color:var(--border2)}
-.tb-btn:disabled{opacity:.3;cursor:not-allowed}
-.tb-btn.primary{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:600;
-  box-shadow:var(--orange-glow)}
-.tb-btn.primary:hover{background:#FF6B35}
-.resolution-badge{font-size:11px;font-weight:700;color:var(--t-lo);
-  padding:3px 8px;border-radius:var(--r-s);border:1px solid var(--border);background:var(--panel2)}
-/* connection */
-.conn-chip{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;
-  font-size:11px;font-weight:600;color:var(--t-lo);border:1px solid var(--border);
-  background:var(--panel2);cursor:pointer;transition:all .1s}
-.conn-chip:hover{border-color:var(--border2);color:var(--t-mid)}
-.conn-chip.on{color:var(--green);border-color:rgba(34,197,94,.3);background:var(--green-dim)}
-.conn-chip .cdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
-.conn-chip.on .cdot{animation:teal-pulse 2s ease infinite}
+.brand{display:flex;align-items:center;gap:9px;min-width:160px}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:var(--ink);
+  display:grid;place-items:center;flex-shrink:0}
+.brand-name{font-size:14px;font-weight:700;letter-spacing:-.02em}
+.brand-name span{color:var(--orange)}
+.file-input-wrap{font-size:10px;color:var(--subtle);display:flex;align-items:center;gap:4px;cursor:pointer}
+.file-input-wrap input{background:none;border:none;color:var(--muted);font-size:10px;width:120px;padding:1px 4px;border-radius:3px}
+.file-input-wrap input:focus{background:var(--surface);outline:1px solid var(--border2)}
 
-/* ══════════════════════════════════════════════════════
-   TOOL BAR (vertical left rail, Figma-style)
-══════════════════════════════════════════════════════ */
-.tool-rail{
-  width:48px;background:var(--panel);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;
-  flex-shrink:0;overflow:hidden
-}
-.tr-btn{width:36px;height:36px;border-radius:var(--r-m);display:grid;place-items:center;
-  color:var(--t-lo);transition:all .1s;position:relative}
-.tr-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;
-  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.tr-btn:hover{background:var(--hover);color:var(--t-mid)}
-.tr-btn.active{background:var(--orange);color:#fff;box-shadow:var(--orange-glow)}
-.tr-btn:disabled{opacity:.2;cursor:not-allowed}
-/* keyboard shortcut tooltip */
-.tr-btn::after{content:attr(data-key);position:absolute;left:calc(100% + 8px);top:50%;
-  transform:translateY(-50%);background:var(--active);border:1px solid var(--border2);
-  color:var(--t-mid);font-size:10px;font-weight:600;padding:3px 6px;border-radius:var(--r-s);
-  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .1s;z-index:100}
-.tr-btn:hover::after{opacity:1}
-.tr-sep{width:24px;height:1px;background:var(--border);margin:6px 0;flex-shrink:0}
-.tr-size-grp{display:flex;flex-direction:column;gap:2px;align-items:center}
-.tr-sz{width:28px;height:22px;border-radius:var(--r-s);font-size:10px;font-weight:700;
-  color:var(--t-lo);background:none;border:1px solid transparent;letter-spacing:-.02em}
-.tr-sz:hover{background:var(--hover);color:var(--t-mid)}
-.tr-sz.on{background:var(--active);color:var(--t-hi);border-color:var(--border2)}
+/* ai prompt bar */
+.ai-bar{flex:1;position:relative;max-width:440px}
+.ai-bar-ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none}
+.ai-bar input{width:100%;height:34px;padding:0 12px 0 32px;border-radius:10px;
+  border:1.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--ink)}
+.ai-bar input:focus{border-color:var(--border2);background:var(--white)}
 
-/* ══════════════════════════════════════════════════════
-   WORKSPACE
-══════════════════════════════════════════════════════ */
+/* mode selector */
+.mode-seg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.mode-btn{height:26px;padding:0 11px;border-radius:7px;font-size:11px;font-weight:600;
+  color:var(--muted);transition:all .1s;white-space:nowrap}
+.mode-btn.active{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.mode-btn:hover:not(.active){color:var(--text)}
+
+.hdr-actions{display:flex;gap:7px;align-items:center}
+.hdr-btn{height:32px;padding:0 14px;border-radius:9px;font-size:12px;font-weight:600;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all .1s}
+.hdr-btn.primary{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(255,77,0,.22)}
+.hdr-btn.primary:hover{background:var(--orange-d)}
+.hdr-btn.secondary{border:1.5px solid var(--border);background:var(--white);color:var(--text)}
+.hdr-btn.secondary:hover{background:var(--surface);border-color:var(--border2)}
+.hdr-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── WORKSPACE ── */
 .workspace{flex:1;display:flex;overflow:hidden}
 
-/* ══════════════════════════════════════════════════════
-   CANVAS AREA (center, Figma-style infinite canvas feel)
-══════════════════════════════════════════════════════ */
-.canvas-area{
-  flex:1;min-width:0;background:var(--chrome);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;position:relative;overflow:hidden
+/* ── TOOL RAIL ── */
+.tool-rail{
+  width:64px;background:var(--white);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;flex-shrink:0
 }
-/* dot grid background for the canvas area — subtle */
-.canvas-area::before{
-  content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);
-  background-size:24px 24px;pointer-events:none
+.tr-btn{
+  width:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:7px 4px;border-radius:10px;color:var(--muted);transition:all .1s
 }
-/* zoom/position controls bottom-left */
-.canvas-hud{
-  position:absolute;bottom:16px;left:16px;display:flex;align-items:center;gap:8px;z-index:10
-}
-.hud-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;
-  background:var(--panel);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--t-lo)}
-.hud-btn{width:24px;height:24px;border-radius:var(--r-s);display:grid;place-items:center;
-  background:var(--panel2);border:1px solid var(--border);color:var(--t-lo)}
-.hud-btn:hover{background:var(--hover);color:var(--t-mid)}
+.tr-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.tr-btn .tr-label{font-size:9px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+.tr-btn:hover:not(:disabled){background:var(--surface);color:var(--text)}
+.tr-btn.active{background:var(--orange);color:#fff}
+.tr-btn:disabled{opacity:.3;cursor:not-allowed}
+.tr-btn.danger:not(.active){color:var(--red)}
+.tr-btn.danger:hover{background:var(--red-bg)}
+.tr-sep{width:38px;height:1px;background:var(--border);margin:5px 0;flex-shrink:0}
 
-/* The DotPad bezel */
-.bezel{
-  background:#111;border-radius:20px;
-  box-shadow:0 0 0 1px rgba(255,255,255,.06),0 32px 64px rgba(0,0,0,.6);
-  padding:20px;display:inline-flex;flex-direction:column;
-  align-items:center;gap:12px;transition:box-shadow .3s
+/* ── CANVAS AREA ── */
+.canvas-area{
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:var(--bg);padding:16px 20px;overflow:hidden;position:relative
 }
-.bezel:focus-within{box-shadow:0 0 0 1px rgba(255,255,255,.1),0 0 0 3px var(--orange),0 32px 64px rgba(0,0,0,.6)}
-.bezel-top{display:flex;align-items:center;gap:8px;width:100%}
-.bezel-brand{font-size:10px;font-weight:700;color:rgba(255,255,255,.2);letter-spacing:.08em;text-transform:uppercase}
-.bezel-indicator{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.1);margin-left:auto}
-.bezel-indicator.on{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.6)}
-.dot-canvas-wrap{position:relative;border-radius:10px;overflow:hidden}
-#pad{display:block;touch-action:none;border-radius:10px}
-.before-img{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:10px}
-#canvasCard[data-view="before"] #pad{visibility:hidden}
-#canvasCard[data-view="before"] .before-img{display:block}
+.canvas-meta{
+  margin-bottom:12px;display:flex;align-items:center;gap:10px
+}
+.canvas-meta-label{font-size:11px;font-weight:500;color:var(--muted);
+  letter-spacing:.05em;text-transform:uppercase}
+.ai-done-badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;
+  background:var(--orange-bg);color:var(--orange);letter-spacing:.03em}
+
+/* dot grid */
+.dot-grid-wrap{
+  background:#F4F1E8;border-radius:14px;padding:10px;
+  box-shadow:0 4px 24px rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.04)
+}
+#pad{display:block;touch-action:none;border-radius:6px}
+#beforeImg{display:none;position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;border-radius:6px}
 
 /* overlays */
-.ov{position:absolute;inset:0;border-radius:10px;display:none;flex-direction:column;
-  align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;
-  background:rgba(17,17,17,.88);backdrop-filter:blur(4px);z-index:10}
+.ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;text-align:center;padding:24px;
+  background:rgba(247,246,243,.93);backdrop-filter:blur(3px);z-index:10;border-radius:14px}
 body[data-state="empty"] #emptyOv{display:flex}
 body[data-state="analyzing"] #analyzeOv{display:flex}
+.ov-ico{width:52px;height:52px;border-radius:16px;background:var(--white);
+  display:grid;place-items:center;margin-bottom:4px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.ov-ico svg{width:24px;height:24px;stroke:var(--ink);fill:none;stroke-width:1.5;
+  stroke-linecap:round;stroke-linejoin:round}
+.ov-title{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.ov-sub{font-size:12px;color:var(--muted);max-width:28ch;line-height:1.75}
+.ov-ctas{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.ov-cta{height:36px;padding:0 18px;border-radius:11px;font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:7px;transition:all .1s;white-space:nowrap}
+.ov-cta.primary{background:var(--ink);color:#fff}
+.ov-cta.primary:hover{background:#2C2C2C}
+.ov-cta.secondary{border:1.5px solid var(--border);background:var(--white);color:var(--text)}
+.ov-cta.secondary:hover{background:var(--surface)}
+.ov-link{font-size:11px;color:var(--subtle);text-decoration:underline;
+  background:none;border:none;cursor:pointer}
+.ov-link:hover{color:var(--muted)}
 
-/* empty state */
-.empty-icon{width:48px;height:48px;border-radius:14px;background:var(--hover);
-  display:grid;place-items:center;margin-bottom:4px}
-.empty-icon svg{width:22px;height:22px;color:var(--t-lo)}
-.ov-title{font-size:15px;font-weight:700;color:var(--t-hi)}
-.ov-sub{font-size:12px;color:var(--t-lo);max-width:28ch;line-height:1.7}
-.ov-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
-.ov-cta{height:34px;padding:0 16px;border-radius:var(--r-l);font-size:12px;font-weight:600;
-  border:1px solid var(--border2);background:var(--hover);color:var(--t-hi);
-  display:inline-flex;align-items:center;gap:6px}
-.ov-cta:hover{background:var(--active);border-color:rgba(255,255,255,.2)}
-.ov-cta.accent{background:var(--orange);border-color:var(--orange);color:#fff;
-  box-shadow:var(--orange-glow)}
-.ov-cta.accent:hover{background:#FF6B35}
-.ov-link{color:var(--t-lo);font-size:11px;text-decoration:underline;background:none;border:none;cursor:pointer}
-.ov-link:hover{color:var(--t-mid)}
-/* drag hint */
-.drag-hint{position:absolute;bottom:12px;font-size:11px;color:var(--t-lo)}
-
-/* analyzing overlay */
-.analyzing-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
-.ai-spinner{width:36px;height:36px;position:relative}
-.ai-spinner::before,.ai-spinner::after{content:'';position:absolute;inset:0;border-radius:50%}
-.ai-spinner::before{border:2.5px solid var(--border);border-top-color:var(--teal);
-  animation:spin .8s linear infinite}
-.ai-spinner::after{border:2.5px solid transparent;border-bottom-color:var(--orange);
-  inset:5px;animation:spin .6s linear infinite reverse}
+/* converting overlay */
+.converting-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.ai-spinner{width:40px;height:40px;border:2.5px solid var(--border);
+  border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.analyzing-title{font-size:14px;font-weight:700;color:var(--t-hi)}
-.analyzing-sub{font-size:11px;color:var(--t-lo);min-height:16px}
-.conv-bar{width:160px;height:3px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden}
-.conv-bar-fill{height:100%;width:0%;border-radius:2px;
-  background:linear-gradient(90deg,var(--teal),var(--orange));
-  transition:width .4s cubic-bezier(.4,0,.2,1)}
-.cancel-link{font-size:11px;color:var(--t-lo);text-decoration:underline;cursor:pointer;background:none;border:none}
+.converting-title{font-size:14px;font-weight:700;color:var(--ink)}
+.converting-sub{font-size:12px;color:var(--muted);min-height:16px;transition:opacity .2s}
+.conv-bar{width:160px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.conv-bar-fill{height:100%;background:linear-gradient(90deg,var(--orange),#FF8C00);
+  border-radius:2px;width:0%;transition:width .4s cubic-bezier(.4,0,.2,1)}
 
-/* view toggle (top right of canvas) */
-.view-toggle{
-  position:absolute;top:16px;right:16px;display:flex;background:var(--panel);
-  border:1px solid var(--border);border-radius:999px;padding:3px;gap:2px;z-index:10
-}
-.vtog{height:26px;padding:0 12px;border-radius:999px;font-size:11px;font-weight:600;
-  color:var(--t-lo);transition:all .1s}
-.vtog.active{background:var(--active);color:var(--t-hi)}
-.vtog:hover:not(.active){color:var(--t-mid)}
-.vtog:disabled{opacity:.3;cursor:not-allowed}
-
-/* quality bar (bottom of bezel area, floating) */
-.q-bar{
-  position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
-  display:flex;gap:6px;align-items:center;z-index:10;
-  background:var(--panel);border:1px solid var(--border);border-radius:999px;
-  padding:5px 14px;box-shadow:0 8px 24px rgba(0,0,0,.4)
-}
-.q-tag{font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap}
-.q-tag .qd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.q-dots{color:var(--t-mid)}
-.q-dots .qd{background:var(--t-lo)}
-.q-good{color:var(--teal)}.q-good .qd{background:var(--teal)}
-.q-mid{color:#FBBF24}.q-mid .qd{background:#FBBF24}
-.q-bad{color:var(--red)}.q-bad .qd{background:var(--red)}
-.q-orange{color:var(--orange)}.q-orange .qd{background:var(--orange)}
-.q-sep{width:1px;height:12px;background:var(--border)}
-
-/* ══════════════════════════════════════════════════════
-   RIGHT PANEL — AI Assistant
-══════════════════════════════════════════════════════ */
+/* ── RIGHT PANEL (Inspector) ── */
 .right-panel{
-  width:280px;flex-shrink:0;background:var(--panel);
-  border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden
+  width:268px;background:var(--white);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;flex-shrink:0
 }
-.rp-header{
-  padding:16px 16px 0;display:flex;align-items:center;justify-content:space-between
-}
-.rp-title{font-size:11px;font-weight:700;color:var(--t-lo);letter-spacing:.06em;text-transform:uppercase}
-.rp-scroll{flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:12px}
-.rp-scroll::-webkit-scrollbar{width:3px}
-.rp-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.rp-header{padding:14px 16px 0;margin-bottom:2px}
+.rp-label{font-size:10px;font-weight:700;color:var(--subtle);letter-spacing:.07em;text-transform:uppercase}
+.rp-scroll{flex:1;overflow-y:auto;padding:10px 16px 20px;display:flex;flex-direction:column;gap:14px}
 
-/* AI insight card */
-.ai-card{background:var(--teal-dim);border:1px solid rgba(0,194,168,.2);border-radius:var(--r-xl);
-  padding:12px;display:flex;flex-direction:column;gap:6px}
-.ai-card-head{display:flex;align-items:center;gap:7px}
-.ai-card-icon{width:22px;height:22px;border-radius:6px;background:var(--teal-dim);
+/* stat card */
+.stat-card{background:var(--surface);border-radius:var(--r-l);padding:10px 12px}
+.stat-num{font-size:24px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.stat-num-unit{font-size:12px;font-weight:500;color:var(--muted);margin-left:4px}
+.stat-sub{font-size:10px;color:var(--subtle);margin-top:3px}
+.density-bar{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.density-fill{height:4px;border-radius:2px;transition:width .3s,background .3s}
+
+/* inspector rows */
+.insp-row{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid #F5F2ED}
+.insp-row:last-child{border-bottom:none}
+.insp-key{font-size:12px;color:var(--muted);font-weight:500}
+.pill{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px}
+.pill-good{background:var(--green-bg);color:var(--green)}
+.pill-warn{background:var(--amber-bg);color:var(--amber)}
+.pill-bad{background:var(--red-bg);color:var(--red)}
+.pill-neutral{background:var(--surface);color:var(--muted)}
+
+/* AI feedback card */
+.ai-feedback{background:var(--orange-bg);border:1px solid rgba(255,77,0,.2);
+  border-radius:var(--r-l);padding:12px}
+.ai-fb-head{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.ai-fb-dot{width:20px;height:20px;border-radius:6px;background:var(--orange);
   display:grid;place-items:center;flex-shrink:0}
-.ai-card-icon svg{width:12px;height:12px;color:var(--teal)}
-.ai-card-label{font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.04em;text-transform:uppercase}
-.ai-card-text{font-size:12px;color:var(--t-mid);line-height:1.6;font-family:var(--font-ko)}
-/* AI suggestion chips */
-.ai-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
-.ai-ch{height:26px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:600;
-  color:var(--teal);background:var(--teal-dim);border:1px solid rgba(0,194,168,.2);
-  white-space:nowrap;transition:all .1s}
-.ai-ch:hover{background:rgba(0,194,168,.2);border-color:rgba(0,194,168,.3)}
+.ai-fb-dot svg{width:10px;height:10px}
+.ai-fb-tag{font-size:11px;font-weight:700;color:var(--orange);letter-spacing:.03em}
+.ai-fb-text{font-size:12px;color:#6B4530;line-height:1.75}
+.ai-empty{background:var(--surface);border-radius:var(--r-l);padding:12px;
+  font-size:12px;color:var(--subtle);line-height:1.7}
 
 /* section title */
-.sec-head{font-size:11px;font-weight:700;color:var(--t-lo);letter-spacing:.06em;
-  text-transform:uppercase;margin-bottom:6px}
+.sec-title{font-size:10px;font-weight:700;color:var(--subtle);letter-spacing:.07em;text-transform:uppercase}
 
-/* threshold row */
-.th-row{display:flex;align-items:center;gap:10px}
-.th-slider-wrap{flex:1;position:relative;height:24px;display:flex;align-items:center}
-.th-track{width:100%;height:4px;border-radius:2px;background:var(--active);cursor:pointer;position:relative}
-.th-fill{position:absolute;left:0;top:0;height:4px;border-radius:2px;
-  background:linear-gradient(90deg,var(--teal) 0%,var(--orange) 100%);pointer-events:none;transition:width .04s}
-.th-thumb{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;
-  background:var(--t-hi);border:2px solid var(--orange);
-  box-shadow:0 2px 8px rgba(0,0,0,.4);transform:translate(-50%,-50%);cursor:grab}
-.th-thumb:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.2)}
-#clarity{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
-.th-val{font-size:13px;font-weight:700;color:var(--t-hi);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
-/* ±1 / Auto / Apply */
-.th-actions{display:flex;gap:5px;margin-top:6px}
-.th-adj{flex:1;height:28px;border-radius:var(--r-m);font-size:12px;font-weight:600;
-  color:var(--t-mid);background:var(--panel2);border:1px solid var(--border);transition:all .1s}
-.th-adj:hover{background:var(--hover);color:var(--t-hi)}
-.th-apply{flex:2;height:28px;border-radius:var(--r-m);font-size:12px;font-weight:700;
-  background:var(--orange);color:#fff;border:none;transition:all .1s}
-.th-apply:hover{background:#FF6B35}
-.th-apply:disabled{opacity:.3;cursor:not-allowed}
-
-/* property row */
-.prop-row{display:flex;align-items:center;justify-content:space-between;
-  padding:7px 0;border-top:1px solid var(--border)}
-.prop-row:first-of-type{border-top:none;padding-top:0}
-.prop-label{font-size:12px;color:var(--t-mid)}
-.prop-val{font-size:12px;font-weight:600;color:var(--t-hi)}
-.prop-select{background:var(--panel2);border:1px solid var(--border);color:var(--t-hi);
-  border-radius:var(--r-s);padding:3px 6px;font-size:11px;font-family:inherit;cursor:pointer}
-.prop-select:focus{outline:1px solid var(--orange);border-color:var(--orange)}
-
-/* outline seg */
-.seg3{display:flex;background:var(--panel2);border:1px solid var(--border);
-  border-radius:var(--r-m);padding:2px;gap:2px}
-.seg3-btn{flex:1;height:24px;border-radius:6px;font-size:11px;font-weight:600;color:var(--t-lo)}
-.seg3-btn.on{background:var(--active);color:var(--t-hi)}
-.seg3-btn:hover:not(.on){color:var(--t-mid)}
-.seg3-btn:disabled{opacity:.3;cursor:not-allowed}
-
-/* toggle row */
-.tog-row{display:flex;align-items:center;justify-content:space-between;
-  padding:7px 0;border-top:1px solid var(--border)}
-.tog-row:first-of-type{border-top:none;padding-top:0}
-.tog-label{font-size:12px;color:var(--t-mid)}
-.tog-sub{font-size:11px;color:var(--t-lo)}
-.tog{width:32px;height:18px;border-radius:999px;background:var(--active);
-  position:relative;cursor:pointer;border:none;transition:background .15s;flex-shrink:0}
-.tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;
-  border-radius:50%;background:var(--t-lo);transition:left .15s,background .15s}
-.tog[aria-checked="true"]{background:var(--orange)}
-.tog[aria-checked="true"]::after{left:16px;background:#fff}
-
-/* score card */
-.score-card{border-radius:var(--r-l);padding:10px 12px;border:1px solid var(--border);
-  background:var(--panel2);display:flex;flex-direction:column;gap:3px}
-.score-card.teal{background:var(--teal-dim);border-color:rgba(0,194,168,.2)}
-.score-card.amber{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.2)}
-.score-card.red{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
-.sc-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
-.score-card.teal .sc-label{color:var(--teal)}
-.score-card.amber .sc-label{color:#FBBF24}
-.score-card.red .sc-label{color:var(--red)}
-.sc-title{font-size:13px;font-weight:700;color:var(--t-hi)}
-.sc-desc{font-size:11px;color:var(--t-lo);line-height:1.6}
-
-/* save / export row */
-.export-btns{display:flex;flex-direction:column;gap:5px}
-.exp-btn{height:32px;border-radius:var(--r-m);font-size:12px;font-weight:600;
-  background:var(--panel2);border:1px solid var(--border);color:var(--t-mid);
-  display:flex;align-items:center;justify-content:center;gap:6px;transition:all .1s}
-.exp-btn:hover:not(:disabled){background:var(--hover);color:var(--t-hi);border-color:var(--border2)}
-.exp-btn:disabled{opacity:.25;cursor:not-allowed}
-.exp-btn.accent{background:var(--orange);border-color:var(--orange);color:#fff;box-shadow:var(--orange-glow)}
-.exp-btn.accent:hover:not(:disabled){background:#FF6B35}
-
-/* DotPad section */
-.dp-section{border-top:1px solid var(--border);padding-top:12px}
-.dp-row{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0}
-.dp-dot{width:8px;height:8px;border-radius:50%;background:var(--t-lo);flex-shrink:0;transition:all .2s}
-.dp-dot.on{background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.5)}
-.dp-dot.busy{background:#FBBF24;animation:teal-pulse 1s infinite}
-.dp-dot.err{background:var(--red)}
-.dp-label{font-size:12px;font-weight:600;color:var(--t-mid)}
-.dp-row:hover .dp-label{color:var(--t-hi)}
+/* dotpad section */
+.dp-row{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer}
+.dp-dot{width:7px;height:7px;border-radius:50%;background:var(--subtle);flex-shrink:0;transition:all .2s}
+.dp-dot.on{background:var(--green);box-shadow:0 0 6px rgba(21,128,61,.5)}
+.dp-dot.busy{background:#F59E0B;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dp-lbl{font-size:12px;font-weight:600;color:var(--muted)}
+.dp-row:hover .dp-lbl{color:var(--text)}
 .live-row{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
-.live-lbl{font-size:11px;color:var(--t-lo)}
+.live-lbl{font-size:11px;color:var(--subtle)}
+.sw{width:32px;height:18px;border-radius:999px;background:var(--border2);
+  position:relative;cursor:pointer;border:none;transition:background .15s;flex-shrink:0}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;
+  border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.sw[aria-checked="true"]{background:var(--orange)}
+.sw[aria-checked="true"]::after{left:16px}
+.sw:disabled{opacity:.4;cursor:not-allowed}
 
-/* collapsible expert section */
-.expert-toggle{display:flex;align-items:center;justify-content:space-between;
-  padding:8px 0;cursor:pointer;border-top:1px solid var(--border);margin-top:4px}
-.expert-toggle-label{font-size:11px;font-weight:600;color:var(--t-lo);
-  letter-spacing:.04em;text-transform:uppercase}
-.expert-toggle svg{width:12px;height:12px;color:var(--t-lo);transition:transform .15s}
-.expert-toggle.open svg{transform:rotate(180deg)}
-.expert-body{display:none;flex-direction:column;gap:0}
-.expert-body.show{display:flex}
-.exp-input{height:26px;padding:0 8px;background:var(--panel2);border:1px solid var(--border);
-  border-radius:var(--r-s);font-size:11px;color:var(--t-hi);width:72px;text-align:right;font-family:inherit}
-.exp-input:focus{outline:1px solid var(--orange);border-color:var(--orange)}
+/* export btns */
+.exp-btn{height:32px;border-radius:var(--r-m);font-size:12px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:all .1s}
+.exp-btn.accent{background:var(--orange);color:#fff}
+.exp-btn.accent:hover{background:var(--orange-d)}
+.exp-btn.ghost{border:1.5px solid var(--border);background:var(--white);color:var(--text)}
+.exp-btn.ghost:hover{background:var(--surface)}
+.exp-btn:disabled{opacity:.35;cursor:not-allowed}
 
-/* ══════════════════════════════════════════════════════
-   BOTTOM STATUS BAR
-══════════════════════════════════════════════════════ */
-.status-bar{
-  height:28px;background:var(--panel);border-top:1px solid var(--border);
-  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;overflow:hidden
+/* ── BOTTOM BAR ── */
+.bottom-bar{
+  height:44px;background:var(--white);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0
 }
-.sb-item{font-size:11px;font-weight:500;color:var(--t-lo);display:flex;align-items:center;gap:5px;white-space:nowrap}
-.sb-item.accent{color:var(--orange)}
-.sb-item.good{color:var(--teal)}
-.sb-item.err{color:var(--red)}
-.sb-spacer{flex:1}
-.sb-tag{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em}
-.sb-tag.orange{background:var(--orange-dim);color:var(--orange)}
-.sb-tag.teal{background:var(--teal-dim);color:var(--teal)}
-.sb-tag.green{background:var(--green-dim);color:var(--green)}
+.bb-status{display:flex;align-items:center;gap:6px}
+.bb-dot{width:7px;height:7px;border-radius:50%;background:var(--subtle)}
+.bb-dot.connected{background:var(--green);box-shadow:0 0 5px rgba(21,128,61,.5)}
+.bb-text{font-size:11px;font-weight:600;color:var(--subtle)}
+.bb-sep{width:1px;height:20px;background:var(--border)}
+.bb-page{display:flex;align-items:center;gap:7px}
+.bb-page-btn{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface);color:var(--muted);display:grid;place-items:center;font-size:13px}
+.bb-page-btn:disabled{color:var(--border);cursor:not-allowed}
+.bb-page-label{font-size:11px;color:var(--muted);min-width:52px;text-align:center}
+.bb-spacer{flex:1}
+.bb-btn{height:30px;padding:0 12px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--surface);font-size:11px;font-weight:600;color:var(--text);
+  display:flex;align-items:center;gap:5px;white-space:nowrap}
+.bb-btn:hover{background:var(--white);border-color:var(--border2)}
+.bb-btn:disabled{opacity:.35;cursor:not-allowed}
 
-/* ══════════════════════════════════════════════════════
-   TOAST / MODAL
-══════════════════════════════════════════════════════ */
-#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(10px);
-  background:var(--active);border:1px solid var(--border2);color:var(--t-hi);
-  padding:8px 16px;border-radius:var(--r-l);font-size:12px;font-weight:600;
-  opacity:0;pointer-events:none;transition:.2s;z-index:200;white-space:nowrap;
-  box-shadow:0 8px 24px rgba(0,0,0,.4)}
+/* ── TOAST ── */
+#toast{position:fixed;left:50%;bottom:52px;transform:translateX(-50%) translateY(10px);
+  background:var(--ink);color:#fff;padding:8px 16px;border-radius:var(--r-l);
+  font-size:12px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:200;
+  white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.18)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#toast.ok{border-color:rgba(0,194,168,.4);color:var(--teal)}
-#toast.err{border-color:rgba(239,68,68,.4);color:var(--red)}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);
+#toast.ok{background:var(--green)}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(26,26,26,.4);backdrop-filter:blur(2px);
   display:none;align-items:center;justify-content:center;z-index:180;padding:20px}
 .modal-bg.show{display:flex}
-.modal{background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r-2xl);
-  max-width:340px;width:100%;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
-.modal h2{font-size:14px;font-weight:700;margin-bottom:6px;color:var(--t-hi)}
-.modal p{font-size:12px;color:var(--t-lo);margin-bottom:18px;line-height:1.6}
-.modal .ma{display:flex;flex-direction:column;gap:6px}
-.modal .ma button{width:100%;height:36px;border-radius:var(--r-l);border:1px solid var(--border);
-  background:var(--hover);font-size:12px;font-weight:600;color:var(--t-mid);cursor:pointer}
-.modal .ma button:hover{background:var(--active);color:var(--t-hi)}
-.modal .ma .acc{background:var(--orange);border-color:var(--orange);color:#fff}
-.modal .ma .acc:hover{background:#FF6B35}
+.modal{background:var(--white);border-radius:var(--r-2xl);max-width:340px;width:100%;
+  padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.15)}
+.modal h2{font-size:15px;font-weight:700;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.65}
+.modal-btns{display:flex;flex-direction:column;gap:6px}
+.modal-btns button{width:100%;height:38px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);font-size:13px;font-weight:600;color:var(--text);cursor:pointer}
+.modal-btns button:hover{background:var(--white);border-color:var(--border2)}
+.modal-btns .acc{background:var(--orange);border-color:var(--orange);color:#fff}
+.modal-btns .acc:hover{background:var(--orange-d)}
 
-/* ══════════════════════════════════════════════════════
-   DROP ZONE HIGHLIGHT
-══════════════════════════════════════════════════════ */
-.canvas-area.drag-over::after{
-  content:'이미지를 놓으세요';position:absolute;inset:0;
-  background:rgba(0,194,168,.08);border:2px dashed var(--teal);
-  border-radius:16px;display:grid;place-items:center;
-  font-size:16px;font-weight:700;color:var(--teal);z-index:20;
-  pointer-events:none
-}
-
-/* ══════════════════════════════════════════════════════
-   RESPONSIVE — tablet / mobile
-══════════════════════════════════════════════════════ */
+/* responsive */
 @media(max-width:900px){
   html,body{height:auto;overflow-x:hidden;overflow-y:auto}
   body{display:block}
-  .title-bar{position:sticky;top:0;z-index:100;flex-wrap:wrap;height:auto;
-    min-height:44px;padding:8px 12px;gap:8px}
-  .title-bar-center{order:3;width:100%;justify-content:flex-start}
-  .win-btns{display:none}
+  .app-header{position:sticky;top:0;z-index:100;flex-wrap:wrap;height:auto;
+    min-height:52px;padding:8px 12px}
+  .ai-bar{order:3;flex:none;width:100%}
   .workspace{display:flex;flex-direction:column;overflow:visible;height:auto}
-  .tool-rail{width:100%;flex-direction:row;height:44px;border-right:none;
-    border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;gap:4px}
-  .tr-sep{width:1px;height:24px;margin:0 4px}
-  .tr-size-grp{flex-direction:row}
-  .tr-btn::after{display:none}
-  .canvas-area{min-height:360px}
+  .tool-rail{width:100%;flex-direction:row;height:52px;border-right:none;
+    border-bottom:1px solid var(--border);padding:0 10px;gap:2px;overflow-x:auto}
+  .tr-sep{width:1px;height:30px;margin:0 4px}
+  .canvas-area{min-height:300px}
   .right-panel{width:100%;border-left:none;border-top:1px solid var(--border)}
-  .q-bar{bottom:12px}
-  .status-bar{display:none}
-  .status-bar{position:sticky;bottom:0;z-index:100;display:flex}
+  .bottom-bar{position:sticky;bottom:0;z-index:100}
 }
 @media(max-width:600px){
-  .title-bar{padding:6px 10px}
-  .tb-btn{padding:0 8px;font-size:11px}
-  .ai-chip{display:none}
-  .canvas-area{min-height:280px}
+  .hdr-actions .hdr-btn span{display:none}
+  .mode-seg{display:none}
   .right-panel .rp-scroll{padding:10px 12px}
 }
 </style>
 </head>
-<body data-state="empty" data-dirty="false">
+<body data-state="empty">
 
-<!-- ═══════════════ TITLE BAR ═══════════════ -->
-<div class="title-bar">
-  <div class="win-btns" aria-hidden="true">
-    <div class="wb wb-red"></div>
-    <div class="wb wb-yellow"></div>
-    <div class="wb wb-green"></div>
-  </div>
-
-  <div class="title-bar-center">
-    <div class="file-name">
-      <input type="text" id="fname" value="Untitled" aria-label="파일 이름" spellcheck="false"/>
-      <span class="dirty-dot" id="dirty" aria-hidden="true"></span>
+<!-- HEADER -->
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg width="17" height="17" viewBox="0 0 16 16" fill="none">
+        <circle cx="3.5" cy="3.5" r="1.8" fill="#fff"/>
+        <circle cx="8" cy="3.5" r="1.8" fill="#fff"/>
+        <circle cx="12.5" cy="3.5" r="1.8" fill="#fff"/>
+        <circle cx="3.5" cy="8" r="1.8" fill="#fff" opacity=".4"/>
+        <circle cx="8" cy="8" r="1.8" fill="#fff"/>
+        <circle cx="12.5" cy="8" r="1.8" fill="#fff" opacity=".4"/>
+        <circle cx="3.5" cy="12.5" r="1.8" fill="#fff" opacity=".18"/>
+        <circle cx="8" cy="12.5" r="1.8" fill="#fff"/>
+        <circle cx="12.5" cy="12.5" r="1.8" fill="#fff" opacity=".18"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Dot Canvas <span>AI</span></div>
+      <div class="file-input-wrap">
+        <input type="text" id="fname" value="Untitled" aria-label="파일 이름" spellcheck="false"/>
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>
+      </div>
     </div>
   </div>
 
-  <div class="tb-right">
-    <div class="ai-chip" id="aiChip">
-      <span class="ai-chip-dot" id="aiDot"></span>
-      <span id="aiChipText">AI 대기 중</span>
+  <div class="ai-bar">
+    <div class="ai-bar-ico">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0BAB0" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     </div>
-    <div class="tb-divider"></div>
-    <span class="resolution-badge" id="resChip">60×40</span>
-    <div class="conn-chip" id="connChip" role="button" tabindex="0" aria-label="DotPad 연결">
-      <span class="cdot"></span>
-      <span id="connChipText">미연결</span>
-    </div>
-    <div class="tb-divider"></div>
-    <button class="tb-btn" id="hdrSaveBtn" disabled>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      저장
+    <input id="aiPrompt" placeholder="이미지를 촉각그래픽으로 단순화해줘…" aria-label="AI 프롬프트"/>
+  </div>
+
+  <div class="mode-seg" role="group" aria-label="변환 모드">
+    <button class="mode-btn active" data-mode="simple">Simple</button>
+    <button class="mode-btn" data-mode="balanced">Balanced</button>
+    <button class="mode-btn" data-mode="detail">Detail</button>
+  </div>
+
+  <div class="hdr-actions">
+    <button class="hdr-btn primary" id="hdrOutputBtn" disabled>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <span>DotPad 전송</span>
     </button>
-    <button class="tb-btn primary" id="hdrOutputBtn" disabled>
-      출력
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    <button class="hdr-btn secondary" id="hdrExportBtn" disabled>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>내보내기</span>
     </button>
   </div>
-</div>
+</header>
 
-<!-- ═══════════════ WORKSPACE ═══════════════ -->
+<!-- WORKSPACE -->
 <div class="workspace">
 
-  <!-- LEFT TOOL RAIL -->
-    <aside class="tool-rail" role="toolbar" aria-label="도구">
-
-    <!-- group 1: 이동 / 패닝 / 선택 -->
-    <button class="tr-btn active" data-tool="move" aria-pressed="true"
-      title="이동 (M)" data-key="M">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <g id="Preview / Icon/&#236;&#157;&#180;&#235;&#143;&#153; (M)"> <rect width="40" height="40" rx="6" fill="transparent"/> <path id="Vector" d="M19.996 30.5621V9.43M23.1658 27.3923L19.996 30.5621L16.8262 27.3922M23.1658 12.5998L19.996 9.43L16.8262 12.5999M27.3922 23.1659L30.5619 19.996L27.3922 16.8262M30.5619 19.996H9.43M12.5997 23.1659L9.43 19.996L12.5998 16.8262" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="pan" aria-pressed="false"
-      title="패닝">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M15.5686 31.3455V27.8028" stroke="currentColor" stroke-width="1.17734" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_2" d="M16.987 28.7827C16.2493 28.4562 15.6217 27.9196 15.181 27.2384C14.7403 26.5573 14.5057 25.7611 14.5057 24.9473V14.4483C14.5057 14.1633 14.6178 13.8901 14.8172 13.6886C15.0167 13.487 15.2871 13.3738 15.5691 13.3738C15.8512 13.3738 16.1216 13.487 16.3211 13.6886C16.5205 13.8901 16.6326 14.1633 16.6326 14.4483V11.9411C16.6326 11.6562 16.7446 11.3828 16.944 11.1813C17.1435 10.9798 17.4139 10.8666 17.6959 10.8666C17.978 10.8666 18.2485 10.9798 18.4479 11.1813C18.6473 11.3828 18.7594 11.6562 18.7594 11.9411V10.5085C18.7594 10.2235 18.8714 9.95019 19.0708 9.74868C19.2703 9.54717 19.5407 9.43396 19.8227 9.43396C20.1048 9.43396 20.3753 9.54717 20.5747 9.74868C20.7741 9.95019 20.8862 10.2235 20.8862 10.5085V11.9411C20.8862 11.6562 20.9982 11.3828 21.1977 11.1813C21.397 10.9798 21.6675 10.8666 21.9496 10.8666C22.2316 10.8666 22.5021 10.9798 22.7015 11.1813C22.9009 11.3828 23.013 11.6562 23.013 11.9411V17.856H23.0229C23.0217 17.6912 23.0527 17.5278 23.1142 17.3751C23.1757 17.2225 23.2665 17.0837 23.3814 16.9667C23.4963 16.8497 23.6329 16.7568 23.7835 16.6934C23.934 16.63 24.0955 16.5974 24.2586 16.5974C24.5863 16.5974 24.9006 16.7289 25.1323 16.9631C25.3641 17.1972 25.4943 17.5148 25.4943 17.8459V24.3904C25.4943 24.9857 25.3782 25.5752 25.1528 26.1251C24.9273 26.675 24.5968 27.1748 24.1802 27.5957L24.0133 27.7644C23.6216 28.1601 23.1627 28.4816 22.6585 28.7135V30.566" stroke="currentColor" stroke-width="1.17734" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_3" d="M20.886 11.9411V21.1251" stroke="currentColor" stroke-width="1.17734" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_4" d="M16.6321 13.732V21.0792" stroke="currentColor" stroke-width="1.17734" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_5" d="M18.7595 20.6659V11.9411" stroke="currentColor" stroke-width="1.17734" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_6" d="M23.0128 18.0301V21.6117L22.1394 22.4943C21.3369 23.3052 20.8861 24.4049 20.886 25.5516" stroke="currentColor" stroke-width="1.17734" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="select" aria-pressed="false"
-      title="영역 선택 (S)" data-key="S">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M9.54 16.8262V14.1847C9.54 11.5538 11.6418 9.43 14.2456 9.43H16.8598M23.1339 9.43H25.7482C28.352 9.43 30.4538 11.5538 30.4538 14.1847V16.8262M30.4538 24.2225V25.8074C30.4538 28.4383 28.352 30.5621 25.7482 30.5621H24.1797M16.8598 30.5621H14.2456C11.6418 30.5621 9.54 28.4383 9.54 25.8074V23.1659" stroke="currentColor" stroke-width="1.39172" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
+  <!-- TOOL RAIL -->
+  <aside class="tool-rail" role="toolbar" aria-label="도구">
+    <!-- 이동 (01-move) -->
+    <button class="tr-btn active" data-tool="move" aria-pressed="true" title="이동 (M)">
+      <svg viewBox="0 0 40 40"><path d="M19.996 30.56V9.43M23.17 27.39L20 30.56l-3.17-3.17M23.17 12.6L20 9.43l-3.17 3.17M27.39 23.17L30.56 20l-3.17-3.17M30.56 20H9.43M12.6 23.17L9.43 20l3.17-3.17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="tr-label">Move</span>
     </button>
 
-    <div class="tr-sep"></div>
-
-    <!-- group 2: 펜 / 선 / 사각형 / 원 -->
-    <button class="tr-btn" data-tool="pen" aria-pressed="false"
-      title="펜 (P)" data-key="P">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M14.7085 30.5277L28.4272 30.5621M17.8264 14.713H11.58M14.7085 9.43C12.9857 9.43 11.58 10.8353 11.58 12.547V26.2405C11.58 26.716 11.7808 27.4345 12.0239 27.8466L12.8906 29.2835C13.8841 30.9425 15.5223 30.9425 16.5158 29.2835L17.3825 27.8466C17.6255 27.4345 17.8264 26.716 17.8264 26.2405V12.547C17.8264 10.8353 16.4207 9.43 14.7085 9.43Z" stroke="currentColor" stroke-width="1.54636" stroke-linecap="round"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="line" aria-pressed="false"
-      title="선 (L)" data-key="L">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M11.83 20H28.1721" stroke="currentColor" stroke-width="1.93965" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="rect" aria-pressed="false"
-      title="사각형 (R)" data-key="R">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M16.8598 30.5621H23.134C28.3624 30.5621 30.4538 28.4489 30.4538 23.1659V16.8263C30.4538 11.5432 28.3624 9.43 23.134 9.43H16.8598C11.6314 9.43 9.54 11.5432 9.54 16.8263V23.1659C9.54 28.4489 11.6314 30.5621 16.8598 30.5621Z" stroke="currentColor" stroke-width="1.50457" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="circle" aria-pressed="false"
-      title="원 (C)" data-key="C">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M30.4538 19.996C30.4538 25.8074 25.7482 30.5621 19.9969 30.5621C14.2456 30.5621 9.54 25.8074 9.54 19.996C9.54 14.1847 14.2456 9.43 19.9969 9.43C25.7482 9.43 30.4538 14.1847 30.4538 19.996Z" stroke="currentColor" stroke-width="1.50457" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
+    <!-- 선택 (03-rectangle-selection) -->
+    <button class="tr-btn" data-tool="select" aria-pressed="false" title="영역 선택 (S)">
+      <svg viewBox="0 0 40 40"><path d="M9.54 16.83V14.18C9.54 11.55 11.64 9.43 14.25 9.43H16.86M23.13 9.43H25.75C28.35 9.43 30.45 11.55 30.45 14.18v2.65M30.45 24.22v1.59C30.45 28.44 28.35 30.56 25.75 30.56H24.18M16.86 30.56H14.25C11.64 30.56 9.54 28.44 9.54 25.81V23.17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="tr-label">Select</span>
     </button>
 
-    <div class="tr-sep"></div>
+    <div class="tr-sep" aria-hidden="true"></div>
 
-    <!-- group 3: 지우개 / 채우기 + 두께 -->
-    <button class="tr-btn" data-tool="eraser" aria-pressed="false"
-      title="지우개 (E)" data-key="E">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <g id="Preview / Icon/&#236;&#167;&#128;&#236;&#154;&#176;&#234;&#184;&#176; (E)"> <rect width="40" height="40" rx="6" fill="transparent"/> <path id="Vector" d="M16.8495 30.5621H29.4389M14.8772 16.9413L23.0079 25.1434M11.1004 25.969L17.0279 19.9788M14.0589 28.964L19.9969 22.9738M10.4605 25.8843L14.1428 29.599C14.733 30.1936 15.5329 30.5276 16.3669 30.5276C17.201 30.5276 18.001 30.1936 18.5911 29.599L29.5333 18.5606C30.1227 17.9653 30.4538 17.1583 30.4538 16.3169C30.4538 15.4756 30.1227 14.6686 29.5333 14.0733L25.851 10.3585C25.2608 9.76396 24.4609 9.43 23.6269 9.43C22.7928 9.43 21.9929 9.76396 21.4027 10.3585L10.4605 21.397C9.87106 21.9923 9.54 22.7993 9.54 23.6406C9.54 24.482 9.87106 25.2889 10.4605 25.8843Z" stroke="currentColor" stroke-width="1.50457" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="fill" aria-pressed="false"
-      title="채우기 (B)" data-key="B">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M28.6119 24.0692L25.0004 27.741C22.4638 30.3197 21.5975 30.2772 19.0923 27.741L13.2782 21.83C11.2532 19.7713 10.7417 18.4023 13.2782 15.8237L16.8898 12.1519C19.5933 9.40339 20.7729 10.0932 22.7979 12.1519L28.6119 18.0628C31.1067 20.6097 31.3155 21.3207 28.6119 24.0692ZM12.5058 25.3744L13.1947 26.5312C14.1655 28.176 13.4139 29.5238 11.5246 29.5238C9.63529 29.5238 8.88373 28.176 9.85449 26.5312L10.5434 25.3744C11.0862 24.4618 11.9734 24.4618 12.5058 25.3744Z" stroke="currentColor" stroke-width="1.33929" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_2" d="M30.3648 20.624C24.8302 16.8109 20.3019 21.1324 12.5319 19.494L12 19.6071" stroke="currentColor" stroke-width="1.33929" stroke-linecap="round" stroke-linejoin="round"/> </g> </svg>
+    <!-- 펜 (04-pen) -->
+    <button class="tr-btn" data-tool="pen" aria-pressed="false" title="그리기 (D)">
+      <svg viewBox="0 0 40 40"><path d="M14.71 30.53L28.43 30.56M17.83 14.71H11.58M14.71 9.43C12.99 9.43 11.58 10.84 11.58 12.55V26.24C11.58 26.72 11.78 27.43 12.02 27.85L12.89 29.28C13.88 30.94 15.52 30.94 16.52 29.28l.87-1.44C17.63 27.43 17.83 26.72 17.83 26.24V12.55C17.83 10.84 16.42 9.43 14.71 9.43Z" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/></svg>
+      <span class="tr-label">Draw</span>
     </button>
 
-    <div class="tr-sep"></div>
-
-    <!-- 브러시 두께 -->
-    <div class="tr-size-grp" id="sizeGrp2" role="radiogroup" aria-label="두께" style="display:none">
-      <button class="tr-sz on" role="radio" data-size="1" aria-checked="true">1핀</button>
-      <button class="tr-sz" role="radio" data-size="2" aria-checked="false">2핀</button>
-      <button class="tr-sz" role="radio" data-size="3" aria-checked="false">3핀</button>
-    </div>
-
-    <div class="tr-sep"></div>
-
-    <!-- group 4: 점자 입력 / 촉각 글자 (준비 중) -->
-    <button class="tr-btn" data-tool="braille" aria-pressed="false"
-      title="점자 입력 상자" disabled style="opacity:.25">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <g id="Icon"> <path id="Vector" d="M30.4424 23.1659V16.8262C30.4424 11.5432 28.3541 9.43 23.1335 9.43H16.8688C11.6482 9.43 9.56 11.5432 9.56 16.8262V23.1659C9.56 28.4489 11.6482 30.5621 16.8688 30.5621H23.1335C28.3541 30.5621 30.4424 28.4489 30.4424 23.1659Z" stroke="currentColor" stroke-width="1.42741" stroke-linecap="round" stroke-linejoin="round"/> <path id="Vector_2" d="M19.7055 20.2949H18.8077C18.6425 20.2949 18.5085 20.161 18.5085 19.9957C18.5085 19.8304 18.6425 19.6964 18.8077 19.6964H19.7055V15.8062C19.7055 15.3104 19.3036 14.9085 18.8077 14.9085H18.2093C18.0439 14.9085 17.91 14.7745 17.91 14.6093C17.91 14.4439 18.0439 14.31 18.2093 14.31H18.8077C19.2972 14.31 19.7318 14.545 20.0047 14.9083C20.2777 14.545 20.7122 14.31 21.2017 14.31H21.8002C21.9655 14.31 22.0994 14.4439 22.0994 14.6093C22.0994 14.7745 21.9655 14.9085 21.8002 14.9085H21.2017C20.7059 14.9085 20.3039 15.3104 20.3039 15.8062V19.6964H21.2017C21.367 19.6964 21.501 19.8304 21.501 19.9957C21.501 20.161 21.367 20.2949 21.2017 20.2949H20.3039V24.1851C20.3039 24.681 20.7059 25.0829 21.2017 25.0829H21.8002C21.9655 25.0829 22.0994 25.2168 22.0994 25.3821C22.0994 25.5474 21.9655 25.6813 21.8002 25.6813H21.2017C20.7122 25.6813 20.2777 25.4464 20.0047 25.083C19.7318 25.4464 19.2972 25.6813 18.8077 25.6813H18.2093C18.0439 25.6813 17.91 25.5474 17.91 25.3821C17.91 25.2168 18.0439 25.0829 18.2093 25.0829H18.8077C19.3036 25.0829 19.7055 24.681 19.7055 24.1851V20.2949Z" fill="currentColor"/> <path id="Vector_3" d="M19.9973 21.0746C20.5905 21.0746 21.0746 20.5904 21.0746 19.9973C21.0746 19.4041 20.5905 18.92 19.9973 18.92C19.4041 18.92 18.92 19.4041 18.92 19.9973C18.92 20.5904 19.4041 21.0746 19.9973 21.0746Z" fill="currentColor"/> <path id="Vector_4" d="M19.9986 20.5373C20.2953 20.5373 20.5373 20.2953 20.5373 19.9986C20.5373 19.702 20.2953 19.46 19.9986 19.46C19.702 19.46 19.46 19.702 19.46 19.9986C19.46 20.2953 19.702 20.5373 19.9986 20.5373Z" fill="currentColor"/> <path id="Vector_5" d="M19.9973 21.0746C20.5905 21.0746 21.0746 20.5904 21.0746 19.9973C21.0746 19.4041 20.5905 18.92 19.9973 18.92C19.4041 18.92 18.92 19.4041 18.92 19.9973C18.92 20.5904 19.4041 21.0746 19.9973 21.0746Z" fill="currentColor"/> <path id="Vector_6" d="M19.9986 20.5373C20.2953 20.5373 20.5373 20.2953 20.5373 19.9986C20.5373 19.702 20.2953 19.46 19.9986 19.46C19.702 19.46 19.46 19.702 19.46 19.9986C19.46 20.2953 19.702 20.5373 19.9986 20.5373Z" fill="currentColor"/> <path id="Vector_7" d="M19.9973 21.0746C20.5905 21.0746 21.0746 20.5904 21.0746 19.9973C21.0746 19.4041 20.5905 18.92 19.9973 18.92C19.4041 18.92 18.92 19.4041 18.92 19.9973C18.92 20.5904 19.4041 21.0746 19.9973 21.0746Z" fill="currentColor"/> <path id="Vector_8" d="M19.9986 20.5373C20.2953 20.5373 20.5373 20.2953 20.5373 19.9986C20.5373 19.702 20.2953 19.46 19.9986 19.46C19.702 19.46 19.46 19.702 19.46 19.9986C19.46 20.2953 19.702 20.5373 19.9986 20.5373Z" fill="currentColor"/> </g> </svg>
-    </button>
-    <button class="tr-btn" data-tool="tactile" aria-pressed="false"
-      title="촉각 글자" disabled style="opacity:.25">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <path d="M12.8162 10.2193C12.8162 10.6343 12.464 11.0069 11.9843 11.0069C11.5045 11.0069 11.1523 10.6343 11.1523 10.2193C11.1523 9.80427 11.5045 9.43164 11.9843 9.43164C12.464 9.43164 12.8162 9.80427 12.8162 10.2193Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M16.8259 10.2193C16.8259 10.6343 16.4738 11.0069 15.994 11.0069C15.5143 11.0069 15.1621 10.6343 15.1621 10.2193C15.1621 9.80427 15.5143 9.43164 15.994 9.43164C16.4738 9.43164 16.8259 9.80427 16.8259 10.2193Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M20.8299 10.2193C20.8299 10.6343 20.4776 11.0069 19.9979 11.0069C19.5182 11.0069 19.166 10.6343 19.166 10.2193C19.166 9.80427 19.5182 9.43164 19.9979 9.43164C20.4776 9.43164 20.8299 9.80427 20.8299 10.2193Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M20.8299 14.211C20.8299 14.6259 20.4776 14.9986 19.9979 14.9986C19.5182 14.9986 19.166 14.6259 19.166 14.211C19.166 13.796 19.5182 13.4233 19.9979 13.4233C20.4776 13.4233 20.8299 13.796 20.8299 14.211Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M20.8299 18.0972C20.8299 18.5122 20.4776 18.8848 19.9979 18.8848C19.5182 18.8848 19.166 18.5122 19.166 18.0972C19.166 17.6822 19.5182 17.3096 19.9979 17.3096C20.4776 17.3096 20.8299 17.6822 20.8299 18.0972Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M20.8299 21.9903C20.8299 22.4052 20.4776 22.7779 19.9979 22.7779C19.5182 22.7779 19.166 22.4052 19.166 21.9903C19.166 21.5752 19.5182 21.2026 19.9979 21.2026C20.4776 21.2026 20.8299 21.5752 20.8299 21.9903Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M20.8299 25.8833C20.8299 26.2983 20.4776 26.6709 19.9979 26.6709C19.5182 26.6709 19.166 26.2983 19.166 25.8833C19.166 25.4683 19.5182 25.0957 19.9979 25.0957C20.4776 25.0957 20.8299 25.4683 20.8299 25.8833Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M20.8299 29.7759C20.8299 30.1909 20.4776 30.5635 19.9979 30.5635C19.5182 30.5635 19.166 30.1909 19.166 29.7759C19.166 29.361 19.5182 28.9883 19.9979 28.9883C20.4776 28.9883 20.8299 29.361 20.8299 29.7759Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M24.8474 10.2193C24.8474 10.6343 24.4952 11.0069 24.0155 11.0069C23.5357 11.0069 23.1836 10.6343 23.1836 10.2193C23.1836 9.80427 23.5357 9.43164 24.0155 9.43164C24.4952 9.43164 24.8474 9.80427 24.8474 10.2193Z" stroke="currentColor" stroke-width="1.50943"/> <path d="M28.8533 10.2193C28.8533 10.6343 28.5011 11.0069 28.0214 11.0069C27.5416 11.0069 27.1895 10.6343 27.1895 10.2193C27.1895 9.80427 27.5416 9.43164 28.0214 9.43164C28.5011 9.43164 28.8533 9.80427 28.8533 10.2193Z" stroke="currentColor" stroke-width="1.50943"/> </svg>
+    <!-- 지우개 (08-eraser) -->
+    <button class="tr-btn" data-tool="eraser" aria-pressed="false" title="지우기 (E)">
+      <svg viewBox="0 0 40 40"><path d="M16.85 30.56H29.44M10.46 25.88L14.14 29.6C14.73 30.19 15.53 30.53 16.37 30.53c.83 0 1.63-.34 2.22-.93l10.94-11.04c.59-.6.92-1.4.92-2.25 0-.84-.33-1.65-.92-2.25L25.85 10.36C25.26 9.76 24.46 9.43 23.63 9.43c-.84 0-1.64.33-2.22.93L10.46 21.4C9.87 22 9.54 22.8 9.54 23.64c0 .84.33 1.65.92 2.24Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="tr-label">Erase</span>
     </button>
 
-    <div class="tr-sep"></div>
-
-    <!-- group 5: Undo / Redo -->
-    <button class="tr-btn" id="undoBtn2" title="실행 취소 (⌘Z)" data-key="⌘Z" disabled>
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <mask id="path-2-inside-1_61_14199" fill="white"> <path d="M0 15C0 6.71573 6.71573 0 15 0H25C33.2843 0 40 6.71573 40 15V25C40 33.2843 33.2843 40 25 40H15C6.71573 40 0 33.2843 0 25V15Z"/> </mask> <path d="M0 15C0 6.71573 6.71573 0 15 0H25C33.2843 0 40 6.71573 40 15V25C40 33.2843 33.2843 40 25 40H15C6.71573 40 0 33.2843 0 25V15Z" fill="transparent"/> <path d="M15 0V0.5H25V0V-0.5H15V0ZM40 15H39.5V25H40H40.5V15H40ZM25 40V39.5H15V40V40.5H25V40ZM0 25H0.5V15H0H-0.5V25H0ZM15 40V39.5C6.99187 39.5 0.5 33.0081 0.5 25H0H-0.5C-0.5 33.5604 6.43959 40.5 15 40.5V40ZM40 25H39.5C39.5 33.0081 33.0081 39.5 25 39.5V40V40.5C33.5604 40.5 40.5 33.5604 40.5 25H40ZM25 0V0.5C33.0081 0.5 39.5 6.99187 39.5 15H40H40.5C40.5 6.43959 33.5604 -0.5 25 -0.5V0ZM15 0V-0.5C6.43959 -0.5 -0.5 6.43959 -0.5 15H0H0.5C0.5 6.99187 6.99187 0.5 15 0.5V0Z" fill="white" mask="url(#path-2-inside-1_61_14199)"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M23.3778 16.7363C26.0405 16.7363 28.1475 18.8172 28.1475 21.3146C28.1475 23.8119 26.0405 25.8929 23.3778 25.8929H14.2641C13.7526 25.8929 13.3379 26.3076 13.3379 26.8191C13.3379 27.3307 13.7526 27.7453 14.2641 27.7453H23.3778C27.0034 27.7453 30 24.8942 30 21.3146C30 17.7349 27.0034 14.8838 23.3778 14.8838H10.8465C10.335 14.8838 9.92029 15.2985 9.92029 15.81C9.92029 16.3216 10.335 16.7363 10.8465 16.7363H23.3778Z" fill="currentColor"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M14.1304 12.2826C13.7748 11.9147 13.1883 11.9047 12.8204 12.2602L9.90327 15.0785C9.72263 15.253 9.62063 15.4934 9.62063 15.7446C9.62063 15.9957 9.72263 16.2361 9.90327 16.4106L12.8204 19.2289C13.1883 19.5844 13.7748 19.5744 14.1304 19.2065C14.4859 18.8387 14.4759 18.2523 14.108 17.8968L11.8803 15.7446L14.108 13.5923C14.4759 13.2368 14.4859 12.6504 14.1304 12.2826Z" fill="currentColor"/> </svg>
-    </button>
-    <button class="tr-btn" id="redoBtn2" title="다시 실행 (⌘⇧Z)" data-key="⌘⇧Z" disabled>
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="40" height="40" rx="6" fill="transparent"/> <mask id="path-2-inside-1_61_14204" fill="white"> <path d="M0 15C0 6.71573 6.71573 0 15 0H25C33.2843 0 40 6.71573 40 15V25C40 33.2843 33.2843 40 25 40H15C6.71573 40 0 33.2843 0 25V15Z"/> </mask> <path d="M0 15C0 6.71573 6.71573 0 15 0H25C33.2843 0 40 6.71573 40 15V25C40 33.2843 33.2843 40 25 40H15C6.71573 40 0 33.2843 0 25V15Z" fill="transparent"/> <path d="M15 0V0.5H25V0V-0.5H15V0ZM40 15H39.5V25H40H40.5V15H40ZM25 40V39.5H15V40V40.5H25V40ZM0 25H0.5V15H0H-0.5V25H0ZM15 40V39.5C6.99187 39.5 0.5 33.0081 0.5 25H0H-0.5C-0.5 33.5604 6.43959 40.5 15 40.5V40ZM40 25H39.5C39.5 33.0081 33.0081 39.5 25 39.5V40V40.5C33.5604 40.5 40.5 33.5604 40.5 25H40ZM25 0V0.5C33.0081 0.5 39.5 6.99187 39.5 15H40H40.5C40.5 6.43959 33.5604 -0.5 25 -0.5V0ZM15 0V-0.5C6.43959 -0.5 -0.5 6.43959 -0.5 15H0H0.5C0.5 6.99187 6.99187 0.5 15 0.5V0Z" fill="white" mask="url(#path-2-inside-1_61_14204)"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M16.4328 16.8661C13.77 16.8661 11.663 18.9471 11.663 21.4444C11.663 23.9418 13.77 26.0228 16.4328 26.0228H25.5464C26.058 26.0228 26.4727 26.4375 26.4727 26.949C26.4727 27.4605 26.058 27.8752 25.5464 27.8752H16.4328C12.8072 27.8752 9.81055 25.0241 9.81055 21.4444C9.81055 17.8648 12.8072 15.0137 16.4328 15.0137H28.964C29.4756 15.0137 29.8903 15.4284 29.8903 15.9399C29.8903 16.4514 29.4756 16.8661 28.964 16.8661H16.4328Z" fill="currentColor"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M25.6782 12.4125C26.0336 12.0446 26.62 12.0346 26.9879 12.3901L29.9042 15.2084C30.0848 15.3829 30.1868 15.6233 30.1868 15.8744C30.1868 16.1256 30.0848 16.366 29.9042 16.5405L26.9879 19.3588C26.62 19.7143 26.0336 19.7043 25.6782 19.3364C25.3227 18.9686 25.3327 18.3822 25.7005 18.0267L27.9277 15.8744L25.7005 13.7222C25.3327 13.3667 25.3227 12.7803 25.6782 12.4125Z" fill="currentColor"/> </svg>
+    <!-- 채우기 (09-fill) -->
+    <button class="tr-btn" data-tool="fill" aria-pressed="false" title="채우기 (F)">
+      <svg viewBox="0 0 40 40"><path d="M28.61 24.07L25 27.74C22.46 30.32 21.6 30.28 19.09 27.74L13.28 21.83C11.25 19.77 10.74 18.4 13.28 15.82L16.89 12.15C19.59 9.4 20.77 10.09 22.8 12.15L28.61 18.06C31.11 20.61 31.32 21.32 28.61 24.07ZM12.51 25.37l.69 1.16C14.17 28.18 13.41 29.52 11.52 29.52S8.88 28.18 9.85 26.53l.69-1.16C11.09 24.46 11.97 24.46 12.51 25.37Z" stroke="currentColor" stroke-width="1.34" stroke-linecap="round" stroke-linejoin="round"/><path d="M30.36 20.62C24.83 16.81 20.3 21.13 12.53 19.49L12 19.61" stroke="currentColor" stroke-width="1.34" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="tr-label">Fill</span>
     </button>
 
+    <div class="tr-sep" aria-hidden="true"></div>
+
+    <!-- Undo (12-undo) -->
+    <button class="tr-btn" id="undoBtn2" title="실행 취소 (⌘Z)" disabled>
+      <svg viewBox="0 0 40 40"><path fill-rule="evenodd" clip-rule="evenodd" d="M23.38 16.74C26.04 16.74 28.15 18.82 28.15 21.31S26.04 25.89 23.38 25.89H14.26C13.75 25.89 13.34 26.31 13.34 26.82S13.75 27.75 14.26 27.75H23.38C27 27.75 30 24.89 30 21.31S27 14.88 23.38 14.88H10.85C10.34 14.88 9.92 15.3 9.92 15.81S10.34 16.74 10.85 16.74H23.38Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M14.13 12.28C13.77 11.91 13.19 11.9 12.82 12.26L9.9 15.08C9.72 15.25 9.62 15.49 9.62 15.74S9.72 16.24 9.9 16.41L12.82 19.23C13.19 19.58 13.77 19.57 14.13 19.21S14.48 18.25 14.11 17.9L11.88 15.74 14.11 13.59C14.48 13.24 14.49 12.65 14.13 12.28Z" fill="currentColor"/></svg>
+      <span class="tr-label">Undo</span>
+    </button>
+
+    <!-- Redo (13-redo) -->
+    <button class="tr-btn" id="redoBtn2" title="다시 실행 (⌘⇧Z)" disabled>
+      <svg viewBox="0 0 40 40"><path fill-rule="evenodd" clip-rule="evenodd" d="M16.43 16.87C13.77 16.87 11.66 18.95 11.66 21.44S13.77 26.02 16.43 26.02H25.55C26.06 26.02 26.47 26.44 26.47 26.95S26.06 27.88 25.55 27.88H16.43C12.81 27.88 9.81 25.02 9.81 21.44S12.81 15.01 16.43 15.01H28.96C29.48 15.01 29.89 15.43 29.89 15.94S29.48 16.87 28.96 16.87H16.43Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M25.68 12.41C26.03 12.04 26.62 12.03 26.99 12.39L29.9 15.21C30.08 15.38 30.19 15.62 30.19 15.87S30.08 16.37 29.9 16.54L26.99 19.36C26.62 19.71 26.03 19.7 25.68 19.34S25.33 18.38 25.7 18.03L27.93 15.87 25.7 13.72C25.33 13.37 25.32 12.78 25.68 12.41Z" fill="currentColor"/></svg>
+      <span class="tr-label">Redo</span>
+    </button>
+
+    <div class="tr-sep" aria-hidden="true"></div>
+
+    <div style="flex:1"></div>
+
+    <!-- Clear (eraser 변형) -->
+    <button class="tr-btn danger" id="clearBtn2" title="전체 지우기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      <span class="tr-label">Clear</span>
+    </button>
   </aside>
 
-  <!-- CANVAS AREA -->
-  <main class="canvas-area" id="canvasArea" id="canvasCard" data-view="after">
-
-    <!-- view toggle -->
-    <div class="view-toggle">
-      <button class="vtog" id="vpBefore">원본</button>
-      <button class="vtog active" id="vpCurrent">촉각</button>
-      <button class="vtog" id="vpDotpad" disabled>DotPad</button>
+  <!-- CANVAS -->
+  <main class="canvas-area" id="canvasArea" data-view="after">
+    <div class="canvas-meta" id="canvasMeta">
+      <span class="canvas-meta-label" id="canvasMetaLabel">편집 모드 · 60×40</span>
     </div>
 
-    <!-- bezel -->
-    <div class="bezel" id="bezelWrap">
-      <div class="bezel-top">
-        <span class="bezel-brand">Dot Pad</span>
-        <span class="bezel-indicator" id="bezelIndicator"></span>
-      </div>
-      <div class="dot-canvas-wrap">
-        <div id="dotGrid" style="position:relative">
-          <canvas id="pad" tabindex="0" role="application" aria-label="DotPad 촉각 캔버스"></canvas>
-          <img id="beforeImg" class="before-img" alt="원본 이미지"/>
+    <div class="dot-grid-wrap" id="dotGridWrap" style="position:relative">
+      <div id="dotGrid" style="position:relative">
+        <canvas id="pad" tabindex="0" role="application" aria-label="DotPad 60×40 촉각 그리드"></canvas>
+        <img id="beforeImg" alt="원본 이미지"/>
 
-          <!-- empty overlay -->
-          <div class="ov" id="emptyOv">
-            <div class="empty-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            </div>
-            <p class="ov-title">이미지를 올려보세요</p>
-            <p class="ov-sub">AI가 즉시 최적 촉각 그래픽으로 변환해드려요</p>
-            <div class="ov-actions">
-              <label for="imageFileInput" class="ov-cta accent" tabindex="0" role="button">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                파일 선택
-              </label>
-              <label for="tactileFileInput" class="ov-cta" tabindex="0" role="button">DTM·DTMS</label>
-            </div>
-            <button class="ov-link" id="sampleBtn">또는 샘플로 시작</button>
-            <p class="drag-hint">파일을 이곳에 드래그해도 됩니다</p>
+        <!-- empty overlay -->
+        <div class="ov" id="emptyOv">
+          <div class="ov-ico">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
+          <p class="ov-title">이미지를 올려보세요</p>
+          <p class="ov-sub">AI가 즉시 최적 촉각 그래픽으로 변환해드려요</p>
+          <div class="ov-ctas">
+            <label for="imageFileInput" class="ov-cta primary" tabindex="0" role="button">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              파일 선택
+            </label>
+            <label for="tactileFileInput" class="ov-cta secondary" tabindex="0" role="button">DTM·DTMS</label>
+          </div>
+          <button class="ov-link" id="sampleBtn">또는 샘플로 시작</button>
+        </div>
 
-          <!-- analyzing overlay -->
-          <div class="ov" id="analyzeOv">
-            <div class="analyzing-wrap">
-              <div class="ai-spinner"></div>
-              <p class="analyzing-title" id="analyzeTitle">이미지 분석 중</p>
-              <p class="analyzing-sub" id="analyzeName">AI가 최적 변환 방식을 찾고 있어요</p>
-              <div class="conv-bar"><div class="conv-bar-fill" id="convBarFill"></div></div>
-              <button class="cancel-link" id="cancelAnalyze">취소</button>
-            </div>
+        <!-- analyzing overlay -->
+        <div class="ov" id="analyzeOv">
+          <div class="converting-wrap">
+            <div class="ai-spinner" aria-hidden="true"></div>
+            <p class="converting-title" id="analyzeTitle">이미지 분석 중</p>
+            <p class="converting-sub" id="analyzeName">AI가 최적 변환 방식을 찾고 있어요</p>
+            <div class="conv-bar"><div class="conv-bar-fill" id="convBarFill"></div></div>
+            <button class="ov-link" id="cancelAnalyze">취소</button>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- quality bar -->
-    <div class="q-bar" id="qBar" style="display:none">
-      <span class="q-tag q-dots"><span class="qd"></span><span id="qDotCount">—</span></span>
-      <span class="q-sep"></span>
-      <span class="q-tag q-good" id="qReadability" style="display:none"><span class="qd"></span><span id="qReadText">읽기 좋음</span></span>
-      <span class="q-tag q-good" id="qNoise" style="display:none"><span class="qd"></span><span id="qNoiseText">잡음 적음</span></span>
-      <span class="q-tag q-good" id="qSpacing" style="display:none"><span class="qd"></span><span id="qSpacingText">간격 여유</span></span>
-    </div>
-
-    <!-- canvas HUD -->
-    <div class="canvas-hud">
-      <div class="hud-pill" id="sbZoomPill">100%</div>
-      <div class="hud-pill" id="sbPinsPill">0 핀</div>
     </div>
   </main>
 
   <!-- RIGHT PANEL -->
-  <aside class="right-panel">
+  <aside class="right-panel" aria-label="Tactile Inspector">
     <div class="rp-header">
-      <span class="rp-title">Properties</span>
+      <div class="rp-label">Tactile Inspector</div>
     </div>
     <div class="rp-scroll">
 
-      <!-- AI 인사이트 카드 -->
-      <div class="ai-card" id="aiCard">
-        <div class="ai-card-head">
-          <div class="ai-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l4-4"/><circle cx="18" cy="6" r="3"/></svg>
+      <!-- dot count -->
+      <div class="stat-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="stat-num"><span id="qDotCount">—</span><span class="stat-num-unit">핀</span></div>
+            <div class="stat-sub" id="qDotSub">/ 2,400 · —%</div>
           </div>
-          <span class="ai-card-label">AI 분석</span>
+          <div id="miniPreview" aria-hidden="true" style="opacity:.7"></div>
         </div>
-        <p class="ai-card-text" id="aiCardText">이미지를 업로드하면 AI가 분석 결과를 보여드려요.</p>
-        <div class="ai-chips" id="aiChips" style="display:none"></div>
+        <div class="density-bar"><div class="density-fill" id="densityFill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:9px;color:var(--subtle)">Low</span>
+          <span style="font-size:9px;color:var(--subtle)">Balanced</span>
+          <span style="font-size:9px;color:var(--subtle)">High</span>
+        </div>
       </div>
 
-      <!-- 점 농도 -->
+      <!-- quality metrics -->
       <div>
-        <div class="sec-head">점 농도</div>
-        <div class="th-row">
-          <div class="th-slider-wrap">
-            <div class="th-track">
-              <div class="th-fill" id="thFill" style="width:50%"></div>
-              <div class="th-thumb" id="thThumb" style="left:50%"></div>
+        <div class="insp-row"><span class="insp-key">Tactile Clarity</span><span class="pill pill-neutral" id="qClarity">—</span></div>
+        <div class="insp-row"><span class="insp-key">Dot Density</span><span class="pill pill-neutral" id="qDensity">—</span></div>
+        <div class="insp-row"><span class="insp-key">Finger Readability</span><span class="pill pill-neutral" id="qReadability">—</span></div>
+        <div class="insp-row"><span class="insp-key">Structure</span><span class="pill pill-neutral" id="qStructure">—</span></div>
+      </div>
+
+      <!-- AI feedback -->
+      <div>
+        <div class="sec-title" style="margin-bottom:8px">AI Feedback</div>
+        <div class="ai-empty" id="aiFeedbackEmpty">이미지를 업로드하거나 샘플을 변환하면 AI 피드백이 표시돼요.</div>
+        <div class="ai-feedback" id="aiFeedbackCard" style="display:none">
+          <div class="ai-fb-head">
+            <div class="ai-fb-dot">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5M8 10.5v.4"/></svg>
             </div>
-            <input type="range" id="clarity" min="20" max="240" value="128" aria-label="점 농도"/>
+            <span class="ai-fb-tag">AI 분석 완료</span>
           </div>
-          <span class="th-val" id="thValDisplay">50%</span>
-        </div>
-        <div class="th-actions">
-          <button class="th-adj" id="thMinus">−1</button>
-          <button class="th-adj" id="thAuto">자동</button>
-          <button class="th-adj" id="thPlus">+1</button>
-          <button class="th-apply" id="thApply" disabled>적용</button>
-        </div>
-      </div>
-
-      <!-- 품질 카드 -->
-      <div class="score-card" id="scoreCard">
-        <span class="sc-label" id="scoreLabel">대기 중</span>
-        <span class="sc-title" id="scoreTitle">이미지를 올려주세요</span>
-        <span class="sc-desc" id="scoreDesc">AI가 촉각 인지 품질을 분석해드려요.</span>
-      </div>
-
-      <!-- 표현 방식 -->
-      <div>
-        <div class="sec-head">표현 방식</div>
-        <div class="prop-row">
-          <span class="prop-label">윤곽선</span>
-          <div class="seg3">
-            <button class="seg3-btn on" data-ol="0" id="olBtn0">채움</button>
-            <button class="seg3-btn" data-ol="1" id="olBtn1">1선</button>
-            <button class="seg3-btn" data-ol="2" id="olBtn2">2선</button>
-          </div>
-        </div>
-        <div class="prop-row">
-          <span class="prop-label">자동 정리</span>
-          <button class="tog" id="autoSimplifyTog" role="switch" aria-checked="true"></button>
-        </div>
-        <div class="prop-row">
-          <span class="prop-label">극성 반전</span>
-          <button class="tog" id="polarityTog" role="switch" aria-checked="false"></button>
-        </div>
-        <div class="prop-row">
-          <span class="prop-label">출력 크기</span>
-          <div class="seg3">
-            <button class="seg3-btn on" id="resBtn60">60×40</button>
-            <button class="seg3-btn" id="resBtn96">96×64</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 빠른 편집 -->
-      <div>
-        <div class="sec-head">빠른 편집</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          <button class="exp-btn" id="btnInvert" disabled>핀 반전</button>
-          <button class="exp-btn" id="btnDenoise" disabled>노이즈 정리</button>
-          <button class="exp-btn" id="btnAllUp" disabled>전체 올리기</button>
-          <button class="exp-btn" id="btnAllDown" disabled>전체 내리기</button>
+          <p class="ai-fb-text" id="aiFeedbackText"></p>
         </div>
       </div>
 
       <!-- DotPad -->
-      <div class="dp-section">
-        <div class="sec-head">DotPad</div>
+      <div>
+        <div class="sec-title" style="margin-bottom:8px">DotPad</div>
         <div class="dp-row" id="connRow" role="button" tabindex="0">
-          <span class="dp-dot off" id="connDot"></span>
-          <span class="dp-label" id="connText">연결되지 않음</span>
+          <span class="dp-dot" id="connDot"></span>
+          <span class="dp-lbl" id="connText">연결되지 않음</span>
         </div>
         <div class="live-row">
           <span class="live-lbl" id="liveHint">연결 후 라이브 반영 가능</span>
-          <button class="tog" id="liveSwitch" role="switch" aria-checked="false" disabled></button>
+          <button class="sw" id="liveSwitch" role="switch" aria-checked="false" aria-label="라이브 반영" disabled></button>
         </div>
       </div>
 
-      <!-- 저장 / 내보내기 -->
+      <!-- export -->
       <div>
-        <div class="sec-head">저장 / 내보내기</div>
-        <div class="export-btns">
+        <div class="sec-title" style="margin-bottom:8px">저장 / 내보내기</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
           <button class="exp-btn accent" id="dtmsBtn" disabled>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             .dtms 저장
           </button>
-          <button class="exp-btn" id="pngBtn" disabled>PNG 내보내기</button>
-          <button class="exp-btn" id="hexBtn" disabled>HEX 복사</button>
+          <button class="exp-btn ghost" id="pngBtn" disabled>PNG 내보내기</button>
+          <button class="exp-btn ghost" id="hexBtn" disabled>HEX 복사</button>
         </div>
       </div>
 
-      <!-- 고급 설정 (접이식) -->
-      <div>
-        <div class="expert-toggle" id="expertToggle" role="button" tabindex="0" aria-expanded="false">
-          <span class="expert-toggle-label">고급 설정</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="expert-body" id="expertBody">
-          <div class="prop-row" style="border-top:none;padding-top:0">
-            <span class="prop-label">변환 방식</span>
-            <select class="prop-select" id="method">
-              <option value="global">자동</option>
-              <option value="otsu">Otsu</option>
-              <option value="sauvola">Sauvola</option>
-              <option value="adaptive">Adaptive</option>
-              <option value="mean">평균</option>
-            </select>
-          </div>
-          <div class="prop-row">
-            <span class="prop-label">원시 임계값</span>
-            <input type="number" class="exp-input" id="rawth" min="0" max="255" value="128"/>
-          </div>
-          <div class="prop-row">
-            <span class="prop-label">최소 점 크기</span>
-            <input type="number" class="exp-input" id="minComp" min="1" max="40" value="3"/>
-          </div>
-          <div class="prop-row">
-            <span class="prop-label">고급 브러시</span>
-            <select class="prop-select" id="advSize">
-              <option value="0">끄기</option>
-              <option value="1">켜기</option>
-            </select>
-          </div>
-          <button class="exp-btn" id="recoReset" disabled style="margin-top:6px">추천값으로 초기화</button>
-        </div>
-      </div>
-
-    </div><!-- /rp-scroll -->
+    </div>
   </aside>
-</div><!-- /workspace -->
-
-<!-- ═══════════════ STATUS BAR ═══════════════ -->
-<div class="status-bar">
-  <span class="sb-item" id="sbTool" hidden></span>
-  <span class="sb-item" id="sbZoom">100%</span>
-  <span class="sb-item"><span id="sbPins">0</span> 핀</span>
-  <span class="sb-spacer"></span>
-  <span class="sb-tag orange" id="bsThresh" style="display:none">농도 50%</span>
-  <span class="sb-tag teal" id="bsSynced" style="display:none">DotPad 동기화됨</span>
-  <span class="sb-tag green" id="bsRetouch" style="display:none">리터치 완료</span>
-  <span class="sb-item" id="sbPerc" style="margin-left:8px">—</span>
 </div>
 
-<!-- utils -->
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div class="bb-status">
+    <span class="bb-dot" id="bbDot"></span>
+    <span class="bb-text" id="bbStatus">Not Connected</span>
+  </div>
+  <div class="bb-sep"></div>
+  <div class="bb-page">
+    <button class="bb-page-btn" id="prevPage" disabled>‹</button>
+    <span class="bb-page-label" id="pageInd">Page 1 / 1</span>
+    <button class="bb-page-btn" id="nextPage" disabled>›</button>
+  </div>
+  <div class="bb-spacer"></div>
+  <button class="bb-btn" id="exportJsonBtn" disabled>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Export JSON
+  </button>
+  <button class="bb-btn" id="exportPngBtn" disabled>Export PNG</button>
+</div>
+
+<!-- toast -->
 <div id="toast" role="status" aria-live="polite"></div>
 <div class="sr-only" id="live" role="status" aria-live="assertive"></div>
+
+<!-- file inputs -->
 <input type="file" id="imageFileInput" accept=".png,.jpg,.jpeg,.webp,.gif,.svg,image/*"
   style="position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true"/>
 <input type="file" id="tactileFileInput" accept=".dtm,.dtms"
@@ -841,7 +564,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   <div class="modal">
     <h2>저장하지 않은 변경이 있어요</h2>
     <p>새 파일을 불러오면 현재 작업 내용이 사라져요.</p>
-    <div class="ma">
+    <div class="modal-btns">
       <button class="acc" id="guardSave">저장하고 불러오기</button>
       <button id="guardProceed">저장 없이 불러오기</button>
       <button id="guardCancel">취소</button>
@@ -849,10 +572,9 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   </div>
 </div>
 
-<!-- LEGACY (engine references, hidden) -->
+<!-- LEGACY (engine bindings) -->
 <div id="legacy" hidden aria-hidden="true">
-  <input class="fname" id="fname2" value="Untitled"/>
-  <span class="dirty" id="dirty2"></span>
+  <span class="dirty" id="dirty"></span>
   <div class="chip" id="chip"><span class="dot"></span><span id="chipText">미연결</span></div>
   <button id="connectBtn">연결</button>
   <button id="saveTopBtn">저장</button>
@@ -861,7 +583,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <button role="menuitem" id="miImage">이미지</button>
     <button role="menuitem" id="miTactile">DTM·DTMS</button>
   </div>
-  <nav class="rail" id="rail">
+  <nav id="rail">
     <button class="tool" data-tool="move" aria-pressed="true"></button>
     <button class="tool" data-tool="pen" aria-pressed="false"></button>
     <button class="tool" data-tool="eraser" aria-pressed="false"></button>
@@ -876,15 +598,21 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
       <button role="radio" data-size="3" aria-checked="false">3</button>
     </div>
   </div>
-  <span id="sbToolDiv" hidden></span>
-  <span id="sbDot">—</span>
+  <div id="sizeGrp2" role="radiogroup">
+    <button role="radio" data-size="1" aria-checked="true"></button>
+    <button role="radio" data-size="2" aria-checked="false"></button>
+    <button role="radio" data-size="3" aria-checked="false"></button>
+  </div>
+  <span id="sbTool" hidden></span><span id="sbToolDiv" hidden></span>
+  <span id="sbZoom">100%</span><span id="sbPins">0</span>
+  <span id="sbPerc">—</span><span id="sbDot">—</span>
   <p id="agentLead"></p><div id="agentReco"></div>
   <div id="askWrap"><input id="askInput"/><button id="askGo">↵</button></div>
   <div id="askChips">
     <button class="chipbtn" data-cmd="simpler">더 단순하게</button>
-    <button class="chipbtn" data-cmd="outline">외곽선 강조</button>
+    <button class="chipbtn" data-cmd="outline">외곽선</button>
     <button class="chipbtn" data-cmd="denoise">점 정리</button>
-    <button class="chipbtn" data-cmd="invert">핀 반전</button>
+    <button class="chipbtn" data-cmd="invert">반전</button>
   </div>
   <div id="infoImage"><span id="infoFile">—</span><span id="infoSize">—</span><span id="infoType">—</span><span id="infoReco">—</span></div>
   <div id="infoTactile"><span id="tFile">—</span><span id="tFormat">—</span><span id="tRes">60×40</span><span id="tPages">1</span><span id="tVersion">—</span><span id="tStatus">완료</span></div>
@@ -901,7 +629,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     </div>
     <span class="v" id="clarityVal">128</span>
     <b id="recoLabel">균형</b>
-    <button id="recoReset2">추천값</button>
+    <button id="recoReset">추천값</button>
     <div id="clarityFb"></div>
   </section>
   <section id="secOutline">
@@ -913,7 +641,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <p id="outlineDesc">채움.</p>
   </section>
   <section id="secPages" hidden>
-    <button id="prevPage">‹</button><span id="pageInd">1/1</span><button id="nextPage">›</button>
+    <button id="prevPage2">‹</button><span id="pageInd2">1/1</span><button id="nextPage2">›</button>
   </section>
   <section id="secQuick">
     <button class="qbtn img-only" data-op="auto">자동</button>
@@ -934,9 +662,13 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <p id="saveHint">준비 중</p>
   </section>
   <section id="secExpert">
+    <select id="method"><option value="global">자동</option></select>
+    <input type="number" id="rawth" min="0" max="255" value="128"/>
+    <input type="number" id="minComp" min="1" max="40" value="3"/>
+    <select id="advSize"><option value="0">끄기</option></select>
     <div id="hexOut">—</div>
   </section>
-  <button id="mobtab">패널 ▲</button>
+  <button id="mobtab">패널</button>
 </div>
 
 <script type="module">
@@ -1546,7 +1278,8 @@ setAppState('empty');layout();updateScoreUI();updateUndoButtons();
 initDotPad();
 
 /* ============================================================
-   Dot Canvas Dark Editor — 전체 기능 완전 구현
+   Dot Canvas AI — Addon
+   Clean studio UI, full engine wiring
    ============================================================ */
 (function(){
 'use strict';
@@ -1554,574 +1287,395 @@ const q  = s => document.querySelector(s);
 const qa = s => Array.from(document.querySelectorAll(s));
 const ge = id => document.getElementById(id);
 
-/* ══ 캔버스 핏 ══ */
+/* ── canvas fit ── */
 function fitCanvas(){
-  const box = ge('dotGrid');
-  if(!box||!pad) return;
-  const area = q('.canvas-area');
-  const aw = area ? Math.max(300, area.clientWidth  - 100) : 500;
-  const ah = area ? Math.max(200, area.clientHeight - 100) : 360;
-  const cw = Math.floor(aw / GW);
-  const ch = Math.floor(ah / GH);
-  cell = Math.max(5, Math.min(20, Math.min(cw, ch)));
-  const w = GW*cell + off*2;
-  const h = GH*cell + off*2;
-  const dpr = window.devicePixelRatio || 1;
-  pad.width  = w * dpr;
-  pad.height = h * dpr;
-  pad.style.width  = w + 'px';
-  pad.style.height = h + 'px';
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const wrap=ge('dotGridWrap');
+  if(!wrap||!pad) return;
+  const area=q('.canvas-area');
+  if(!area) return;
+  const aw=Math.max(240, area.clientWidth-80);
+  const ah=Math.max(160, area.clientHeight-80);
+  const cw=Math.floor(aw/GW), ch=Math.floor(ah/GH);
+  cell=Math.max(6,Math.min(18,Math.min(cw,ch)));
+  const w=GW*cell+off*2, h=GH*cell+off*2;
+  const dpr=window.devicePixelRatio||1;
+  pad.width=w*dpr; pad.height=h*dpr;
+  pad.style.width=w+'px'; pad.style.height=h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   draw();
 }
-layout = fitCanvas;
-window.addEventListener('resize', fitCanvas);
+layout=fitCanvas;
+window.addEventListener('resize',fitCanvas);
 
-/* ══ autoSelect 패치 (형태 보존 + 과채움 방지) ══ */
-autoSelect = function(){
-  imgMeta = Object.assign(imgMeta||{}, analyzeImageType());
+/* ── canvas draw override: dot canvas AI style ── */
+const _draw=draw;
+draw=function(){
+  const w=GW*cell+off*2, h=GH*cell+off*2;
+  ctx.fillStyle='#F4F1E8';
+  ctx.fillRect(0,0,w,h);
+  // grid lines (subtle)
+  ctx.strokeStyle='rgba(180,170,158,.3)'; ctx.lineWidth=.5;
+  for(let x=0;x<=GW;x++){const px=off+x*cell+.5;ctx.beginPath();ctx.moveTo(px,off);ctx.lineTo(px,h-off);ctx.stroke();}
+  for(let y=0;y<=GH;y++){const py=off+y*cell+.5;ctx.beginPath();ctx.moveTo(off,py);ctx.lineTo(w-off,py);ctx.stroke();}
+  // braille cell boundaries
+  ctx.strokeStyle='rgba(155,145,135,.45)';
+  for(let x=0;x<=GW;x+=2){const px=off+x*cell+.5;ctx.beginPath();ctx.moveTo(px,off);ctx.lineTo(px,h-off);ctx.stroke();}
+  for(let y=0;y<=GH;y+=4){const py=off+y*cell+.5;ctx.beginPath();ctx.moveTo(off,py);ctx.lineTo(w-off,py);ctx.stroke();}
+  // center axis
+  ctx.strokeStyle='rgba(200,175,155,.6)'; ctx.lineWidth=.8;
+  const ax=off+(GW/2)*cell+.5, ay=off+(GH/2)*cell+.5;
+  ctx.beginPath();ctx.moveTo(ax,off);ctx.lineTo(ax,h-off);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(off,ay);ctx.lineTo(w-off,ay);ctx.stroke();
+  // dots
+  const rOn=cell*.38, rOff=cell*.16;
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+    const on=grid[y*GW+x];
+    const cx2=off+x*cell+cell/2, cy2=off+y*cell+cell/2;
+    if(on){
+      ctx.fillStyle='#1A1A1A';
+      ctx.beginPath();ctx.arc(cx2,cy2,rOn,0,7);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.1)';
+      ctx.beginPath();ctx.arc(cx2-rOn*.22,cy2-rOn*.28,rOn*.45,0,7);ctx.fill();
+    }else{
+      ctx.fillStyle='#C4BDB4';
+      ctx.beginPath();ctx.arc(cx2,cy2,rOff,0,7);ctx.fill();
+    }
+  }
+  // hover
+  if(hoverBrush){
+    ctx.fillStyle=hoverBrush.kind==='eraser'?'rgba(185,28,28,.15)':'rgba(255,77,0,.18)';
+    ctx.strokeStyle=hoverBrush.kind==='eraser'?'rgba(185,28,28,.55)':'rgba(255,77,0,.6)';
+    ctx.lineWidth=1.4;
+    for(const[x,y] of hoverBrush.cells){if(x<0||y<0||x>=GW||y>=GH)continue;ctx.fillRect(off+x*cell+1,off+y*cell+1,cell-2,cell-2);ctx.strokeRect(off+x*cell+1.5,off+y*cell+1.5,cell-3,cell-3);}
+  }
+  if(tool!=='move'&&hasImage&&!hoverBrush){ctx.strokeStyle='#FF4D00';ctx.lineWidth=2;ctx.strokeRect(off+cursor.x*cell+1,off+cursor.y*cell+1,cell-2,cell-2);}
+};
 
+/* ── autoSelect fix ── */
+autoSelect=function(){
+  imgMeta=Object.assign(imgMeta||{},analyzeImageType());
   if(imgMeta.hasAlpha){
-    // 불투명 영역 gray 분포로 Otsu
-    const ag = [];
+    const ag=[];
     for(let i=0;i<N;i++) if(alphaBuf[i]>=128) ag.push(grayBuf[i]);
-    let t = 128;
-    if(ag.length > 20){
+    let t=128;
+    if(ag.length>20){
       const h=new Array(256).fill(0); ag.forEach(v=>h[v|0]++);
       const NN=ag.length; let sum=0;
       for(let i=0;i<256;i++) sum+=i*h[i];
       let sB=0,wB=0,mx=-1; t=128;
-      for(let i=0;i<256;i++){
-        wB+=h[i]; if(!wB) continue;
-        const wF=NN-wB; if(!wF) break;
-        sB+=i*h[i];
-        const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);
-        if(b>mx){mx=b;t=i;}
-      }
+      for(let i=0;i<256;i++){wB+=h[i];if(!wB)continue;const wF=NN-wB;if(!wF)break;sB+=i*h[i];const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)*(mB-mF);if(b>mx){mx=b;t=i;}}
     }
-    // alpha+gray 이중 마스크
     const test=new Uint8Array(N);
     for(let i=0;i<N;i++) test[i]=(alphaBuf[i]>=128&&grayBuf[i]<=t)?1:0;
     const on=test.reduce((a,v)=>a+v,0);
-    if(on/N>0.40) t=Math.min(t,Math.round(t*0.6));
+    if(on/N>0.40) t=Math.min(t,Math.round(t*0.62));
     threshold=t;
     const _bm=baseMask;
     baseMask=function(th,meth,pol){
-      if(meth==='alpha_gray'||meth==='alpha'){
-        const o=new Uint8Array(N);
-        for(let i=0;i<N;i++) o[i]=(alphaBuf[i]>=128&&grayBuf[i]<=th)?1:0;
-        if(pol) for(let i=0;i<N;i++) o[i]^=1;
-        return o;
-      }
+      if(meth==='alpha_gray'||meth==='alpha'){const o=new Uint8Array(N);for(let i=0;i<N;i++)o[i]=(alphaBuf[i]>=128&&grayBuf[i]<=th)?1:0;if(pol)for(let i=0;i<N;i++)o[i]^=1;return o;}
       return _bm(th,meth,pol);
     };
-    method='alpha_gray'; polarity=false; outline=0;
-    recoThreshold=threshold; recoOutline=0;
-    rebuild();
-    return {score:100,meth:'alpha_gray',pol:false,ol:0};
+    method='alpha_gray';polarity=false;outline=0;recoThreshold=threshold;recoOutline=0;
+    rebuild();return{score:100,meth:'alpha_gray',pol:false,ol:0};
   }
-
-  const t=otsu(grayBuf); let finalT=t, pol=false;
-  const tm=fillT(grayBuf,t,false);
-  let on=0; for(let i=0;i<N;i++) on+=tm[i];
+  const t=otsu(grayBuf);let finalT=t,pol=false;
+  const tm=fillT(grayBuf,t,false);let on=0;for(let i=0;i<N;i++)on+=tm[i];
   const d=on/N;
-  if(d>0.75) pol=true;
-  else if(d>0.50) finalT=Math.round(t*0.70);
-  method='global'; polarity=pol; outline=0;
-  threshold=finalT; recoThreshold=finalT; recoOutline=0;
-  rebuild();
-  return {score:100,meth:'global',pol,ol:0};
+  if(d>0.75)pol=true;else if(d>0.50)finalT=Math.round(t*0.70);
+  method='global';polarity=pol;outline=0;threshold=finalT;recoThreshold=finalT;recoOutline=0;
+  rebuild();return{score:100,meth:'global',pol,ol:0};
 };
 
-/* ══ 슬라이더 ══ */
-function thPct(v){ return Math.max(0,Math.min(100,Math.round((+v-20)/220*100))); }
-function paintSlider(v){
-  const pct=thPct(v);
-  const fill=ge('thFill'),thumb=ge('thThumb'),disp=ge('thValDisplay');
-  if(fill)  fill.style.width=pct+'%';
-  if(thumb) thumb.style.left=pct+'%';
-  if(disp)  disp.textContent=pct+'%';
-  const bt=ge('bsThresh');
-  if(bt){ bt.textContent='농도 '+pct+'%'; bt.style.display=hasImage?'':'none'; }
-}
-
-ge('clarity').addEventListener('input',function(){
-  const v=+this.value;
-  paintSlider(v);
-  threshold=v; method='global';
-  const rm=ge('method'); if(rm) rm.value='global';
-  const rv=ge('rawth'); if(rv) rv.value=v;
-  if(hasImage&&grayBuf){ rebuild(); afterChange(false); syncQuality(); }
-  const ap=ge('thApply'); if(ap) ap.disabled=false;
-});
-ge('thApply').addEventListener('click',function(){
-  if(!hasImage) return;
-  rebuild(); afterChange(); this.disabled=true;
-  syncQuality(); toast('점 농도 '+thPct(threshold)+'% 적용됨');
-});
-ge('thMinus').addEventListener('click',()=>{
-  const sl=ge('clarity'); sl.value=Math.max(20,+sl.value-1);
-  sl.dispatchEvent(new Event('input',{bubbles:true}));
-});
-ge('thPlus').addEventListener('click',()=>{
-  const sl=ge('clarity'); sl.value=Math.min(240,+sl.value+1);
-  sl.dispatchEvent(new Event('input',{bubbles:true}));
-});
-ge('thAuto').addEventListener('click',()=>{
-  if(!grayBuf){ toast('이미지를 먼저 올려주세요'); return; }
-  const t=otsu(grayBuf);
-  ge('clarity').value=t;
-  ge('clarity').dispatchEvent(new Event('input',{bubbles:true}));
-  toast('자동: '+thPct(t)+'%');
-});
-
-/* ══ 품질 ══ */
+/* ── quality sync ── */
 const AI_MSGS={
   transparent:'투명 배경 PNG를 감지했어요. 형태 외곽을 핀으로 표현했어요.',
   lineart:'선화·아이콘을 감지했어요. 선을 핀으로 직접 변환했어요.',
   lowcontrast:'저대비 이미지를 감지했어요. 국소 임계값으로 세부를 살렸어요.',
   photo:'사진을 감지했어요. 주요 윤곽선을 추출했어요.',
-  default:'AI가 이미지를 분석해 최적 변환 방식을 선택했어요.',
+  default:'AI가 이미지를 분석해 최적 변환 방식을 선택했어요.'
 };
-const AI_CHIPS=['더 단순하게','선만 남기기','점 정리','핀 반전'];
-const SCORE_INFO={
-  4:{label:'읽기 쉬움',title:'혼자서도 읽을 수 있어요',desc:'선이 선명하고 핀 수가 적당해요.',cls:'teal'},
-  3:{label:'읽기 양호',title:'도움이 있으면 읽을 수 있어요',desc:'일부 영역이 구분하기 어려울 수 있어요.',cls:''},
-  2:{label:'조정 필요',title:'임계값을 조정해보세요',desc:'"자동" 버튼으로 최적값을 찾아보세요.',cls:'amber'},
-  1:{label:'인지 어려움',title:'핀이 너무 많거나 너무 적어요',desc:'"자동" 버튼을 눌러보세요.',cls:'red'},
+const CONV_MODE_MSG={
+  simple:'핵심 윤곽선만 추출해요.',
+  balanced:'윤곽 + 핵심 구조를 균형 있게 표현해요.',
+  detail:'내부 디테일까지 강조해요.'
 };
+
+function pill(el,txt,kind){
+  if(!el)return;
+  el.textContent=txt;
+  el.className='pill pill-'+kind;
+}
 
 function syncQuality(){
-  if(!hasImage||appState!=='ready'){ resetQuality(); return; }
-  const pins=countOn(grid), fill=Math.round(pins/N*100);
+  if(!hasImage||appState!=='ready'){resetQuality();return;}
+  const pins=countOn(grid),fill=Math.round(pins/N*100);
   const sc=tactileQualityScore(grid,{type:imgMeta&&imgMeta.type,outline});
   const g=Math.min(4,Math.max(1,sc.grade));
-  const info=SCORE_INFO[g];
 
-  // quality bar (floating)
-  const qbar=ge('qBar'); if(qbar) qbar.style.display='flex';
-  const qd=ge('qDotCount'); if(qd) qd.textContent=pins+' 핀';
-  const qr=ge('qReadability');
-  if(qr){
-    qr.style.display='flex';
-    qr.className='q-tag '+(g>=3?'q-good':g===2?'q-mid':'q-bad');
-    ge('qReadText').textContent=g>=3?'읽기 좋음':g===2?'읽기 보통':'읽기 어려움';
-  }
-  const qn=ge('qNoise');
-  if(qn){
-    qn.style.display='flex';
-    const noisy=fill>50;
-    qn.className='q-tag '+(noisy?'q-mid':'q-good');
-    ge('qNoiseText').textContent=fill<=35?'잡음 적음':fill<=50?'잡음 보통':'잡음 많음';
-  }
-  const qs=ge('qSpacing');
-  if(qs){
-    qs.style.display='flex';
-    ge('qSpacingText').textContent=fill<18?'간격 넓음':fill>58?'간격 빽빽':'간격 여유';
-  }
+  // stat card
+  const qd=ge('qDotCount');if(qd)qd.textContent=pins.toLocaleString();
+  const qs=ge('qDotSub');if(qs)qs.textContent='/ 2,400 · '+fill+'%';
+  const df=ge('densityFill');
+  if(df){df.style.width=Math.min(100,fill)+'%';df.style.background=fill<15?'#15803D':fill<40?'#FF9500':'#DC2626';}
 
-  // score card
-  const card=ge('scoreCard');
-  if(card){
-    card.className='score-card '+(info.cls||'');
-    ge('scoreLabel').textContent=info.label;
-    ge('scoreTitle').textContent=info.title;
-    ge('scoreDesc').textContent=info.desc;
+  // pills
+  pill(ge('qClarity'),g>=3?'Good':g===2?'Needs work':'Poor',g>=3?'good':g===2?'warn':'bad');
+  pill(ge('qDensity'),fill<15?'Low':fill<40?'Balanced':'High',fill>=10&&fill<=40?'good':fill<10?'neutral':'warn');
+  pill(ge('qReadability'),g>=3?'Good':'Warning',g>=3?'good':'warn');
+  pill(ge('qStructure'),sc.m&&sc.m.on>N*.4?'Filled':sc.m&&sc.m.on>N*.15?'Mixed':'Outline','neutral');
+
+  // AI feedback
+  const aiFeedbackEmpty=ge('aiFeedbackEmpty');
+  const aiFeedbackCard=ge('aiFeedbackCard');
+  const aiTxt=ge('aiFeedbackText');
+  if(imgMeta&&aiTxt){
+    const base=AI_MSGS[imgMeta.type]||AI_MSGS.default;
+    const modeLabel=currentMode?CONV_MODE_MSG[currentMode]:'';
+    aiTxt.textContent=base+(modeLabel?' '+modeLabel:'')+' '+GW+'×'+GH+' · '+pins.toLocaleString()+'핀';
+    if(aiFeedbackEmpty)aiFeedbackEmpty.style.display='none';
+    if(aiFeedbackCard)aiFeedbackCard.style.display='block';
   }
 
-  // AI 카드
-  const aiTxt=ge('aiCardText');
-  if(aiTxt&&imgMeta){
-    aiTxt.textContent=(AI_MSGS[imgMeta.type]||AI_MSGS.default)+
-      ' '+GW+'×'+GH+' · '+pins+'핀 · '+fill+'% 채움';
-  }
-  const aiChipsEl=ge('aiChips');
-  if(aiChipsEl&&aiChipsEl.style.display==='none'){
-    aiChipsEl.style.display='flex';
-    aiChipsEl.innerHTML=AI_CHIPS.map(t=>
-      `<button class="ai-ch" data-cmd="${t}">${t}</button>`).join('');
-    aiChipsEl.querySelectorAll('.ai-ch').forEach(b=>b.addEventListener('click',()=>{
-      const map={'더 단순하게':'simpler','선만 남기기':'outline','점 정리':'denoise','핀 반전':'invert'};
-      const cmd=map[b.dataset.cmd]; if(cmd) applyOp(cmd);
-    }));
-  }
+  // canvas meta
+  const lbl=ge('canvasMetaLabel');
+  if(lbl)lbl.textContent=(currentMode?currentMode.charAt(0).toUpperCase()+currentMode.slice(1)+' conversion':'Tactile conversion')+' · '+GW+'×'+GH;
 
-  // status bar
-  const bt=ge('bsThresh'); if(bt){bt.textContent='농도 '+thPct(threshold)+'%';bt.style.display='';}
-  const bs=ge('bsSynced'); if(bs) bs.style.display=connected?'':'none';
-  const br=ge('bsRetouch'); if(br) br.style.display='';
-  const sbp=ge('sbPinsPill'); if(sbp) sbp.textContent=pins+' 핀';
-  const rc=ge('resChip'); if(rc) rc.textContent=GW+'×'+GH;
+  // res chip
+  const rc=ge('resChip');if(rc)rc.textContent=GW+'×'+GH;
 
-  syncBtns(true); syncOutlineBtns();
+  // bottom bar
+  const bs=ge('bbDot'),bt=ge('bbStatus');
+  if(bs)bs.className='bb-dot'+(connected?' connected':'');
+  if(bt)bt.textContent=connected?'Ready':'Not Connected';
+
+  syncBtns(true);
 }
 
 function resetQuality(){
-  const qbar=ge('qBar'); if(qbar) qbar.style.display='none';
-  qa('#qReadability,#qNoise,#qSpacing').forEach(e=>{ if(e) e.style.display='none'; });
-  const qd=ge('qDotCount'); if(qd) qd.textContent='—';
-  const card=ge('scoreCard');
-  if(card){
-    card.className='score-card';
-    ge('scoreLabel').textContent='대기 중';
-    ge('scoreTitle').textContent='이미지를 올려주세요';
-    ge('scoreDesc').textContent='AI가 촉각 인지 품질을 분석해드려요.';
-  }
-  const aiTxt=ge('aiCardText');
-  if(aiTxt) aiTxt.textContent='이미지를 업로드하면 AI가 분석 결과를 보여드려요.';
-  const aiChipsEl=ge('aiChips'); if(aiChipsEl) aiChipsEl.style.display='none';
-  const sbp=ge('sbPinsPill'); if(sbp) sbp.textContent='0 핀';
-  const br=ge('bsRetouch'); if(br) br.style.display='none';
+  const qd=ge('qDotCount');if(qd)qd.textContent='—';
+  const qs=ge('qDotSub');if(qs)qs.textContent='/ 2,400 · —%';
+  const df=ge('densityFill');if(df)df.style.width='0%';
+  ['qClarity','qDensity','qReadability','qStructure'].forEach(id=>{
+    const el=ge(id);if(el){el.textContent='—';el.className='pill pill-neutral';}
+  });
+  const aiFeedbackEmpty=ge('aiFeedbackEmpty');
+  const aiFeedbackCard=ge('aiFeedbackCard');
+  if(aiFeedbackEmpty)aiFeedbackEmpty.style.display='';
+  if(aiFeedbackCard)aiFeedbackCard.style.display='none';
+  const lbl=ge('canvasMetaLabel');if(lbl)lbl.textContent='편집 모드 · '+GW+'×'+GH;
   syncBtns(false);
 }
 
 function syncBtns(ready){
-  qa('#dtmsBtn,#pngBtn,#hexBtn,#hdrSaveBtn,#hdrOutputBtn,#recoReset').forEach(b=>{ if(b) b.disabled=!ready; });
-  qa('#btnInvert,#btnDenoise,#btnAllUp,#btnAllDown').forEach(b=>{ if(b) b.disabled=!ready; });
-  qa('.seg3-btn[data-ol]').forEach(b=>b.disabled=!ready);
+  qa('#dtmsBtn,#pngBtn,#hexBtn,#hdrOutputBtn,#hdrExportBtn,#exportJsonBtn,#exportPngBtn').forEach(b=>{if(b)b.disabled=!ready;});
 }
 
-/* ══ monkey-patch ══ */
+/* ── patches ── */
 const _updateScoreUI=updateScoreUI;
-updateScoreUI=function(){ _updateScoreUI(); try{ syncQuality(); paintSlider(threshold); }catch(e){} };
+updateScoreUI=function(){_updateScoreUI();try{syncQuality();}catch(e){}};
+
+let currentMode='balanced';
 
 const _setAppState=setAppState;
 setAppState=function(s){
   _setAppState(s);
   try{
-    fitCanvas(); paintSlider(threshold); syncQuality(); syncConn(); syncToolBar();
+    fitCanvas();syncQuality();syncConn();syncToolBar();
     const ready=(s==='ready');
-    // 파일명 동기화
-    const fn=ge('fname'); if(fn){ const fn2=ge('fname2'); if(fn2) fn.value=fn2.value||'Untitled'; }
-    if(ready&&srcImage){
-      const bi=ge('beforeImg'); if(bi&&srcImage.src) bi.src=srcImage.src;
-    }
-    // AI chip
-    const dot=ge('aiDot'),txt=ge('aiChipText');
-    if(s==='analyzing'){ dot?.classList.add('pulse'); if(txt) txt.textContent='AI 처리 중'; }
-    else{ dot?.classList.remove('pulse'); if(txt) txt.textContent=ready?'AI 완료':'AI 대기 중'; }
-    // bezel indicator
-    const bi2=ge('bezelIndicator'); if(bi2) bi2.className='bezel-indicator '+(connected&&ready?'on':'');
-    // conn chip
-    syncConn();
-    // mobile
-    if(s==='analyzing') mobileStartAnalyzing();
-    if(s==='ready') mobileOnReady();
+    if(ready&&srcImage){const bi=ge('beforeImg');if(bi&&srcImage.src)bi.src=srcImage.src;}
+    // AI badge
+    const badge=q('.ai-done-badge');
+    if(badge)badge.style.display=ready?'inline-flex':'none';
+    // mobile scroll
+    if(s==='analyzing')mobileStartAnalyzing();
+    if(s==='ready')mobileOnReady();
   }catch(e){}
 };
 
 const _setDpState=setDpState;
-setDpState=function(s){ _setDpState(s); try{ syncConn(); }catch(e){} };
+setDpState=function(s){_setDpState(s);try{syncConn();}catch(e){}};
 
 const _afterChange=afterChange;
-afterChange=function(md){ _afterChange(md); try{ syncToolBar(); syncQuality(); }catch(e){} };
+afterChange=function(md){_afterChange(md);try{syncToolBar();}catch(e){}};
 
-let dpDisabled=false, dpDisabledLabel='';
+let dpDisabled=false,dpDisabledLabel='';
 const _disableConnect=disableConnect;
-disableConnect=function(label,desc){
-  dpDisabled=true; dpDisabledLabel=label||'연결 불가'; _disableConnect(label,desc);
-  try{
-    const d=ge('connDot'); if(d) d.className='dp-dot err';
-    const t=ge('connText'); if(t) t.textContent=dpDisabledLabel;
-  }catch(e){}
-};
+disableConnect=function(l,d){dpDisabled=true;dpDisabledLabel=l||'연결 불가';_disableConnect(l,d);try{const t=ge('connDot');if(t)t.className='dp-dot';const tx=ge('connText');if(tx)tx.textContent=dpDisabledLabel;}catch(e){}};
 
-/* ══ 연결 ══ */
+/* ── connection ── */
 function syncConn(){
-  const dot=ge('connDot'),txt=ge('connText'),chip=ge('connChip'),hint=ge('liveHint');
-  const label=dpDisabled?dpDisabledLabel:dpStatusText();
-  let cls='off';
-  if(dpDisabled) cls='err';
-  else if(connected) cls='on';
-  else if(dpState==='connecting') cls='busy';
-  else if(dpState==='error') cls='err';
-  if(dot) dot.className='dp-dot '+cls;
-  if(txt) txt.textContent=label;
-  if(chip){
-    chip.className='conn-chip '+(connected?'on':'');
-    const ct=ge('connChipText'); if(ct) ct.textContent=connected?'연결됨':'미연결';
-  }
+  const dot=ge('connDot'),txt=ge('connText'),hint=ge('liveHint');
+  const lbl=dpDisabled?dpDisabledLabel:dpStatusText();
+  let cls='';
+  if(dpDisabled)cls='';
+  else if(connected)cls=' connected';
+  else if(dpState==='connecting')cls=' busy';
+  if(dot)dot.className='dp-dot'+cls;
+  if(txt)txt.textContent=lbl;
   const sw=ge('liveSwitch');
-  if(sw){ sw.disabled=!connected||dpDisabled;
-    sw.setAttribute('aria-checked',(connected&&liveOn&&!dpDisabled)?'true':'false'); }
-  if(hint) hint.textContent=dpDisabled?dpDisabledLabel
-    :connected?(liveOn?'실시간으로 반영 중':'라이브 반영 끄기')
-    :'연결 후 라이브 반영 가능';
-  const bi=ge('bezelIndicator'); if(bi) bi.className='bezel-indicator '+(connected&&hasImage?'on':'');
-  const bs=ge('bsSynced'); if(bs) bs.style.display=(connected&&hasImage)?'':'none';
+  if(sw){sw.disabled=!connected||dpDisabled;sw.setAttribute('aria-checked',(connected&&liveOn&&!dpDisabled)?'true':'false');}
+  if(hint)hint.textContent=dpDisabled?dpDisabledLabel:connected?(liveOn?'실시간으로 반영 중':'라이브 반영 끄기'):'연결 후 라이브 반영 가능';
+  const bd=ge('bbDot'),bt=ge('bbStatus');
+  if(bd)bd.className='bb-dot'+(connected?' connected':'');
+  if(bt)bt.textContent=connected?'Ready':'Not Connected';
 }
 
-/* ══ 툴바 ══ */
+/* ── toolbar ── */
 function syncToolBar(){
   qa('.tool-rail .tr-btn[data-tool]').forEach(b=>{
-    const on=b.dataset.tool===tool;
-    b.classList.toggle('active',on);
-    b.setAttribute('aria-pressed',on?'true':'false');
-  });
-  const sz=(tool==='pen'||tool==='eraser')?(toolSettings[tool]?.size||1):1;
-  qa('#sizeGrp2 .tr-sz').forEach(b=>{
-    const on=+b.dataset.size===sz;
-    b.classList.toggle('on',on);
-    b.setAttribute('aria-checked',on?'true':'false');
+    b.classList.toggle('active',b.dataset.tool===tool);
+    b.setAttribute('aria-pressed',b.dataset.tool===tool?'true':'false');
   });
   const u=ge('undoBtn2'),r=ge('redoBtn2');
-  if(u) u.disabled=!(appState==='ready'&&(pageUndo[curPage]||[]).length>0);
-  if(r) r.disabled=!(appState==='ready'&&(pageRedo[curPage]||[]).length>0);
-  // 두께 그룹: 펜/지우개일 때만 표시
-  const sg=ge('sizeGrp2');
-  if(sg) sg.style.display=(tool==='pen'||tool==='eraser')?'':'none';
+  if(u)u.disabled=!(appState==='ready'&&(pageUndo[curPage]||[]).length>0);
+  if(r)r.disabled=!(appState==='ready'&&(pageRedo[curPage]||[]).length>0);
 }
 
-/* tool rail 클릭 이벤트 */
 q('.tool-rail').addEventListener('click',e=>{
   const tb=e.target.closest('.tr-btn[data-tool]');
-  if(tb&&!tb.disabled){
+  if(tb&&!tb.disabled&&appState==='ready'){
     const t=tb.dataset.tool;
-    const engineTools=['move','pen','eraser'];
-    if(appState==='ready'){
-      if(engineTools.includes(t)) selectTool(t);
-      else{
-        // 시각적 선택 (엔진 미지원 도구)
-        qa('.tr-btn[data-tool]').forEach(b=>b.setAttribute('aria-pressed','false'));
-        tb.setAttribute('aria-pressed','true');
-        q('.tool-rail').dataset.tool=t;
-      }
-    }
-    syncToolBar(); return;
+    if(['move','pen','eraser'].includes(t))selectTool(t);
+    else{qa('.tr-btn[data-tool]').forEach(b=>b.classList.toggle('active',b===tb));q('.tool-rail').dataset.tool=t;}
+    syncToolBar();return;
   }
-  const sb=e.target.closest('.tr-sz[data-size]');
-  if(sb&&appState==='ready'){ setSize(+sb.dataset.size); syncToolBar(); return; }
-  if(e.target.closest('#undoBtn2')){ ge('undoBtn')?.click(); syncToolBar(); return; }
-  if(e.target.closest('#redoBtn2')){ ge('redoBtn')?.click(); syncToolBar(); return; }
+  if(e.target.closest('#undoBtn2')){ge('undoBtn')?.click();syncToolBar();return;}
+  if(e.target.closest('#redoBtn2')){ge('redoBtn')?.click();syncToolBar();return;}
+  if(e.target.closest('#clearBtn2')){const b=ge('clearBtn');if(b)b.click();}
 });
 
-/* ══ 뷰 토글 ══ */
-qa('.vtog').forEach(p=>p.addEventListener('click',()=>{
-  if(p.disabled) return;
-  if(p.id==='vpDotpad'&&!connected){ toast('먼저 DotPad를 연결하세요'); return; }
-  qa('.vtog').forEach(x=>x.classList.toggle('active',x===p));
-  // canvasCard는 main.canvas-area
-  const card=q('main.canvas-area')||ge('canvasCard');
-  if(card) card.dataset.view=p.id==='vpBefore'?'before':p.id==='vpDotpad'?'dotpad':'after';
-  if(p.id==='vpBefore'&&srcImage){
-    const bi=ge('beforeImg'); if(bi&&srcImage.src) bi.src=srcImage.src;
+/* ── mode buttons ── */
+qa('.mode-btn').forEach(b=>b.addEventListener('click',()=>{
+  currentMode=b.dataset.mode;
+  qa('.mode-btn').forEach(x=>x.classList.toggle('active',x===b));
+  // re-convert if image loaded
+  if(hasImage&&grayBuf){
+    const modeMap={simple:80,balanced:128,detail:185};
+    threshold=modeMap[currentMode]||128;
+    const rv=ge('rawth');if(rv)rv.value=threshold;
+    const rm=ge('method');if(rm)rm.value='global';
+    method='global';rebuild();afterChange(false);syncQuality();
   }
 }));
 
-/* ══ 윤곽선 ══ */
-function syncOutlineBtns(){
-  qa('.seg3-btn[data-ol]').forEach(b=>b.classList.toggle('on',+b.dataset.ol===outline));
-  const od=ge('outlineDesc');
-  if(od) od.textContent=outline===0?'채움 실루엣을 유지합니다.'
-    :outline===1?'실제 외곽 경계를 1핀 두께로 그립니다.'
-    :'1줄 외곽선을 1핀 더 확장합니다.';
-}
-qa('.seg3-btn[data-ol]').forEach(b=>b.addEventListener('click',()=>{
-  if(b.disabled||fileKind==='tactile') return;
-  const legBtn=q(`#secOutline .seg button[data-outline="${b.dataset.ol}"]`);
-  if(legBtn&&!legBtn.disabled) legBtn.click();
-  else{ outline=+b.dataset.ol; rebuild(); afterChange(); syncQuality(); }
-  syncOutlineBtns();
-}));
-
-/* ══ 해상도 ══ */
-function switchRes(w,h){
-  if(GW===w&&GH===h) return;
-  if(fileKind==='tactile'){ toast('촉각 파일 해상도는 변경할 수 없어요'); return; }
-  setResolution(w,h);
-  if(hasImage&&srcImage){ renderGray(); autoSelect(); }
-  else grid=new Uint8Array(N);
-  pages=[grid]; curPage=0; pageUndo=[[]]; pageRedo=[[]];
-  fitCanvas(); afterChange(false); syncQuality();
-  ge('resChip').textContent=GW+'×'+GH;
-  ge('resBtn60')?.classList.toggle('on',GW===60);
-  ge('resBtn96')?.classList.toggle('on',GW===96);
-}
-ge('resBtn60')?.addEventListener('click',()=>switchRes(60,40));
-ge('resBtn96')?.addEventListener('click',()=>switchRes(96,64));
-
-/* ══ 토글 ══ */
-ge('autoSimplifyTog')?.addEventListener('click',function(){
-  const on=this.getAttribute('aria-checked')==='true';
-  this.setAttribute('aria-checked',on?'false':'true');
-  const mc=ge('minComp'); if(mc){ mc.value=on?'1':'3'; mc.dispatchEvent(new Event('input',{bubbles:true})); }
-  if(hasImage&&grayBuf){ rebuild(); afterChange(); syncQuality(); }
-});
-ge('polarityTog')?.addEventListener('click',function(){
-  const on=this.getAttribute('aria-checked')==='true';
-  this.setAttribute('aria-checked',on?'false':'true');
-  polarity=!on;
-  if(hasImage&&grayBuf){ rebuild(); afterChange(); syncQuality(); }
-});
-ge('liveSwitch')?.addEventListener('click',()=>{
-  const sw=ge('liveSwitch'); if(sw?.disabled) return;
-  ge('liveToggle')?.click(); syncConn();
-});
-
-/* ══ 빠른 편집 ══ */
-ge('btnInvert')?.addEventListener('click',()=>{ if(hasImage) applyOp('invert'); });
-ge('btnDenoise')?.addEventListener('click',()=>{ if(hasImage) applyOp('denoise'); });
-ge('btnAllUp')?.addEventListener('click',()=>{
-  if(!hasImage) return; pushUndo();
-  for(let i=0;i<N;i++) grid[i]=1; pages[curPage]=grid; afterChange(); syncQuality();
-});
-ge('btnAllDown')?.addEventListener('click',()=>{
-  if(!hasImage) return; pushUndo();
-  for(let i=0;i<N;i++) grid[i]=0; pages[curPage]=grid; afterChange(); syncQuality();
-});
-
-/* ══ 저장 / 출력 ══ */
-ge('hdrSaveBtn')?.addEventListener('click',()=>ge('saveTopBtn')?.click());
-ge('dtmsBtn')?.addEventListener('click',()=>ge('saveTopBtn')?.click());
+/* ── save / export ── */
 ge('hdrOutputBtn')?.addEventListener('click',()=>ge('outBtn')?.click());
-ge('pngBtn')?.addEventListener('click',()=>ge('pngBtn2')?.click());
+ge('hdrExportBtn')?.addEventListener('click',()=>exportPNGFn());
+ge('dtmsBtn')?.addEventListener('click',()=>ge('saveTopBtn')?.click());
+ge('pngBtn')?.addEventListener('click',()=>exportPNGFn());
 ge('hexBtn')?.addEventListener('click',()=>{
-  const hoEl=ge('hexOut');
-  const hex=(hoEl?.textContent||'').replace('HEX ','').trim();
-  if(hex&&hex!=='—'){
-    navigator.clipboard?.writeText(hex).then(()=>toast('HEX 복사됨','ok')).catch(()=>ge('hexBtn2')?.click());
-  } else ge('hexBtn2')?.click();
+  const ho=ge('hexOut');
+  const hex=(ho?.textContent||'').replace('HEX ','').trim();
+  if(hex&&hex!=='—')navigator.clipboard?.writeText(hex).then(()=>toast('HEX 복사됨','ok')).catch(()=>ge('hexBtn2')?.click());
+  else ge('hexBtn2')?.click();
 });
+ge('exportJsonBtn')?.addEventListener('click',exportJSONFn);
+ge('exportPngBtn')?.addEventListener('click',exportPNGFn);
 
-/* ══ 연결 이벤트 ══ */
-ge('connRow')?.addEventListener('click',()=>{ if(!dpDisabled&&!connected) doConnect?.(); });
-ge('connRow')?.addEventListener('keydown',e=>{
-  if((e.key==='Enter'||e.key===' ')&&!dpDisabled&&!connected){ e.preventDefault(); doConnect?.(); }
-});
-ge('connChip')?.addEventListener('click',()=>{ if(!dpDisabled&&!connected) doConnect?.(); });
-ge('connChip')?.addEventListener('keydown',e=>{
-  if((e.key==='Enter'||e.key===' ')&&!dpDisabled&&!connected){ e.preventDefault(); doConnect?.(); }
-});
+function exportJSONFn(){
+  if(!hasImage){toast('변환 결과가 없어요');return;}
+  const data=JSON.stringify({version:1,cols:GW,rows:GH,dots:grid.map(r=>Array.from(r).map(v=>v?1:0))},null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
+  a.download=(ge('fname')?.value||'Untitled')+'.json';a.click();
+  toast('JSON 파일을 내보냈어요');
+}
 
-/* ══ 고급 설정 토글 ══ */
-ge('expertToggle')?.addEventListener('click',()=>{
-  const body=ge('expertBody');
-  const open=body?.classList.toggle('show');
-  ge('expertToggle')?.classList.toggle('open',open);
-  ge('expertToggle')?.setAttribute('aria-expanded',open?'true':'false');
-});
-ge('expertToggle')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'||e.key===' '){ e.preventDefault(); ge('expertToggle')?.click(); }
-});
-ge('recoReset')?.addEventListener('click',()=>ge('recoReset2')?.click());
+function exportPNGFn(){
+  if(!hasImage){toast('변환 결과가 없어요');return;}
+  const sc=10,cv=document.createElement('canvas');
+  cv.width=GW*sc;cv.height=GH*sc;
+  const ct=cv.getContext('2d');ct.fillStyle='#F4F1E8';ct.fillRect(0,0,cv.width,cv.height);
+  for(let r=0;r<GH;r++)for(let c=0;c<GW;c++){
+    if(grid[r*GW+c]){ct.fillStyle='#1A1A1A';ct.beginPath();ct.arc(c*sc+sc/2,r*sc+sc/2,sc*.38,0,Math.PI*2);ct.fill();}
+    else{ct.fillStyle='#C4BDB4';ct.beginPath();ct.arc(c*sc+sc/2,r*sc+sc/2,sc*.12,0,Math.PI*2);ct.fill();}
+  }
+  const a=document.createElement('a');a.href=cv.toDataURL();a.download=(ge('fname')?.value||'Untitled')+'.png';a.click();
+  toast('PNG 파일을 내보냈어요');
+}
 
-/* ══ 샘플 ══ */
+/* ── connection row ── */
+ge('connRow')?.addEventListener('click',()=>{if(!dpDisabled&&!connected)doConnect?.();});
+ge('connRow')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!dpDisabled&&!connected){e.preventDefault();doConnect?.();}});
+ge('liveSwitch')?.addEventListener('click',()=>{const sw=ge('liveSwitch');if(sw?.disabled)return;ge('liveToggle')?.click();syncConn();});
+
+/* ── sample ── */
 ge('sampleBtn')?.addEventListener('click',()=>loadSample?.());
 
-/* ══ 드래그앤드롭 ══ */
-const ca=q('.canvas-area');
-if(ca){
-  ['dragenter','dragover'].forEach(ev=>ca.addEventListener(ev,e=>{
-    e.preventDefault(); ca.classList.add('drag-over');
-  }));
-  ['dragleave','drop'].forEach(ev=>ca.addEventListener(ev,e=>{
-    e.preventDefault(); ca.classList.remove('drag-over');
-  }));
-  ca.addEventListener('drop',e=>{
-    const f=e.dataTransfer?.files[0]; if(!f) return;
-    if(/\.(dtm|dtms)$/i.test(f.name)) guardUnsaved(()=>loadTactileFile(f));
-    else guardUnsaved(()=>loadImageFile(f));
-  });
-}
-
-/* ══ 취소 ══ */
+/* ── cancel analyze ── */
 ge('cancelAnalyze')?.addEventListener('click',()=>{
-  if(typeof pendingImg!=='undefined') pendingImg=null;
-  if(typeof loading!=='undefined') loading=false;
+  if(typeof pendingImg!=='undefined')pendingImg=null;
+  if(typeof loading!=='undefined')loading=false;
   setAppState(hasImage?'ready':'empty');
 });
 
-/* ══ 가드 모달 ══ */
-ge('guardCancel')?.addEventListener('click',()=>ge('guardModal')?.classList.remove('show'));
-ge('guardProceed')?.addEventListener('click',()=>{
-  ge('guardModal')?.classList.remove('show');
-  const a=typeof guardAction!=='undefined'?guardAction:null; if(a) a();
-});
-ge('guardSave')?.addEventListener('click',()=>{
-  ge('saveTopBtn')?.click();
-  ge('guardModal')?.classList.remove('show');
-  const a=typeof guardAction!=='undefined'?guardAction:null; if(a) setTimeout(()=>a(),300);
-});
-
-/* ══ 파일명 동기화 (title bar input) ══ */
-const fnInput=ge('fname');
-if(fnInput){
-  fnInput.addEventListener('input',()=>{
-    const fn2=ge('fname2'); if(fn2) fn2.value=fnInput.value;
-    ge('saveTopBtn'); // 엔진이 fname2를 참조
-  });
-  fnInput.addEventListener('keydown',e=>{ if(e.key==='Enter') fnInput.blur(); });
+/* ── drag & drop ── */
+const ca=q('.canvas-area');
+if(ca){
+  ['dragenter','dragover'].forEach(ev=>ca.addEventListener(ev,e=>{e.preventDefault();ca.classList.add('drag-over');}));
+  ['dragleave','drop'].forEach(ev=>ca.addEventListener(ev,e=>{e.preventDefault();ca.classList.remove('drag-over');}));
+  ca.addEventListener('drop',e=>{const f=e.dataTransfer?.files[0];if(!f)return;if(/\.(dtm|dtms)$/i.test(f.name))guardUnsaved(()=>loadTactileFile(f));else guardUnsaved(()=>loadImageFile(f));});
 }
 
-/* ══ label → input 중복 방지 ══ */
+/* ── guard modal ── */
+ge('guardCancel')?.addEventListener('click',()=>ge('guardModal')?.classList.remove('show'));
+ge('guardProceed')?.addEventListener('click',()=>{ge('guardModal')?.classList.remove('show');const a=typeof guardAction!=='undefined'?guardAction:null;if(a)a();});
+ge('guardSave')?.addEventListener('click',()=>{ge('saveTopBtn')?.click();ge('guardModal')?.classList.remove('show');const a=typeof guardAction!=='undefined'?guardAction:null;if(a)setTimeout(()=>a(),300);});
+
+/* ── file name sync ── */
+ge('fname')?.addEventListener('input',()=>{});
+
+/* ── label → input 중복 방지 ── */
 setTimeout(()=>{
-  ['emptyImageBtn'].forEach(id=>{
-    const el=ge(id);
-    if(el&&typeof el.onclick==='function') el.onclick=e=>e.preventDefault();
-  });
+  ['emptyImageBtn'].forEach(id=>{const el=ge(id);if(el&&typeof el.onclick==='function')el.onclick=e=>e.preventDefault();});
 },200);
 
-/* ══ 모바일 변환 진행 ══ */
+/* ── mobile scroll ── */
 let _timers=[];
-function isMob(){ return window.innerWidth<=900; }
-function scrollTo2(el,off2=12){
-  if(!el) return;
-  window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off2,behavior:'smooth'});
-}
+function isMob(){return window.innerWidth<=900;}
+function scrollTo2(el,off2=12){if(!el)return;window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-off2,behavior:'smooth'});}
+
 function mobileStartAnalyzing(){
-  if(!isMob()) return;
+  if(!isMob())return;
   scrollTo2(q('.canvas-area'),8);
-  _timers.forEach(clearTimeout); _timers=[];
+  _timers.forEach(clearTimeout);_timers=[];
   const fill=ge('convBarFill');
-  if(fill){ fill.style.transition='none'; fill.style.width='0%'; setTimeout(()=>fill.style.transition='width .4s cubic-bezier(.4,0,.2,1)',20); }
+  if(fill){fill.style.transition='none';fill.style.width='0%';setTimeout(()=>fill.style.transition='width .4s cubic-bezier(.4,0,.2,1)',20);}
   const steps=[
-    {t:0,   pct:'15%',title:'이미지 분석 중',   sub:'AI가 이미지 유형을 파악하고 있어요'},
-    {t:200, pct:'45%',title:'핀 배열 계산 중',  sub:'최적 변환 방식을 선택하고 있어요'},
-    {t:380, pct:'75%',title:'품질 최적화 중',   sub:'촉각 인지 점수를 계산하고 있어요'},
-    {t:540, pct:'92%',title:'마무리 중',         sub:'거의 다 됐어요'},
+    {t:0,   pct:'15%',title:'이미지 분석 중',    sub:'AI가 이미지 유형을 파악하고 있어요'},
+    {t:200, pct:'45%',title:'핀 배열 계산 중',   sub:'최적 변환 방식을 선택하고 있어요'},
+    {t:380, pct:'75%',title:'품질 최적화 중',    sub:'촉각 인지 점수를 계산하고 있어요'},
+    {t:540, pct:'92%',title:'마무리 중',          sub:'거의 다 됐어요'},
   ];
   steps.forEach(({t,pct,title,sub})=>{
     _timers.push(setTimeout(()=>{
-      if(appState!=='analyzing') return;
-      if(fill) fill.style.width=pct;
+      if(appState!=='analyzing')return;
+      if(fill)fill.style.width=pct;
       const tt=ge('analyzeTitle'),sb=ge('analyzeName');
-      if(tt){ tt.style.opacity='0'; setTimeout(()=>{tt.textContent=title;tt.style.opacity='1';},80); }
-      if(sb){ sb.style.opacity='0'; setTimeout(()=>{sb.textContent=sub;sb.style.opacity='1';},100); }
+      if(tt){tt.style.opacity='0';setTimeout(()=>{tt.textContent=title;tt.style.opacity='1';},80);}
+      if(sb){sb.style.opacity='0';setTimeout(()=>{sb.textContent=sub;sb.style.opacity='1';},100);}
     },t));
   });
 }
+
 function mobileOnReady(){
-  _timers.forEach(clearTimeout); _timers=[];
+  _timers.forEach(clearTimeout);_timers=[];
   const fill=ge('convBarFill');
-  if(fill){ fill.style.width='100%'; setTimeout(()=>{fill.style.transition='none';fill.style.width='0%';},600); }
-  if(!isMob()) return;
+  if(fill){fill.style.width='100%';setTimeout(()=>{fill.style.transition='none';fill.style.width='0%';},600);}
+  if(!isMob())return;
   setTimeout(()=>scrollTo2(q('.right-panel'),8),300);
-  const bezel=q('.bezel');
-  if(bezel){ bezel.style.opacity='0'; setTimeout(()=>{ bezel.style.transition='opacity .25s'; bezel.style.opacity='1'; setTimeout(()=>bezel.style.transition='',300); },100); }
 }
 
-/* ══ 초기화 ══ */
+/* ── init ── */
 function init(){
-  paintSlider(threshold);
-  fitCanvas(); syncQuality(); syncConn(); syncToolBar();
-  resetQuality();
-  // 해상도 버튼
-  ge('resBtn60')?.classList.add('on');
-  ge('resBtn96')?.classList.remove('on');
-  // 크기 그룹 초기 숨김
-  const sg=ge('sizeGrp2'); if(sg) sg.style.display='none';
-  // 파일명
-  const fn=ge('fname'); if(fn) fn.value='Untitled';
-  // 취소 + 교체 버튼 (엔진이 이미 바인딩하므로 추가 배선 불필요)
-  // drag hint 추가 hover 효과
-  const dotGr=ge('dotGrid');
-  if(dotGr){
-    dotGr.addEventListener('dragenter',()=>dotGr.closest('.canvas-area')?.classList.add('drag-over'));
-    dotGr.addEventListener('dragleave',()=>dotGr.closest('.canvas-area')?.classList.remove('drag-over'));
-  }
+  fitCanvas();syncQuality();syncConn();syncToolBar();resetQuality();
+  currentMode='balanced';
+  // set balanced active
+  qa('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode==='balanced'));
+  // AI badge hidden initially
+  const badge=q('.ai-done-badge');if(badge)badge.style.display='none';
 }
-
-if(document.readyState==='complete'||document.readyState==='interactive') setTimeout(init,0);
+if(document.readyState==='complete'||document.readyState==='interactive')setTimeout(init,0);
 else window.addEventListener('DOMContentLoaded',init);
 document.fonts?.ready?.then(fitCanvas);
 })();
