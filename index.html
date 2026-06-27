@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -222,7 +221,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 .dp-dot.busy{background:#F59E0B;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .dp-lbl{font-size:12px;font-weight:600;color:var(--text)}
-.dp-row:hover .dp-lbl{color:var(--text)}
+.dp-row:hover 
 .live-row{display:flex;align-items:center;justify-content:space-between;margin-top:var(--sp-xs)}
 .live-lbl{font-size:11px;color:var(--muted)}
 .sw{width:32px;height:18px;border-radius:999px;background:var(--border2);
@@ -275,7 +274,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 /* ── MODAL ── */
 .modal-bg{position:fixed;inset:0;background:rgba(26,26,26,.4);backdrop-filter:blur(2px);
   display:none;align-items:center;justify-content:center;z-index:180;padding:20px}
-.modal-bg.show{display:flex}
+.modal-bg
 .modal{background:var(--white);border-radius:var(--r-2xl);max-width:340px;width:100%;
   padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.15)}
 .modal h2{font-size:15px;font-weight:700;margin-bottom:6px}
@@ -391,9 +390,9 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 }
 .analyze-spinner-wrap{flex-shrink:0}
 .analyze-body{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
-.analyze-body .converting-title{font-size:13px;font-weight:700;color:var(--ink)}
-.analyze-body .converting-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.analyze-body .conv-bar{margin-top:4px}
+.analyze-body 
+.analyze-body 
+.analyze-body 
 /* scanning animation dots */
 @keyframes scan-pulse{
   0%,100%{opacity:.25}
@@ -444,7 +443,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     </button>
     <button class="hdr-btn secondary" id="hdrExportBtn" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span>↓  저장</span>
+      <span>저장</span>
     </button>
   </div>
 </header>
@@ -453,7 +452,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 <div class="workspace">
 
   <!-- TOOL RAIL — 5개 도구만, 중복 없음 -->
-  <aside class="tool-rail" role="toolbar" aria-label="편집 도구">
+  <aside class="tool-rail" role="toolbar" aria-label="도구 모음">
 
     <!-- 선택 (move로 통합 — 클릭/드래그 이동) -->
     <button class="tr-btn active" data-tool="move" aria-pressed="true"
@@ -520,11 +519,26 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   <main class="canvas-area" id="canvasArea" data-view="after">
     <div class="canvas-meta" id="canvasMeta">
       <span class="canvas-meta-label" id="canvasMetaLabel">Dot Pad 촉각 미리보기 · 60×40</span>
+      <!-- 변환 후 노출: 다른 이미지로 변환 버튼 -->
+      <label for="imageFileInput" id="replaceImgLabel"
+        onclick="document.getElementById('imageFileInput').click();return false;"
+        tabindex="0" role="button"
+        style="display:none;align-items:center;gap:5px;height:24px;padding:0 10px;
+               border-radius:999px;border:1.5px solid var(--border2);background:var(--white);
+               font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;
+               transition:all .12s;white-space:nowrap">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span id="replaceImgLabelText">다른 이미지로 변환</span>
+      </label>
     </div>
 
     <div class="dot-grid-wrap" id="dotGridWrap" style="position:relative">
       <div id="dotGrid" style="position:relative">
-        <canvas id="pad" tabindex="0" role="application" aria-label="DotPad 60×40 촉각 그리드"></canvas>
+        <canvas id="pad" tabindex="0" role="application" aria-label="Dot Pad 60×40 촉각 그리드"></canvas>
         <img id="beforeImg" alt="원본 이미지"/>
 
         <!-- analyzing overlay: 소형 카드, 그리드 계속 보임 -->
@@ -574,7 +588,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
           <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
         <span style="font-size:13px;font-weight:600;color:var(--ink)">이미지 가져오기</span>
-        <span style="font-size:11px;color:var(--subtle)">클릭하거나 파일을 여기에 드래그하세요</span>
+        <span style="font-size:11px;color:var(--subtle)">클릭하거나 파일을 드래그하세요</span>
       </label>
 
       <!-- 보조 액션들 -->
@@ -595,22 +609,22 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
   </main>
 
   <!-- RIGHT PANEL -->
-  <aside class="right-panel" aria-label="Tactile Inspector">
+  <aside class="right-panel" aria-label="촉각 품질 분석">
     <div class="rp-header">
-      <div class="rp-label" style="font-size:11px;font-weight:700;color:var(--ink);letter-spacing:-.01em">촉각 품질 분석</div>
+      <div class="rp-label" style="font-size:11px;font-weight:700;color:var(--ink);letter-spacing:-.01em"><span data-i18n="quality_analysis">촉각 품질 분석</span></div>
     </div>
     <div class="rp-scroll">
 
       <!-- 점 농도 슬라이더 -->
       <div>
-        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)">점 농도 조절</div>
+        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)"><span data-i18n="density_control">점 농도 조절</span></div>
         <div class="th-slider-wrap">
           <div class="th-track" id="thTrack">
             <div class="th-fill" id="thFill" style="width:50%"></div>
             <div class="th-thumb" id="thThumb" style="left:50%"></div>
           </div>
           <input type="range" id="clarity2" min="20" max="240" value="128"
-            aria-label="점 농도 조절" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%"/>
+            aria-label="점 밀도 조절 슬라이더" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%"/>
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:3px">
           <span style="font-size:10px;color:var(--subtle)">적게 (단순)</span>
@@ -664,14 +678,14 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
       <div>
         <div class="insp-row"><span class="insp-key">판독성</span><span class="pill pill-neutral" id="qClarity">—</span></div>
         <div class="insp-row"><span class="insp-key">점 밀도</span><span class="pill pill-neutral" id="qDensity">—</span></div>
-        <div class="insp-row"><span class="insp-key">손가락 구분</span><span class="pill pill-neutral" id="qReadability">—</span></div>
+        <div class="insp-row"><span class="insp-key">촉각 구분</span><span class="pill pill-neutral" id="qReadability">—</span></div>
         <div class="insp-row"><span class="insp-key">구조 표현</span><span class="pill pill-neutral" id="qStructure">—</span></div>
       </div>
 
       <!-- AI feedback -->
       <div>
-        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)">AI 추천</div>
-        <div class="ai-empty" id="aiFeedbackEmpty">이미지를 가져오면 AI가 주요 윤곽과 핵심 구조를 분석해 Dot Pad용 촉각그래픽으로 변환합니다.</div>
+        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)"><span data-i18n="ai_suggestion">AI 추천</span></div>
+        <div class="ai-empty" id="aiFeedbackEmpty">이미지를 가져오면 AI가 주요 윤곽과 핵심 구조를 분석해 Dot Pad용 촉각그래픽으로 변환해드려요.</div>
         <div class="ai-feedback" id="aiFeedbackCard" style="display:none">
           <div class="ai-fb-head">
             <div class="ai-fb-dot">
@@ -687,7 +701,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- 핀 빠른 편집 -->
       <div>
-        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)">핀 제어</div>
+        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)"><span data-i18n="pin_control">핀 제어</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
           <button class="pin-ctrl-btn" id="btnAllUp" disabled title="모든 핀을 올립니다 (전체 채움)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12l4-4 4 4"/></svg>
@@ -706,7 +720,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- DotPad -->
       <div>
-        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)">DotPad</div>
+        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)">Dot Pad</div>
         <div class="dp-row" id="connRow" role="button" tabindex="0">
           <span class="dp-dot" id="connDot"></span>
           <span class="dp-lbl" id="connText">Dot Pad 연결 안 됨</span>
@@ -719,7 +733,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
       <!-- export -->
       <div>
-        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)">저장 / 내보내기</div>
+        <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)"><span data-i18n="save">저장</span> / 내보내기</div>
         <div style="display:flex;flex-direction:column;gap:var(--sp-xs)">
           <button class="exp-btn accent" id="dtmsBtn" disabled>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -751,7 +765,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     Export JSON
   </button>
-  <button class="bb-btn" id="exportPngBtn" disabled>PNG 저장</button>
+  <button class="bb-btn" id="exportPngBtn" disabled style="display:none" aria-hidden="true">PNG 저장</button>
 </div>
 
 <!-- toast -->
@@ -767,8 +781,8 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 <!-- guard modal -->
 <div class="modal-bg" id="guardModal" role="dialog" aria-modal="true">
   <div class="modal">
-    <h2>저장하지 않은 변경이 있어요</h2>
-    <p>새 파일을 불러오면 현재 작업 내용이 사라져요.</p>
+    <h2>변경 사항이 저장되지 않았어요</h2>
+    <p>지금 불러오면 현재 작업 내용이 사라집니다.<br>저장 후 진행하시겠어요?</p>
     <div class="modal-btns">
       <button class="acc" id="guardSave">저장하고 불러오기</button>
       <button id="guardProceed">저장 없이 불러오기</button>
@@ -919,7 +933,7 @@ let fileKind=null;                    // 'image' | 'tactile'
 let tool='move';
 let grid=new Uint8Array(N);
 let srcImage=null, grayBuf=null, alphaBuf=null, imgMeta=null;
-let threshold=128, polarity=false, method='global', outline=0, minComp=3;
+let threshold=128, polarity=false, method='global', outline=0, minComp=2;
 let recoThreshold=128, recoOutline=0;
 let liveOn=true, connected=false, sdk=null, dotDevice=null;
 let hasImage=false, dirty=false, loading=false;
@@ -1137,108 +1151,76 @@ function gradeReason(g,m){if(g>=3){if(m.iso/Math.max(1,m.on)<0.08&&m.count<=4)re
 function autoSelect(){
   imgMeta=Object.assign(imgMeta||{},analyzeImageType());
   const type=imgMeta.type;
-  let meth,pol=false,ol=0;
 
   /* ── 투명 PNG ── */
   if(imgMeta.hasAlpha){
     const alphaM=alphaMask(false);
     const onCnt=alphaM.reduce((s,v)=>s+v,0);
-    // 불투명 영역이 65% 이상이면 반전 (어두운 형태를 배경으로 인식)
     pol=onCnt/N>0.65;
-    meth='alpha'; ol=0;
-    method='alpha'; polarity=pol; outline=ol;
+    method='alpha'; polarity=pol; outline=0;
     threshold=128; recoThreshold=128; recoOutline=0;
     rebuild();
-    const q=tactileQualityScore(grid,{type,outline});
-    return {score:q.score,meth,pol,ol};
+    /* 결과 검증: 핀이 너무 적으면 otsu로 재시도 */
+    const after0=grid.reduce((s,v)=>s+v,0);
+    if(after0/N<0.04){method='otsu';polarity=false;rebuild();}
+    return {score:tactileQualityScore(grid,{type,outline:0}).score,meth:'alpha',pol:polarity,ol:0};
   }
 
-  /* ── Otsu 임계값 계산 ── */
   const t=otsu(grayBuf);
-  const rawMask=fillT(grayBuf,t,false);
-  const rawOn=rawMask.reduce((s,v)=>s+v,0);
+  const rawOn=fillT(grayBuf,t,false).reduce((s,v)=>s+v,0);
   const rawD=rawOn/N;
 
-  /* ── 선화 (흰 배경 + 검은 선) ── */
+  /* ── 선화 (흰/밝은 배경 + 어두운 선) ── */
   if(type==='lineart'){
-    // 선화는 어두운 픽셀이 선(ON). 반전 불필요
-    // rawD가 너무 높으면 임계값을 높여서 어두운 픽셀만 잡기
     let finalT=t;
-    if(rawD>0.5){
-      // 배경이 어두운 경우 → 반전
-      pol=true; finalT=t;
-    } else if(rawD>0.35){
-      // 너무 많이 잡힘 → 임계값 내려서 더 진한 선만
-      finalT=Math.round(t*0.75);
-    }
-    meth='otsu'; ol=0;
-    method='otsu'; polarity=pol; outline=ol;
+    if(rawD>0.6){pol=true;finalT=t;}           // 어두운 배경 → 반전
+    else if(rawD>0.4){finalT=Math.round(t*0.80);}  // 조금 많음 → 소폭 조정 (0.75→0.80으로 완화)
+    // rawD 10~40%는 그대로 사용 — 너무 많이 줄이지 않음
+    method='otsu'; polarity=pol; outline=0;
     threshold=finalT; recoThreshold=finalT; recoOutline=0;
     rebuild();
-    // 결과 검증: 너무 적으면 임계값 다시 조정
-    const after=grid.reduce((s,v)=>s+v,0);
-    if(after/N<0.05&&!pol){
-      // 결과가 너무 적음 → 임계값 높여서 재시도
-      threshold=Math.min(240,Math.round(t*1.3));
-      recoThreshold=threshold;
-      rebuild();
+    /* 결과 검증 */
+    const aft=grid.reduce((s,v)=>s+v,0)/N;
+    if(aft<0.04 && !pol){
+      // 너무 적음 → 임계값 올려서 재시도
+      threshold=Math.min(220,Math.round(t*1.3));recoThreshold=threshold;rebuild();
     }
-    const q=tactileQualityScore(grid,{type,outline});
-    return {score:q.score,meth,pol,ol};
+    return {score:tactileQualityScore(grid,{type,outline:0}).score,meth:'otsu',pol,ol:0};
   }
 
-  /* ── 저대비 이미지 ── */
+  /* ── 저대비 ── */
   if(type==='lowcontrast'){
-    // adaptive가 세부를 더 잘 잡음
-    meth='adaptive'; pol=false; ol=0;
     method='adaptive'; polarity=false; outline=0;
     threshold=t; recoThreshold=t; recoOutline=0;
     rebuild();
-    const after=grid.reduce((s,v)=>s+v,0);
-    if(after/N<0.05){
-      // 결과가 너무 적으면 sauvola로 재시도
-      method='sauvola'; rebuild();
-    }
-    const q=tactileQualityScore(grid,{type,outline});
-    return {score:q.score,meth:method,pol:false,ol:0};
+    const aft2=grid.reduce((s,v)=>s+v,0)/N;
+    if(aft2<0.04){method='sauvola';rebuild();}
+    if(aft2>0.6){polarity=true;rebuild();}
+    return {score:tactileQualityScore(grid,{type,outline:0}).score,meth:method,pol:polarity,ol:0};
   }
 
   /* ── 사진 / 일반 이미지 ── */
-  // 1단계: 기본 Otsu
-  meth='otsu'; pol=false; ol=0;
-  let finalT=t;
-
-  if(rawD>0.72){
-    // 너무 많이 채워짐 → 반전
-    pol=true;
-  } else if(rawD>0.55){
-    // 채움 많음 → 임계값 낮춰서 더 어두운 것만
-    finalT=Math.round(t*0.72);
-  } else if(rawD<0.05){
-    // 너무 적음 → 임계값 높여서 더 많이 잡기
-    finalT=Math.min(240,Math.round(t*1.4));
-  }
+  let finalT=t, pol=false, ol=0;
+  if(rawD>0.72){pol=true;}                        // 전체가 어두움 → 반전
+  else if(rawD>0.60){finalT=Math.round(t*0.78);}  // 많음 → 임계값 낮추기
+  else if(rawD<0.06){finalT=Math.min(210,Math.round(t*1.35));} // 너무 적음 → 올리기
+  // 15~60% 범위는 그대로 — 과도한 임계값 조정 금지
 
   method='otsu'; polarity=pol; outline=ol;
-  threshold=finalT; recoThreshold=finalT; recoOutline=0;
+  threshold=finalT; recoThreshold=finalT; recoOutline=ol;
   rebuild();
 
-  // 2단계: 결과 검증 및 보정
-  const after=grid.reduce((s,v)=>s+v,0);
-  const afterD=after/N;
-
-  if(afterD<0.04&&!pol){
-    // 여전히 너무 적음 → sauvola로 재시도
-    method='sauvola'; polarity=false; threshold=t; recoThreshold=t;
-    rebuild();
-  } else if(afterD>0.65&&pol){
-    // 반전 후에도 너무 많음 → outline 추가
-    ol=1; outline=1; recoOutline=1;
-    rebuild();
+  /* 2단계 검증 */
+  const aft3=grid.reduce((s,v)=>s+v,0)/N;
+  if(aft3<0.04 && !pol){
+    // 여전히 적음 → sauvola
+    method='sauvola';polarity=false;threshold=t;recoThreshold=t;rebuild();
+  } else if(aft3>0.70 && !pol){
+    // 과채움 → outline으로 경계만
+    ol=1;outline=1;recoOutline=1;rebuild();
   }
 
-  const q=tactileQualityScore(grid,{type,outline});
-  return {score:q.score,meth:method,pol:polarity,ol:outline};
+  return {score:tactileQualityScore(grid,{type,outline}).score,meth:method,pol:polarity,ol:outline};
 }
 
 /* ============================================================
@@ -1646,7 +1628,8 @@ function removeBorder(g){
   const runLen=(arr)=>{let mx=0,cur=0;for(const v of arr){cur=v?cur+1:0;if(cur>mx)mx=cur;}return mx;};
   const density=(arr)=>arr.reduce((s,v)=>s+v,0)/arr.length;
   /* 기준: 연속 핀 55% 이상 AND 밀도 60% 이상 → 의도적 테두리 아닌 경우 보호 */
-  const isBorder=(arr,len)=>runLen(arr)>len*0.55&&density(arr)>0.6;
+  /* 기준 강화: 70% 이상 연속 + 밀도 75% 이상만 제거 (선화 형태 보존) */
+  const isBorder=(arr,len)=>runLen(arr)>len*0.70&&density(arr)>0.75;
   // 상단 1행 (2행으로 늘리면 너무 많이 지워짐)
   for(let r=0;r<1;r++){
     const row=[];for(let c=0;c<GW;c++)row.push(o[r*GW+c]);
@@ -1698,11 +1681,29 @@ const _rebuild=rebuild;
 rebuild=function(){
   if(!grayBuf)return;
   let m=cleanup(baseMask(threshold,method,polarity));
-  m=applyOutline(m,outline);
-  // 테두리 자동 제거
+  /* 파이프라인 순서 최적화:
+     1. removeBorder — outline 전에 제거해야 형태 보존
+     2. applyOutline — 윤곽 추출
+     3. smoothPass   — 고립점 제거
+     4. 선 연결 보강 — 핀이 너무 적을 때만 */
   m=removeBorder(m);
-  // 스무딩 1패스
+  m=applyOutline(m,outline);
   m=smoothPass(m);
+  /* 선화 연결성 보강: 전체의 4% 미만이면 선이 끊긴 것으로 판단 */
+  const onCount=m.reduce((s,v)=>s+v,0);
+  if(onCount>0 && onCount<N*0.04){
+    const enhanced=new Uint8Array(m);
+    for(let y=1;y<GH-1;y++)for(let x=1;x<GW-1;x++){
+      if(m[y*GW+x])continue;
+      let n8=0;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        if(dx===0&&dy===0)continue;
+        if(m[(y+dy)*GW+(x+dx)])n8++;
+      }
+      if(n8>=2)enhanced[y*GW+x]=1;
+    }
+    m=enhanced;
+  }
   grid=m;
   pages[curPage]=grid;
 };
@@ -2030,7 +2031,7 @@ ge('clarity2')?.addEventListener('input', function(){
 });
 
 ge('thMinus')?.addEventListener('click', ()=>{
-  if(!hasImage){ toast('이미지를 먼저 가져와주세요'); return; }
+  if(!hasImage){ toast(t('toast_need_image')); return; }
   const v = Math.max(20, +ge('clarity2').value - 1);
   ge('clarity2').value = v;
   threshold = v; method = 'global';
@@ -2053,7 +2054,7 @@ ge('thAuto')?.addEventListener('click', ()=>{
   threshold = t; method = 'global';
   paintSlider(t);
   rebuild(); draw(); syncQuality();
-  toast('자동 임계값 ' + thPct(t) + '%');
+  toast(t('toast_auto_th') + ' ' + thPct(t) + '%');
   const ap = ge('thApply');
   if(ap) ap.disabled = true;
 });
@@ -2127,12 +2128,12 @@ function syncQuality(){
 
   // pills
   // 한국어 상태값 + 점 밀도 기준 (스펙 §10)
-  const fillState=fill<10?'부족':fill<35?'적정':fill<50?'조금 많음':'높음';
+  const fillState=fill<10?t('state_low'):fill<35?t('state_balanced'):fill<50?t('state_a_bit_high'):t('state_high');
   const fillCls=fill<10?'warn':fill<35?'good':fill<50?'warn':'bad';
-  pill(ge('qClarity'),g>=3?'좋음':g===2?'주의':'다시 확인 필요',g>=3?'good':g===2?'warn':'bad');
+  pill(ge('qClarity'),g>=3?t('state_good'):g===2?t('state_warning'):t('state_poor'),g>=3?'good':g===2?'warn':'bad');
   pill(ge('qDensity'),fillState,fillCls);
-  pill(ge('qReadability'),g>=3?'좋음':g===2?'주의':'확인 필요',g>=3?'good':g===2?'warn':'bad');
-  const structVal=fill>40?'면 채움':fill>15?'윤곽 + 핵심 구조':'윤곽 중심';
+  pill(ge('qReadability'),g>=3?t('state_good'):g===2?t('state_warning'):t('state_poor'),g>=3?'good':g===2?'warn':'bad');
+  const structVal=fill>40?t('state_filled'):fill>15?t('state_mixed'):t('state_outline');
   pill(ge('qStructure'),structVal,'neutral');
 
   // AI feedback
@@ -2225,6 +2226,18 @@ setAppState=function(s){
     // AI badge
     const badge=q('.ai-done-badge');
     if(badge)badge.style.display=ready?'inline-flex':'none';
+    /* 다른 이미지로 변환 버튼 — 변환 완료 후만 표시 */
+    const replLbl=ge('replaceImgLabel');
+    if(replLbl){
+      replLbl.style.display=ready?'flex':'none';
+      /* hover 효과 */
+      if(!replLbl._hover){
+        replLbl._hover=true;
+        replLbl.addEventListener('mouseenter',()=>{replLbl.style.background='var(--surface)';replLbl.style.borderColor='var(--border)';replLbl.style.color='var(--text)';});
+        replLbl.addEventListener('mouseleave',()=>{replLbl.style.background='var(--white)';replLbl.style.borderColor='var(--border2)';replLbl.style.color='var(--muted)';});
+        replLbl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();document.getElementById('imageFileInput').click();}});
+      }
+    }
     // scanning animation
     if(s==='analyzing') startScanAnimation();
     else stopScanAnimation();
@@ -2325,7 +2338,7 @@ ge('pngBtn')?.addEventListener('click',()=>exportPNGFn());
 ge('hexBtn')?.addEventListener('click',()=>{
   const ho=ge('hexOut');
   const hex=(ho?.textContent||'').replace('HEX ','').trim();
-  if(hex&&hex!=='—')navigator.clipboard?.writeText(hex).then(()=>toast('HEX 복사됨','ok')).catch(()=>ge('hexBtn2')?.click());
+  if(hex&&hex!=='—')navigator.clipboard?.writeText(hex).then(()=>toast('HEX copied ✓','ok')).catch(()=>ge('hexBtn2')?.click());
   else ge('hexBtn2')?.click();
 });
 ge('exportJsonBtn')?.addEventListener('click',exportJSONFn);
@@ -2338,7 +2351,7 @@ ge('btnAllUp')?.addEventListener('click',()=>{
   for(let i=0;i<N;i++) grid[i]=1;
   pages[curPage]=grid;
   draw(); afterChange(); syncQuality();
-  toast('모든 핀을 올렸어요');
+  toast(t('toast_pin_up'));
 });
 ge('btnAllDown')?.addEventListener('click',()=>{
   if(!hasImage&&fileKind!=='tactile') return;
@@ -2346,7 +2359,7 @@ ge('btnAllDown')?.addEventListener('click',()=>{
   for(let i=0;i<N;i++) grid[i]=0;
   pages[curPage]=grid;
   draw(); afterChange(); syncQuality();
-  toast('모든 핀을 내렸어요');
+  toast(t('toast_pin_down'));
 });
 ge('btnInvert')?.addEventListener('click',()=>{
   if(!hasImage&&fileKind!=='tactile') return;
@@ -2354,7 +2367,7 @@ ge('btnInvert')?.addEventListener('click',()=>{
   for(let i=0;i<N;i++) grid[i]=grid[i]?0:1;
   pages[curPage]=grid;
   draw(); afterChange(); syncQuality();
-  toast('핀을 반전했어요');
+  toast(t('toast_pin_inv'));
 });
 
 function exportJSONFn(){
@@ -2363,7 +2376,7 @@ function exportJSONFn(){
   const a=document.createElement('a');
   a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
   a.download=(ge('fname')?.value||'Untitled')+'.json';a.click();
-  toast('JSON 파일을 내보냈어요');
+  toast(t('toast_json'));
 }
 
 function exportPNGFn(){
@@ -2376,7 +2389,7 @@ function exportPNGFn(){
     else{ct.fillStyle='#C4BDB4';ct.beginPath();ct.arc(c*sc+sc/2,r*sc+sc/2,sc*.12,0,Math.PI*2);ct.fill();}
   }
   const a=document.createElement('a');a.href=cv.toDataURL();a.download=(ge('fname')?.value||'Untitled')+'.png';a.click();
-  toast('PNG 파일을 내보냈어요');
+  toast(t('toast_png'));
 }
 
 /* ── connection row ── */
@@ -2521,6 +2534,392 @@ if(document.readyState==='complete'||document.readyState==='interactive')setTime
 else window.addEventListener('DOMContentLoaded',init);
 document.fonts?.ready?.then(fitCanvas);
 })();
+
+/* ══════════════════════════════════════════════════════════
+   i18n — 한국어 / English 다국어 시스템
+   ══════════════════════════════════════════════════════════ */
+const I18N = {
+  ko: {
+    /* 헤더 */
+    brand_sub:        '새 촉각그래픽',
+    prompt_ph:        'Dot Pad용 촉각그래픽으로 변환해보세요…',
+    btn_send:         'Dot Pad로 보내기',
+    btn_save:         '저장',
+    mode_simple:      '윤곽 중심',
+    mode_balanced:    '균형 변환',
+    mode_detail:      '디테일 유지',
+
+    /* 툴바 */
+    tool_select:      '선택',
+    tool_pen:         '펜',
+    tool_eraser:      '지우개',
+    tool_undo:        '되돌리기',
+    tool_redo:        '다시하기',
+    tool_clear:       '전체 지우기',
+    size_label:       '크기',
+
+    /* 캔버스 */
+    canvas_meta:      'Dot Pad 촉각 미리보기 · 60×40',
+    converting:       'AI 촉각 변환 중',
+    converting_sub:   '주요 윤곽과 핵심 구조를 분석하고 있어요',
+    cancel:           '취소',
+    empty_title:      '촉각그래픽을 만들어보세요',
+    empty_sub:        'AI가 Dot Pad에 맞게 촉각그래픽으로\n자동 변환해드려요',
+    empty_import:     '이미지 가져오기',
+    empty_drag:       '클릭하거나 파일을 드래그하세요',
+    empty_dtms:       '.dtms 파일 열기',
+    empty_sample:     '샘플로 시작',
+    warn_density_high:'점이 많아 촉각으로 구분하기 어려울 수 있어요.',
+    warn_simplify:    '윤곽 중심으로 변환',
+
+    /* 우측 패널 */
+    panel_title:      '촉각 품질 분석',
+    panel_sub:        '이 결과가 Dot Pad에서 잘 읽히는지 확인해드려요.',
+    density_title:    '점 밀도',
+    density_ctrl:     '점 농도 조절',
+    density_low:      '적게 (단순)',
+    density_high:     '많게 (선명)',
+    btn_minus:        '−1',
+    btn_auto:         '자동',
+    btn_plus:         '+1',
+    btn_apply:        '적용',
+    quality_title:    '촉각 품질',
+    q_clarity:        '판독성',
+    q_density:        '점 밀도',
+    q_readability:    '촉각 구분',
+    q_structure:      '구조 표현',
+    ai_title:         'AI 추천',
+    ai_empty:         '이미지를 가져오면 AI가 주요 윤곽과 핵심 구조를 분석해 Dot Pad용 촉각그래픽으로 변환해드려요.',
+    pin_ctrl_title:   '핀 제어',
+    pin_up:           '전체 올리기',
+    pin_down:         '전체 내리기',
+    pin_invert:       '반전',
+    conn_title:       'Dot Pad 연결',
+    conn_off:         'Dot Pad 연결 안 됨',
+    conn_hint:        '연결하면 Dot Pad에서 직접 확인할 수 있어요',
+    conn_btn:         '연결하기',
+    save_title:       '저장',
+    btn_dtms:         '.dtms 저장',
+    btn_png:          'PNG 저장',
+    btn_dev:          '개발자 옵션',
+    btn_dotpad:       'Dot Pad로 보내기',
+
+    /* 상태값 */
+    state_good:       '좋음',
+    state_warning:    '주의',
+    state_poor:       '다시 확인 필요',
+    state_balanced:   '적정',
+    state_low:        '부족해요',
+    state_a_bit_high: '조금 많아요',
+    state_high:       '점이 많아요',
+    state_outline:    '윤곽 중심',
+    state_filled:     '면 채움',
+    state_mixed:      '윤곽 + 핵심 구조',
+
+    /* 토스트 */
+    toast_converted:  'AI 촉각 변환이 완료됐어요 ✓',
+    toast_need_image: '이미지를 먼저 가져와주세요',
+    toast_auto_th:    '자동 임계값 적용됨',
+    toast_pin_up:     '모든 핀을 올렸어요',
+    toast_pin_down:   '모든 핀을 내렸어요',
+    toast_pin_inv:    '핀을 반전했어요',
+    toast_png:        'PNG로 저장했어요 ✓',
+    toast_json:       'JSON 파일을 내보냈어요',
+    toast_dtms:       '.dtms 파일을 저장했어요 ✓',
+
+    /* 하단 바 */
+    bb_disconnected:  'Dot Pad 연결 안 됨',
+    bb_connected:     'Dot Pad 연결됨',
+    bb_page:          '페이지',
+
+    /* AI 추천 칩 */
+    chip_simplify:    '윤곽 중심으로 변환',
+    chip_density_low: '점 밀도 낮추기',
+    chip_filled_less: '면 채움 줄이기',
+    chip_redetect:    '윤곽 다시 감지',
+    chip_density_high:'점 밀도 높이기',
+    chip_structure:   '핵심 구조 강조',
+    chip_detail:      '디테일 정리',
+
+    /* 가드 모달 */
+    guard_title:      '변경 사항이 저장되지 않았어요',
+    guard_desc:       '지금 불러오면 현재 작업 내용이 사라집니다.\n저장 후 진행하시겠어요?',
+    guard_save:       '저장하고 불러오기',
+    guard_proceed:    '저장 없이 불러오기',
+    guard_cancel:     '취소',
+  },
+
+  en: {
+    /* Header */
+    brand_sub:        'New tactile graphic',
+    prompt_ph:        'Convert to Dot Pad tactile graphic…',
+    btn_send:         'Send to Dot Pad',
+    btn_save:         'Save',
+    mode_simple:      'Outline',
+    mode_balanced:    'Balanced',
+    mode_detail:      'Detail',
+
+    /* Toolbar */
+    tool_select:      'Select',
+    tool_pen:         'Pen',
+    tool_eraser:      'Eraser',
+    tool_undo:        'Undo',
+    tool_redo:        'Redo',
+    tool_clear:       'Clear All',
+    size_label:       'Size',
+
+    /* Canvas */
+    canvas_meta:      'Dot Pad Preview · 60×40',
+    converting:       'AI Converting…',
+    converting_sub:   'Analyzing outlines and core structure',
+    cancel:           'Cancel',
+    empty_title:      'Create a tactile graphic',
+    empty_sub:        'AI converts your image into a\nDot Pad-optimized tactile graphic',
+    empty_import:     'Import Image',
+    empty_drag:       'Click or drag a file here',
+    empty_dtms:       'Open .dtms file',
+    empty_sample:     'Start with a sample',
+    warn_density_high:'Too many dots — may be hard to feel.',
+    warn_simplify:    'Simplify',
+
+    /* Right Panel */
+    panel_title:      'Tactile Quality',
+    panel_sub:        "See how well this will read on a Dot Pad.",
+    density_title:    'Dot Density',
+    density_ctrl:     'Density Control',
+    density_low:      'Fewer (simpler)',
+    density_high:     'More (detailed)',
+    btn_minus:        '−1',
+    btn_auto:         'Auto',
+    btn_plus:         '+1',
+    btn_apply:        'Apply',
+    quality_title:    'Tactile Quality',
+    q_clarity:        'Readability',
+    q_density:        'Dot Density',
+    q_readability:    'Tactile Feel',
+    q_structure:      'Structure',
+    ai_title:         'AI Suggestions',
+    ai_empty:         'Import an image and AI will analyze its outline and core structure to convert it into a Dot Pad tactile graphic.',
+    pin_ctrl_title:   'Pin Control',
+    pin_up:           'All On',
+    pin_down:         'All Off',
+    pin_invert:       'Invert',
+    conn_title:       'Dot Pad',
+    conn_off:         'Not Connected',
+    conn_hint:        'Connect to preview on an actual Dot Pad',
+    conn_btn:         'Connect',
+    save_title:       'Save',
+    btn_dtms:         'Save .dtms',
+    btn_png:          'Save PNG',
+    btn_dev:          'Developer Options',
+    btn_dotpad:       'Send to Dot Pad',
+
+    /* Status values */
+    state_good:       'Good',
+    state_warning:    'Warning',
+    state_poor:       'Needs Review',
+    state_balanced:   'Balanced',
+    state_low:        'Too low',
+    state_a_bit_high: 'A bit high',
+    state_high:       'Too high',
+    state_outline:    'Outline',
+    state_filled:     'Filled',
+    state_mixed:      'Outline + Core',
+
+    /* Toasts */
+    toast_converted:  'Tactile conversion complete ✓',
+    toast_need_image: 'Please import an image first',
+    toast_auto_th:    'Auto threshold applied',
+    toast_pin_up:     'All pins raised',
+    toast_pin_down:   'All pins lowered',
+    toast_pin_inv:    'Pins inverted',
+    toast_png:        'Saved as PNG ✓',
+    toast_json:       'JSON exported',
+    toast_dtms:       '.dtms file saved ✓',
+
+    /* Bottom bar */
+    bb_disconnected:  'Dot Pad not connected',
+    bb_connected:     'Dot Pad connected',
+    bb_page:          'Page',
+
+    /* AI suggestion chips */
+    chip_simplify:    'Simplify outlines',
+    chip_density_low: 'Reduce density',
+    chip_filled_less: 'Reduce fill',
+    chip_redetect:    'Re-detect outlines',
+    chip_density_high:'Increase density',
+    chip_structure:   'Emphasize structure',
+    chip_detail:      'Clean up details',
+
+    /* Guard modal */
+    guard_title:      'Unsaved changes',
+    guard_desc:       'Loading a new file will discard current changes.\nSave before continuing?',
+    guard_save:       'Save and load',
+    guard_proceed:    'Load without saving',
+    guard_cancel:     'Cancel',
+  }
+};
+
+/* ── 언어 전환 시스템 ── */
+let _lang = localStorage.getItem('dc_lang') || 'ko';
+
+function t(key){ return (I18N[_lang]||I18N.ko)[key] || (I18N.ko)[key] || key; }
+
+function applyLang(){
+  const lang = _lang;
+  // 파일명 기본값
+  const fn = ge('fname');
+  if(fn && (fn.value === '새 촉각그래픽' || fn.value === 'New tactile graphic'))
+    fn.value = t('brand_sub');
+
+  // placeholder
+  const prompt = ge('aiPrompt');
+  if(prompt) prompt.placeholder = t('prompt_ph');
+
+  // 헤더 버튼
+  const sendBtn = ge('hdrOutputBtn');
+  if(sendBtn){ const sp = sendBtn.querySelector('span'); if(sp) sp.textContent = t('btn_send'); }
+  const expBtn = ge('hdrExportBtn');
+  if(expBtn){ const sp = expBtn.querySelector('span'); if(sp) sp.textContent = t('btn_save'); }
+
+  // 툴바 레이블
+  const toolLabels = {
+    'move':   'tool_select',
+    'pen':    'tool_pen',
+    'eraser': 'tool_eraser',
+  };
+  qa('.tr-btn[data-tool]').forEach(btn => {
+    const key = toolLabels[btn.dataset.tool];
+    if(key){ const lbl = btn.querySelector('.tr-label'); if(lbl) lbl.textContent = t(key); }
+  });
+  const undo2 = ge('undoBtn2'); if(undo2){ const lbl = undo2.querySelector('.tr-label'); if(lbl) lbl.textContent = t('tool_undo'); }
+  const redo2 = ge('redoBtn2'); if(redo2){ const lbl = redo2.querySelector('.tr-label'); if(lbl) lbl.textContent = t('tool_redo'); }
+  const clr2  = ge('clearBtn2');if(clr2) { const lbl = clr2.querySelector('.tr-label');  if(lbl) lbl.textContent = t('tool_clear'); }
+  const szLbl = document.querySelector('#brushSizeGroup > span');
+  if(szLbl) szLbl.textContent = t('size_label');
+
+  // 캔버스 메타
+  const meta = ge('canvasMetaLabel');
+  if(meta && !hasImage) meta.textContent = t('canvas_meta');
+
+  // 빈 상태
+  const emptyTitle = document.querySelector('#emptyOv p:first-of-type');
+  if(emptyTitle && emptyTitle.style) {} // 동적 생성이므로 패스
+
+  // analyzeOv
+  const analyzeT = ge('analyzeTitle');
+  if(analyzeT) analyzeT.textContent = t('converting');
+
+  // 우측 패널 레이블
+  const rpLabel = document.querySelector('.rp-label');
+  if(rpLabel) rpLabel.textContent = t('panel_title');
+
+  // 품질 지표 항목명
+  const qKeys = {
+    'qClarity':     'q_clarity',
+    'qDensity':     'q_density',
+    'qReadability': 'q_readability',
+    'qStructure':   'q_structure',
+  };
+  qa('.insp-key').forEach((el, i) => {
+    const keys = ['q_clarity','q_density','q_readability','q_structure'];
+    if(keys[i]) el.textContent = t(keys[i]);
+  });
+
+  // 섹션 제목들
+  const secTitles = document.querySelectorAll('.sec-title');
+  const secKeys = ['density_ctrl','quality_title','ai_title','pin_ctrl_title','conn_title','save_title'];
+  secTitles.forEach((el, i) => { if(secKeys[i]) el.textContent = t(secKeys[i]); });
+
+  // 슬라이더 레이블
+  const lowLbl = document.querySelector('.th-slider-wrap ~ div span:first-child');
+  const hiLbl  = document.querySelector('.th-slider-wrap ~ div span:last-child');
+  if(lowLbl) lowLbl.textContent = t('density_low');
+  if(hiLbl)  hiLbl.textContent  = t('density_high');
+  const thAuto = ge('thAuto'); if(thAuto) thAuto.textContent = t('btn_auto');
+  const thApply = ge('thApply'); if(thApply) thApply.textContent = t('btn_apply');
+
+  // 핀 제어 버튼
+  const pinBtns = qa('.pin-ctrl-btn');
+  const pinKeys = ['pin_up','pin_down','pin_invert'];
+  pinBtns.forEach((btn, i) => {
+    if(pinKeys[i]){
+      const lbl = btn.querySelectorAll('span')[1] || btn.querySelector('span');
+      if(lbl) lbl.textContent = t(pinKeys[i]);
+    }
+  });
+
+  // 연결 상태
+  /* 다른 이미지로 변환 버튼 */
+  const repLblTxt = ge('replaceImgLabelText');
+  if(repLblTxt) repLblTxt.textContent = lang==='en'?'Replace image':'다른 이미지로 변환';
+
+  const connTxt = ge('connText');
+  if(connTxt && !connected) connTxt.textContent = t('conn_off');
+  const connHint = ge('liveHint');
+  if(connHint && !connected) connHint.textContent = t('conn_hint');
+
+  // 저장 버튼
+  const dtmsBtn = ge('dtmsBtn');
+  if(dtmsBtn) dtmsBtn.childNodes[dtmsBtn.childNodes.length-1].textContent = ' '+t('btn_dtms');
+  const pngBtn  = ge('pngBtn');
+  if(pngBtn)  pngBtn.textContent  = t('btn_png');
+  const hexBtn  = ge('hexBtn');
+  if(hexBtn)  hexBtn.textContent  = t('btn_dev');
+
+  // 하단바
+  const bbStatus = ge('bbStatus');
+  if(bbStatus && !connected) bbStatus.textContent = t('bb_disconnected');
+
+  // html lang 속성
+  document.documentElement.lang = lang;
+}
+
+/* ── 언어 토글 버튼 헤더에 추가 ── */
+function addLangToggle(){
+  const hdrActions = document.querySelector('.hdr-actions');
+  if(!hdrActions || ge('langToggle')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'langToggle';
+  btn.style.cssText = `
+    height:var(--h-btn);padding:0 10px;border-radius:var(--r-l);
+    border:1.5px solid var(--border);background:var(--white);
+    font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
+    display:flex;align-items:center;gap:5px;transition:all .12s;
+    font-family:var(--font);white-space:nowrap;
+  `;
+  btn.innerHTML = '<span id="langFlag">KO</span>';
+  btn.title = 'Switch language / 언어 전환';
+  btn.addEventListener('click', ()=>{
+    _lang = _lang === 'ko' ? 'en' : 'ko';
+    localStorage.setItem('dc_lang', _lang);
+    ge('langFlag').textContent = _lang.toUpperCase();
+    applyLang();
+    toast(_lang === 'en' ? 'Switched to English' : '한국어로 전환됐어요');
+  });
+  btn.addEventListener('mouseenter', ()=>{ btn.style.background='var(--surface)'; btn.style.borderColor='var(--border2)'; });
+  btn.addEventListener('mouseleave', ()=>{ btn.style.background='var(--white)'; btn.style.borderColor='var(--border)'; });
+
+  // 전송 버튼 앞에 삽입
+  const sendBtn = ge('hdrOutputBtn');
+  if(sendBtn) hdrActions.insertBefore(btn, sendBtn);
+  else hdrActions.appendChild(btn);
+}
+
+/* ── 초기화 시 언어 적용 ── */
+const _origInit = typeof init === 'function' ? init : null;
+setTimeout(()=>{
+  addLangToggle();
+  // 저장된 언어가 en이면 즉시 적용
+  if(_lang === 'en') applyLang();
+  // ko도 aria-label 등 정리
+  else applyLang();
+}, 50);
+
+/* i18n 전역 노출 (addon 내 다른 함수에서 사용) */
+window._t = t;
+window._applyLang = applyLang;
 </script>
 </body>
 </html>
