@@ -546,6 +546,17 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 
 
   <div class="hdr-actions">
+    <!-- 언어 토글 — JS 동적 생성 대신 HTML에 고정 배치 -->
+    <button id="langToggle"
+      title="Switch language / 언어 전환"
+      aria-label="언어 전환"
+      style="height:var(--h-btn);padding:0 12px;border-radius:var(--r-l);
+             border:1.5px solid var(--border);background:var(--white);
+             font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
+             display:flex;align-items:center;gap:5px;transition:all .12s;
+             white-space:nowrap;font-family:var(--font)">
+      <span id="langFlag">KO</span>
+    </button>
     <button class="hdr-btn primary" id="hdrOutputBtn" disabled>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       <span>Dot Pad로 보내기</span>
@@ -3022,34 +3033,30 @@ function applyLang(){
 
 /* ── 언어 토글 버튼 헤더에 추가 ── */
 function addLangToggle(){
-  const hdrActions = document.querySelector('.hdr-actions');
-  if(!hdrActions || ge('langToggle')) return;
+  /* langToggle은 HTML에 정적 배치 — 이벤트만 연결 */
+  const btn = ge('langToggle');
+  if(!btn || btn._wired) return;
+  btn._wired = true;
 
-  const btn = document.createElement('button');
-  btn.id = 'langToggle';
-  btn.style.cssText = `
-    height:var(--h-btn);padding:0 10px;border-radius:var(--r-l);
-    border:1.5px solid var(--border);background:var(--white);
-    font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
-    display:flex;align-items:center;gap:5px;transition:all .12s;
-    font-family:var(--font);white-space:nowrap;
-  `;
-  btn.innerHTML = '<span id="langFlag">KO</span>';
-  btn.title = 'Switch language / 언어 전환';
   btn.addEventListener('click', ()=>{
     _lang = _lang === 'ko' ? 'en' : 'ko';
     localStorage.setItem('dc_lang', _lang);
-    ge('langFlag').textContent = _lang.toUpperCase();
+    const flag = ge('langFlag');
+    if(flag) flag.textContent = _lang.toUpperCase();
     applyLang();
     toast(_lang === 'en' ? 'Switched to English' : '한국어로 전환됐어요');
   });
-  btn.addEventListener('mouseenter', ()=>{ btn.style.background='var(--surface)'; btn.style.borderColor='var(--border2)'; });
-  btn.addEventListener('mouseleave', ()=>{ btn.style.background='var(--white)'; btn.style.borderColor='var(--border)'; });
-
-  // 전송 버튼 앞에 삽입
-  const sendBtn = ge('hdrOutputBtn');
-  if(sendBtn) hdrActions.insertBefore(btn, sendBtn);
-  else hdrActions.appendChild(btn);
+  btn.addEventListener('mouseenter', ()=>{
+    btn.style.background = 'var(--surface)';
+    btn.style.borderColor = 'var(--border2)';
+  });
+  btn.addEventListener('mouseleave', ()=>{
+    btn.style.background = 'var(--white)';
+    btn.style.borderColor = 'var(--border)';
+  });
+  /* 저장된 언어 복원 */
+  const flag = ge('langFlag');
+  if(flag) flag.textContent = _lang.toUpperCase();
 }
 
 /* ── 초기화 시 언어 적용 ── */
@@ -3060,7 +3067,7 @@ setTimeout(()=>{
   if(_lang === 'en') applyLang();
   // ko도 aria-label 등 정리
   else applyLang();
-}, 50);
+}, 0);
 
 /* i18n 전역 노출 (addon 내 다른 함수에서 사용) */
 window._t = t;
