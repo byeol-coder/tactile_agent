@@ -207,7 +207,13 @@ export function interpretCommand(text, lang = 'ko') {
     // no text → send existing braille description (handled below by 'braille' rule)
   }
 
-  // ③ Describe the current graphic.
+  // ③ Sonify — play an audio sweep of the current graphic.
+  if (/소리로?\s*(들|확인|재생|듣)|음향|소리\s*나|sonif|play\s*sound|들려/i.test(s)) {
+    return { patch: {}, deltaThreshold: 0, optimize: false, action: 'sonify', create: null, brailleText: null,
+      reply: (lang === 'ko' ? '소리로 그래픽을 훑어볼게요' : 'Playing an audio sweep'), matched: true };
+  }
+
+  // ④ Describe the current graphic.
   if (/설명|묘사|describe|alt\s*text|뭐가\s*있|무엇/i.test(s)) {
     return { patch: {}, deltaThreshold: 0, optimize: false, action: 'describe', create: null, brailleText: null,
       reply: (lang === 'ko' ? '그래픽을 설명할게요' : 'Describing the graphic'), matched: true };

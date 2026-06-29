@@ -20,6 +20,7 @@ import {
 import { interpretCommand, QUICK_COMMANDS } from './commands.js';
 import { drawPrimitive, renderBrailleGrid, describeTactile } from './generate.js';
 import { renderMathGraph } from './mathgraph.js';
+import { setSonify, sonifyMove, sonifySweep, isSonifyEnabled } from './sense.js';
 
 import {
   computeCanvasLayout, applyLayout, renderGrid,
@@ -493,6 +494,11 @@ function onPointerDown(e) {
 function onPointerMove(e) {
   const { col, row } = getPointerCell(e, padEl, layout);
   const tool = toolState.currentTool;
+  // Sonification: only on the move (hand) tool, so it never fights drawing.
+  if (tool === 'move' && isSonifyEnabled()) {
+    sonifyMove({ col, row }, canvasState.data, canvasState.width, canvasState.height,
+      { volume: dotPadState.sonifyVolume ?? 0.6, sensitivity: dotPadState.sonifySens ?? 3 });
+  }
   if (tool === 'pen' || tool === 'eraser') {
     toolState.hoverBrush = getBrushCells(col, row, toolState.brushSize);
     drawCanvas();
@@ -666,6 +672,14 @@ function parseCommand(text) {
     const after = canvasState.data.reduce((s, v) => s + v, 0);
     afterChange();
     toast(`${intent.reply} (${before}→${after}핀)`, 'ok');
+    return;
+  }
+
+  // ── Sonify: play an audio sweep of the current graphic ──
+  if (intent.action === 'sonify') {
+    if (!canvasState.data.some(v => v)) { toast(t('toast_need_image', lang)); return; }
+    sonifySweep(canvasState.data, cols, rows, { volume: dotPadState.sonifyVolume ?? 0.6 });
+    toast(intent.reply, 'ok');
     return;
   }
 
@@ -1027,6 +1041,21 @@ function wireFullMode() {
     dotPadState.livePreviewEnabled = checked;
     this.setAttribute('aria-checked', String(checked));
     if (checked) syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
+  });
+
+  // Sonification toggle — enabling it also switches to the move tool so hover works.
+  ge('sonifySwitch')?.addEventListener('click', function() {
+    const checked = this.getAttribute('aria-checked') !== 'true';
+    setSonify(checked);
+    this.setAttribute('aria-checked', String(checked));
+    if (checked) {
+      selectTool('move');
+      toast(t('sonify_on', appState.language), 'ok');
+    }
+  });
+  ge('sonifySweepBtn')?.addEventListener('click', () => {
+    if (!canvasState.data.some(v => v)) { toast(t('toast_need_image', appState.language)); return; }
+    sonifySweep(canvasState.data, canvasState.width, canvasState.height, { volume: dotPadState.sonifyVolume ?? 0.6 });
   });
   ge('dotpadBtn')?.addEventListener('click', () => {
     if (!dotPadState.connected) { toast(t('toast_not_conn', appState.language)); return; }
