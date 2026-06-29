@@ -5761,6 +5761,217 @@ document.addEventListener('mousedown', ()=>{
   refreshAll();
   window.__cibRefresh=refreshAll;
 })();
+
+/* ══════════════════════════════════════════════════════
+   pageManager — 페이지별 이미지 상태 독립 저장/복원
+   각 페이지가 고유한 srcImage·grayBuf·threshold·altText를
+   가지도록 gotoPage / __pgAdd / __pgDup / __pgDel /
+   finishAnalyze 를 래핑한다.
+   ══════════════════════════════════════════════════════ */
+(function pageManager(){
+  if(window.__pageMgrWired) return; window.__pageMgrWired=true;
+
+  /* ── 빈 상태 팩토리 ── */
+  function blankState(){
+    return { srcImage:null, grayBuf:null, alphaBuf:null, imgMeta:null,
+      threshold:128, method:'global', outline:0, polarity:false,
+      fileKind:null, altText:'' };
+  }
+
+  /* ── 페이지별 이미지 상태 배열 (초기 페이지는 현재 globals로 채움) ── */
+  const ps=[ {
+    srcImage:typeof srcImage!=='undefined'?srcImage:null,
+    grayBuf:typeof grayBuf!=='undefined'?grayBuf:null,
+    alphaBuf:typeof alphaBuf!=='undefined'?alphaBuf:null,
+    imgMeta:typeof imgMeta!=='undefined'?imgMeta:null,
+    threshold:typeof threshold!=='undefined'?threshold:128,
+    method:typeof method!=='undefined'?method:'global',
+    outline:typeof outline!=='undefined'?outline:0,
+    polarity:typeof polarity!=='undefined'?polarity:false,
+    fileKind:typeof fileKind!=='undefined'?fileKind:null,
+    altText:(window.__altText||''),
+  } ];
+
+  /* ── 현재 globals → ps[curPage] 저장 ── */
+  function save(){
+    const i=typeof curPage!=='undefined'?curPage:0;
+    while(ps.length<=i) ps.push(blankState());
+    ps[i]={ srcImage, grayBuf, alphaBuf, imgMeta,
+      threshold, method, outline, polarity, fileKind,
+      altText:(window.__altText||'') };
+  }
+
+  /* ── ps[idx] → globals 복원 ── */
+  function restore(idx){
+    while(ps.length<=idx) ps.push(blankState());
+    const s=ps[idx];
+    srcImage=s.srcImage; grayBuf=s.grayBuf; alphaBuf=s.alphaBuf; imgMeta=s.imgMeta;
+    threshold=s.threshold; method=s.method; outline=s.outline; polarity=s.polarity;
+    fileKind=s.fileKind;
+    hasImage=!!(s.srcImage||(s.fileKind==='tactile'));
+    window.__altText=s.altText||'';
+    /* UI 동기화 */
+    try{ const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+      if(engSl) engSl.value=threshold; }catch(e){}
+    try{ if(typeof paintSlider==='function') paintSlider(threshold); }catch(e){}
+    try{ if(typeof syncSliders==='function') syncSliders(); }catch(e){}
+    try{ if(typeof refreshModeGating==='function') refreshModeGating(); }catch(e){}
+    /* altText textarea 동기화 */
+    const ta=document.getElementById('altText');
+    if(ta&&ta.value!==window.__altText){ ta.value=window.__altText; ta.dispatchEvent(new Event('input',{bubbles:true})); }
+    /* canvasInfoBar 칩 갱신 */
+    setTimeout(()=>{ if(typeof window.__cibRefresh==='function') window.__cibRefresh(); },60);
+    updateBlankOverlay();
+  }
+
+  /* ── gotoPage 패치 — 상태 저장 후 이동, 복원 ── */
+  if(typeof gotoPage==='function'){
+    const _g=gotoPage;
+    gotoPage=function(p){
+      if(p<0||p>=(typeof pages!=='undefined'?pages.length:1)) return;
+      save();
+      _g(p);
+      restore(p);
+    };
+  }
+
+  /* ── __pgAdd 패치 — 새 페이지는 완전 빈 상태 ── */
+  const _add=window.__pgAdd;
+  if(typeof _add==='function') window.__pgAdd=function(){
+    save();
+    _add();
+    const i=typeof curPage!=='undefined'?curPage:0;
+    ps.splice(i,0,blankState());
+    restore(i);
+    updateBlankOverlay();
+  };
+
+  /* ── __pgDup 패치 — 이미지 상태도 deep clone ── */
+  const _dup=window.__pgDup;
+  if(typeof _dup==='function') window.__pgDup=function(){
+    save();
+    const src=ps[typeof curPage!=='undefined'?curPage:0]||blankState();
+    const clone={...src,
+      grayBuf:src.grayBuf?new Uint8ClampedArray(src.grayBuf):null,
+      alphaBuf:src.alphaBuf?new Uint8ClampedArray(src.alphaBuf):null,
+      imgMeta:src.imgMeta?{...src.imgMeta}:null };
+    _dup();
+    const i=typeof curPage!=='undefined'?curPage:0;
+    ps.splice(i,0,clone);
+    restore(i);
+  };
+
+  /* ── __pgDel 패치 — 삭제 후 남은 페이지 복원 ── */
+  const _del=window.__pgDel;
+  if(typeof _del==='function') window.__pgDel=function(){
+    const idx=typeof curPage!=='undefined'?curPage:0;
+    _del();
+    ps.splice(idx,1);
+    if(ps.length===0) ps.push(blankState());
+    restore(typeof curPage!=='undefined'?curPage:0);
+  };
+
+  /* ── finishAnalyze 패치 — 이미지 분석 완료 후 현재 페이지 저장 ── */
+  if(typeof finishAnalyze==='function'){
+    const _fa=finishAnalyze;
+    finishAnalyze=function(img,name){
+      _fa(img,name);
+      /* 분석 완료 후 globals가 최신 상태이므로 바로 저장 */
+      setTimeout(()=>{ save(); updateBlankOverlay(); },120);
+    };
+  }
+
+  /* ── altText 변경 시 현재 페이지에 저장 ── */
+  const ta=document.getElementById('altText');
+  if(ta) ta.addEventListener('input',()=>setTimeout(()=>{
+    const i=typeof curPage!=='undefined'?curPage:0;
+    if(ps[i]) ps[i].altText=window.__altText||'';
+  },50));
+
+  /* ── 빈 페이지 오버레이 ── */
+  const OV_CSS=`
+  #blankPageOv{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(240,236,229,.80);z-index:10;border-radius:8px;pointer-events:auto}
+  #blankPageOv[data-on="1"]{display:flex}
+  .bpo-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 24px;
+    background:var(--white,#fff);border-radius:18px;border:1px solid var(--border2,#e8e3da);
+    box-shadow:0 8px 32px rgba(0,0,0,.10);max-width:260px;text-align:center}
+  .bpo-title{font-size:14px;font-weight:800;color:var(--ink,#1a1a1a)}
+  .bpo-desc{font-size:11px;color:var(--muted,#9a9490);line-height:1.5}
+  .bpo-btn{min-height:34px;padding:0 16px;border-radius:10px;border:1.5px solid var(--border2);
+    background:#fff;font-size:12px;font-weight:700;cursor:pointer;width:100%;
+    transition:border-color .12s,color .12s}
+  .bpo-btn.primary{background:var(--orange,#ff5a1f);border-color:var(--orange);color:#fff}
+  .bpo-btn:hover:not(.primary){border-color:var(--orange);color:var(--orange)}
+  .bpo-btn.primary:hover{background:#e04400}`;
+  const ovSt=document.createElement('style'); ovSt.textContent=OV_CSS; document.head.appendChild(ovSt);
+
+  function getOrCreateOverlay(){
+    let ov=document.getElementById('blankPageOv');
+    if(!ov){
+      ov=document.createElement('div'); ov.id='blankPageOv';
+      ov.setAttribute('aria-live','polite');
+      ov.innerHTML=`<div class="bpo-card">
+        <div class="bpo-title">새 그림 페이지</div>
+        <div class="bpo-desc">이미지를 불러오거나<br>직접 그려보세요</div>
+        <button type="button" class="bpo-btn primary" id="bpoLoad">이미지 불러오기</button>
+        <button type="button" class="bpo-btn" id="bpoDraw">직접 그리기</button>
+      </div>`;
+      const dgw=document.getElementById('dotGridWrap');
+      if(dgw) dgw.style.position='relative', dgw.appendChild(ov);
+      document.getElementById('bpoLoad').addEventListener('click',()=>{
+        ov.dataset.on='0';
+        const rpl=document.getElementById('hdrLoadBtn')||document.getElementById('replaceImgLabel');
+        if(rpl){ rpl.click(); return; }
+        const fi=document.getElementById('fileInput')||document.querySelector('input[type=file]');
+        if(fi) fi.click();
+      });
+      document.getElementById('bpoDraw').addEventListener('click',()=>{
+        ov.dataset.on='0';
+        // Pen 도구 선택
+        const pen=document.getElementById('penBtn')||document.querySelector('[data-tool="pen"],button[aria-label*="펜"]');
+        if(pen) pen.click();
+      });
+    }
+    return ov;
+  }
+
+  function updateBlankOverlay(){
+    const pgCount=typeof pages!=='undefined'?pages.length:1;
+    /* 페이지가 1개뿐이면 오버레이 없음 (일반 빈 상태) */
+    if(pgCount<=1){ const ov=document.getElementById('blankPageOv'); if(ov) ov.dataset.on='0'; return; }
+    /* 현재 페이지가 완전히 비어 있고 이미지 소스도 없으면 오버레이 표시 */
+    const isBlank=typeof grid!=='undefined'&&grid.every(v=>v===0);
+    const noSrc=!srcImage&&!(typeof fileKind!=='undefined'&&fileKind==='tactile');
+    const ov=getOrCreateOverlay();
+    ov.dataset.on=(isBlank&&noSrc)?'1':'0';
+  }
+
+  /* ── afterChange 훅: 편집 시 오버레이 숨기기 + altText 저장 ── */
+  if(typeof afterChange==='function'){
+    const _ac=afterChange;
+    afterChange=function(m){
+      _ac(m);
+      // 이미 존재하는 항목만 altText 갱신 (새 항목 생성 금지 — __pgAdd 시 중복 방지)
+      const i=typeof curPage!=='undefined'?curPage:0;
+      if(ps[i]) ps[i].altText=window.__altText||'';
+      updateBlankOverlay();
+    };
+  }
+
+  /* ── setAppState 훅: ready 진입 시 오버레이 판정 ── */
+  if(typeof setAppState==='function'){
+    const _sa=setAppState;
+    setAppState=function(s){
+      _sa(s);
+      if(s==='ready') setTimeout(updateBlankOverlay,150);
+    };
+  }
+
+  window.__pmSave=save;
+  window.__pmRestore=restore;
+  window.__pmPageStates=ps;
+})();
 </script>
 </body>
 </html>
