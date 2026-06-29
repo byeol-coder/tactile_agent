@@ -34,12 +34,20 @@ const RULES = [
   {
     test: /단순|간단|심플|simpl/i,
     patch: { outline: 1, minComp: 4, denoise: true, edge: 'none' },
+    deltaThreshold: -20,
     reply: R('윤곽선 중심으로 단순하게 변환했어요', 'Simplified to outline-focused form'),
   },
   {
     test: /또렷|선명|디테일|자세|detail|sharp|crisp/i,
     patch: { minComp: 1, outline: 0, denoise: false },
+    deltaThreshold: +20,
     reply: R('디테일을 살려 또렷하게 변환했어요', 'Brought back detail and crispness'),
+  },
+  {
+    test: /점이?\s*(너무|많|넘)|\b너무\s*많|too\s*many\s*dots?/i,
+    patch: { method: 'global', denoise: true, minComp: 4 },
+    deltaThreshold: -30,
+    reply: R('점이 너무 많아 밀도를 낮췄어요', 'Too many dots — reduced density'),
   },
   {
     test: /외곽|윤곽|테두리|라인|outline|edge\s*only|contour/i,

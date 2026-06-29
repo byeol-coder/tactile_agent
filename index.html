@@ -37,7 +37,20 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
   --h-header: 48px;
   --w-rail:   44px;
-  --w-panel:  260px;
+  --w-panel:  clamp(324px, 24vw, 360px);
+  --space-8:  8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --panel-padding: 20px;
+  --section-gap: 24px;
+  --section-content-gap: 12px;
+  --control-gap: 8px;
+  --btn-height: 44px;
+  --btn-radius: 12px;
+  --btn-padding-x: 10px;
+  --font-label: 12px;
+  --font-button: 13px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
 [hidden] { display: none !important }
@@ -271,11 +284,38 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 .panel {
   width: var(--w-panel); background: var(--surface); border-left: 1px solid var(--border);
   display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  container-type: inline-size;
 }
-.panel-scroll { flex: 1; overflow-y: auto; padding: 14px 14px 20px; display: flex; flex-direction: column; gap: 16px }
+.panel-scroll {
+  flex: 1; overflow-y: auto; padding: var(--panel-padding);
+  display: flex; flex-direction: column; gap: var(--section-gap);
+}
+.panel-section {
+  display: flex; flex-direction: column; gap: var(--section-content-gap); min-width: 0;
+}
+.panel-section .sec-hd { margin-bottom: 0 }
+.panel-subsection {
+  display: flex; flex-direction: column; gap: var(--control-gap); min-width: 0;
+}
+.panel-subsection .ctrl-lbl { margin-bottom: 0 }
+.control-grid {
+  display: grid; gap: var(--control-gap); width: 100%; min-width: 0;
+}
+.control-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+.control-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+@media (max-width: 960px) {
+  :root { --w-panel: 300px }
+}
+@container (max-width: 320px) {
+  .control-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .control-grid.cols-3 > :last-child:nth-child(odd) { grid-column: 1 / -1 }
+}
 
 /* section header */
-.sec-hd { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--hint); margin-bottom: 8px }
+.sec-hd {
+  font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--hint); margin-bottom: 8px;
+}
 
 /* stat card */
 .stat-card {
@@ -435,32 +475,64 @@ details.adv > summary:hover { color: var(--ink) }
 .preset-chip.is-active { background: var(--accent-bg); color: var(--accent) }
 
 /* DotPad section */
-.dp-status { display: flex; align-items: center; gap: 8px; padding: 8px 10px;
-  background: var(--surface2); border-radius: var(--r8); }
+.dp-status {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--surface2); border-radius: var(--r8);
+}
+.panel .dp-status {
+  min-height: var(--btn-height); padding: 0 var(--btn-padding-x);
+  border: 1px solid var(--border); border-radius: var(--btn-radius);
+}
 .dp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hint); flex-shrink: 0; transition: .2s }
 .dp-dot.on { background: var(--green); box-shadow: 0 0 5px rgba(48,209,88,.45) }
-.dp-lbl { font-size: 12px; font-weight: 600; color: var(--text); flex: 1 }
-.dp-conn-row { display: flex; gap: 5px }
+.dp-lbl { font-size: var(--font-label); font-weight: 600; color: var(--text); flex: 1; min-width: 0 }
 .dp-btn {
   height: 26px; padding: 0 10px; border-radius: var(--r6); font-size: 11px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: .12s;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .dp-btn:hover { background: var(--surface2) }
+.panel .live-row {
+  min-height: var(--btn-height); padding: 0 var(--btn-padding-x);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--control-gap);
+  border: 1px solid var(--border); border-radius: var(--btn-radius);
+  background: var(--surface2);
+}
 .live-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0 }
-.live-lbl { font-size: 11px; color: var(--sub) }
+.live-lbl {
+  font-size: var(--font-label); font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.panel .live-row .sw { width: 38px; height: 22px }
+.panel .live-row .sw::after { width: 18px; height: 18px }
+.panel .live-row .sw[aria-checked="true"]::after { left: 18px }
 
 /* pin control */
-.pin-row { display: flex; gap: 4px }
-.pin-btn {
-  flex: 1; height: 26px; border-radius: var(--r6); font-size: 11px; font-weight: 600;
-  border: 1px solid var(--border); background: var(--surface2); color: var(--sub); transition: .12s;
+.panel :where(.dp-btn, .pin-btn, .exp-btn) {
+  width: 100%; min-width: 0; height: var(--btn-height);
+  padding: 0 var(--btn-padding-x); border-radius: var(--btn-radius);
+  font-size: var(--font-button); font-weight: 600; letter-spacing: 0; line-height: 1;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text);
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap; text-align: center; transition: background .12s, border-color .12s, color .12s, transform .08s, box-shadow .12s;
 }
-.pin-btn:hover { background: var(--surface); color: var(--text) }
+.panel :where(.dp-btn, .pin-btn, .exp-btn):hover:not(:disabled):not(.active) {
+  background: var(--surface); border-color: var(--border2);
+}
+.panel :where(.dp-btn, .pin-btn, .exp-btn):active:not(:disabled) {
+  transform: translateY(1px); box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+}
+.panel :where(.dp-btn, .pin-btn, .exp-btn).active,
+.panel :where(.dp-btn, .pin-btn, .exp-btn)[aria-pressed="true"] {
+  background: var(--accent-bg); border-color: rgba(255,77,0,.38); color: var(--accent);
+}
+.panel :where(.dp-btn, .pin-btn, .exp-btn):disabled {
+  background: #F7F7F8; border-color: var(--border); color: #8E8E93;
+  opacity: .72; cursor: not-allowed; transform: none; box-shadow: none;
+}
 
 /* export */
-.exp-stack { display: flex; flex-direction: column; gap: 5px }
+.exp-stack { display: flex; flex-direction: column; gap: var(--control-gap) }
 .exp-main {
   height: 36px; border-radius: var(--r10); font-size: 13px; font-weight: 600;
   display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -468,16 +540,13 @@ details.adv > summary:hover { color: var(--ink) }
 }
 .exp-main:hover { background: var(--accent-d) }
 .exp-main:disabled { opacity: .35; cursor: not-allowed }
-.exp-row { display: flex; gap: 5px }
-.exp-btn {
-  flex: 1; height: 30px; border-radius: var(--r8); font-size: 11px; font-weight: 600;
-  border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: .12s;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+.panel .exp-btn svg,
+.panel .dp-btn svg,
+.panel .pin-btn svg {
+  width: 14px; height: 14px; flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
 }
-.exp-btn:hover { background: var(--surface); border-color: var(--border2) }
-.exp-btn:disabled { opacity: .35; cursor: not-allowed }
-.exp-btn svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
-.dp-btn svg, .pin-btn svg, .mini-btn svg, .th-btn svg, .th-method-btn svg, .outline-btn svg, .proc-btn svg {
+.dp-btn svg, .mini-btn svg, .th-btn svg, .th-method-btn svg, .outline-btn svg, .proc-btn svg {
   width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
 }
 
@@ -573,20 +642,70 @@ details.adv > summary:hover { color: var(--ink) }
   display: flex; align-items: center; padding: 0 14px; gap: 10px; flex-shrink: 0;
 }
 .mini-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px }
+
+/* prompt card */
+.mini-prompt-card {
+  background: var(--surface); border-radius: var(--r12); border: 1px solid var(--border);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.mini-intro { font-size: 12px; font-weight: 700; color: var(--ink); margin: 0 }
+.mini-prompt-form {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--r10);
+  padding: 0 6px 0 10px; height: 36px; transition: border-color .15s;
+}
+.mini-prompt-form:focus-within { border-color: var(--accent); background: var(--surface) }
+.mini-prompt-form input {
+  flex: 1; background: none; border: none; font-size: 12px; color: var(--ink); min-width: 0;
+}
+.mini-prompt-form input::placeholder { color: var(--hint) }
+.mini-prompt-submit {
+  height: 24px; min-width: 24px; border-radius: 6px; background: var(--accent);
+  color: #fff; font-size: 13px; font-weight: 700; border: none; display: grid;
+  place-items: center; flex-shrink: 0; cursor: pointer;
+}
+.mini-prompt-submit:disabled { opacity: .4; cursor: not-allowed }
+.mini-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
+.mini-img-btn {
+  height: 28px; padding: 0 10px; border-radius: var(--r8); border: 1.5px solid var(--border);
+  background: var(--surface); font-size: 11px; font-weight: 600; color: var(--text); transition: .12s;
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; cursor: pointer;
+}
+.mini-img-btn:hover { border-color: var(--accent); color: var(--accent) }
+.mini-res-chips { display: flex; gap: 4px }
+.mini-res-chip {
+  height: 28px; padding: 0 9px; border-radius: var(--r8); border: 1.5px solid var(--border);
+  background: var(--surface); font-size: 11px; font-weight: 700; color: var(--sub); cursor: pointer; transition: .12s;
+}
+.mini-res-chip.active { background: var(--ink); border-color: var(--ink); color: #fff }
+.mini-res-chip:hover:not(.active) { border-color: var(--ink); color: var(--ink) }
+
 .mini-canvas-card {
   background: var(--surface); border-radius: var(--r12); border: 1px solid var(--border);
   padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .mini-drop-zone {
-  width: 100%; height: 72px; border: 2px dashed var(--border); border-radius: var(--r8);
+  width: 100%; height: 56px; border: 2px dashed var(--border); border-radius: var(--r8);
   display: flex; align-items: center; justify-content: center; cursor: pointer;
   font-size: 12px; color: var(--hint); transition: .15s;
 }
-.mini-drop-zone:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg) }
+.mini-drop-zone:hover, .mini-drop-zone.drag-over { border-color: var(--accent); color: var(--accent); background: var(--accent-bg) }
 .mini-th-row { width: 100%; display: flex; align-items: center; gap: 8px }
 .mini-th-row label { font-size: 11px; font-weight: 600; color: var(--sub); flex-shrink: 0 }
 .mini-th-row input[type=range] { flex: 1; accent-color: var(--accent) }
 .mini-th-row span { font-size: 11px; font-weight: 700; color: var(--accent); width: 32px; text-align: right }
+
+/* quick adjustment chips */
+.mini-quick-row { display: flex; gap: 5px; width: 100%; flex-wrap: wrap }
+.mini-quick-btn {
+  flex: 1; min-width: 56px; height: 28px; border-radius: var(--r8);
+  border: 1.5px solid var(--border); background: var(--surface2);
+  font-size: 11px; font-weight: 600; color: var(--text); cursor: pointer; transition: .12s; white-space: nowrap;
+}
+.mini-quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg) }
+.mini-quick-btn.accent { background: var(--accent-bg); border-color: rgba(255,77,0,.3); color: var(--accent) }
+.mini-quick-btn:disabled { opacity: .35; cursor: not-allowed }
+
 .mini-actions { display: flex; gap: 6px }
 .mini-btn {
   flex: 1; height: 34px; border-radius: var(--r8); font-size: 12px; font-weight: 600;
@@ -873,13 +992,13 @@ details.adv > summary:hover { color: var(--ink) }
     </div>
 
     <!-- ③ Dot Pad 연결 -->
-    <div>
+    <div class="panel-section">
       <div class="sec-hd" data-i18n="panel_dotpad">Dot Pad</div>
       <div class="dp-status">
         <div class="dp-dot" id="dpDot"></div>
         <span class="dp-lbl" id="dpLbl" data-i18n="conn_off">연결 안 됨</span>
       </div>
-      <div class="dp-conn-row" style="margin-top:6px">
+      <div class="dp-conn-row control-grid cols-2">
         <button class="dp-btn" id="bleBtn" data-i18n="conn_btn_ble">BLE 연결</button>
         <button class="dp-btn" id="usbBtn" data-i18n="conn_btn_usb">USB 연결</button>
       </div>
@@ -888,9 +1007,9 @@ details.adv > summary:hover { color: var(--ink) }
         <button class="sw" id="liveSwitch" role="switch" aria-checked="false" disabled></button>
       </div>
 
-      <div style="margin-top:8px">
-        <div style="font-size:10px;color:var(--hint);margin-bottom:5px;font-weight:600" data-i18n="pin_ctrl_title">핀 제어</div>
-        <div class="pin-row">
+      <div class="panel-subsection">
+        <div class="ctrl-lbl" data-i18n="pin_ctrl_title">핀 제어</div>
+        <div class="pin-row control-grid cols-3">
           <button class="pin-btn" id="pinUpBtn" data-i18n="pin_up">전체 올리기</button>
           <button class="pin-btn" id="pinDownBtn" data-i18n="pin_down">전체 내리기</button>
           <button class="pin-btn" id="pinInvBtn" data-i18n="pin_invert">반전</button>
@@ -899,10 +1018,10 @@ details.adv > summary:hover { color: var(--ink) }
     </div>
 
     <!-- ④ 저장 / 내보내기 -->
-    <div>
+    <div class="panel-section">
       <div class="sec-hd" data-i18n="panel_export">내보내기</div>
       <div class="exp-stack">
-        <div class="exp-row">
+        <div class="exp-row control-grid cols-3">
           <button class="exp-btn" id="dtmsBtn" disabled>
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             DTMS
@@ -916,7 +1035,7 @@ details.adv > summary:hover { color: var(--ink) }
             HEX
           </button>
         </div>
-        <button class="exp-btn" id="jsonBtn" style="width:100%">
+        <button class="exp-btn exp-wide" id="jsonBtn">
           <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           JSON 내보내기
         </button>
@@ -924,11 +1043,11 @@ details.adv > summary:hover { color: var(--ink) }
     </div>
 
     <!-- Resolution selector (hidden but accessible) -->
-    <div>
+    <div class="panel-section">
       <div class="sec-hd">해상도</div>
-      <div style="display:flex;gap:5px">
-        <button class="exp-btn res-btn active" data-res="60x40" style="flex:1;justify-content:center">60×40</button>
-        <button class="exp-btn res-btn" data-res="96x64" style="flex:1;justify-content:center">96×64</button>
+      <div class="res-row control-grid cols-2">
+        <button class="exp-btn res-btn active" data-res="60x40">60×40</button>
+        <button class="exp-btn res-btn" data-res="96x64">96×64</button>
       </div>
     </div>
 
@@ -996,9 +1115,34 @@ details.adv > summary:hover { color: var(--ink) }
 </header>
 
 <div class="mini-body">
+
+  <!-- ① Command prompt card -->
+  <div class="mini-prompt-card">
+    <p class="mini-intro">무엇을 촉각그래픽으로 만들까요?</p>
+    <form class="mini-prompt-form" id="miniPromptForm" autocomplete="off">
+      <input type="text" id="miniPromptInput" placeholder="꽃 모양 테두리를 60×40으로 단순하게 만들어줘" aria-label="명령어 입력"/>
+      <button type="submit" class="mini-prompt-submit" id="miniPromptSubmit" aria-label="생성">↵</button>
+    </form>
+    <div class="mini-row">
+      <button class="mini-img-btn" id="miniAddImgBtn" type="button">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        이미지 추가
+      </button>
+      <div class="mini-res-chips" role="group" aria-label="해상도 선택">
+        <button class="mini-res-chip active" data-mini-res="60x40" type="button">60×40</button>
+        <button class="mini-res-chip" data-mini-res="96x64" type="button">96×64</button>
+        <button class="mini-res-chip" data-mini-res="28x40" type="button">28×40</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② Canvas + density -->
   <div class="mini-canvas-card">
-    <div id="miniDropZone" class="mini-drop-zone" role="button" tabindex="0" aria-label="이미지 선택">
-      이미지 가져오기 또는 드래그
+    <div id="miniDropZone" class="mini-drop-zone" role="button" tabindex="0" aria-label="이미지를 여기에 드래그하거나 클릭해서 선택">
+      이미지를 드래그하거나 클릭해서 가져오기
     </div>
     <canvas id="pad-mini" aria-label="촉각그래픽 캔버스" role="img" style="border-radius:6px"></canvas>
     <div class="mini-th-row">
@@ -1006,12 +1150,22 @@ details.adv > summary:hover { color: var(--ink) }
       <input type="range" id="miniThSlider" min="20" max="240" value="128" aria-label="점 농도"/>
       <span id="miniThVal">50%</span>
     </div>
+    <!-- ③ Quick adjustment chips -->
+    <div class="mini-quick-row" id="miniQuickRow">
+      <button class="mini-quick-btn" data-cmd="단순하게" type="button" disabled>단순하게</button>
+      <button class="mini-quick-btn" data-cmd="또렷하게" type="button" disabled>또렷하게</button>
+      <button class="mini-quick-btn" data-cmd="점 정리" type="button" disabled>점 정리</button>
+      <button class="mini-quick-btn accent" data-cmd="Dot Pad에 맞게 최적화" type="button" disabled>최적화</button>
+    </div>
   </div>
+
+  <!-- ④ Output actions -->
   <div class="mini-actions">
     <button class="mini-btn acc" id="miniSendBtn" disabled>Dot Pad 전송</button>
     <button class="mini-btn" id="miniDtmsBtn" disabled>DTMS</button>
     <button class="mini-btn" id="miniPngBtn" disabled>PNG</button>
   </div>
+
 </div>
 
 </div><!-- /app-mini -->
@@ -1021,7 +1175,7 @@ details.adv > summary:hover { color: var(--ink) }
 
 <!-- Hidden file inputs -->
 <input type="file" id="imgFileInput" accept="image/*" style="display:none" aria-hidden="true"/>
-<input type="file" id="tactileFileInput" accept=".dtms,.json" style="display:none" aria-hidden="true"/>
+<input type="file" id="tactileFileInput" accept=".dtms,.dtm,.json" style="display:none" aria-hidden="true"/>
 <input type="file" id="miniImgInput" accept="image/*" style="display:none" aria-hidden="true"/>
 
 <!-- Toast -->

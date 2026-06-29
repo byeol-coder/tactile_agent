@@ -226,23 +226,27 @@ function loadTactileFile(file) {
   reader.onload = async e => {
     try {
       const { parseDtms } = await import('./export.js');
-      const { fileName, pages: items } = parseDtms(e.target.result);
+      const { fileName, pages: items, cols, rows } = parseDtms(e.target.result);
       if (!items.length) return;
       appState.fileName = fileName;
       const inp = ge('fname'); if (inp) inp.value = fileName;
 
-      // Replace all pages with loaded data
+      // Use file's own resolution if present, otherwise keep current canvas size
+      const w = cols || canvasState.width;
+      const h = rows || canvasState.height;
+
       pagesState.pages = items.map(item => {
-        const page = createBlankPage(canvasState.width, canvasState.height);
+        const page = createBlankPage(w, h);
         page.title = item.title;
-        page.canvasData = hexToGrid(item.hex, canvasState.width, canvasState.height);
+        page.canvasData = hexToGrid(item.hex, w, h);
         page.activeDots = page.canvasData.reduce((s, v) => s + v, 0);
         page.altText = item.altText;
         return page;
       });
+      canvasState.width = w; canvasState.height = h;
       loadPageState(0);
       drawCanvas(); syncQuality();
-      syncPageUI();
+      syncPageUI(); fitCanvas();
       toast(fileName + ' 불러왔어요 ✓', 'ok');
     } catch {
       toast('파일을 읽을 수 없어요');
@@ -286,6 +290,9 @@ function paintSlider(v) {
   if (thumb) thumb.style.left  = pct + '%';
   if (disp)  disp.textContent  = pct + '%';
   if (sl && +sl.value !== v) sl.value = v;
+  // keep mini slider in sync
+  const msl = ge('miniThSlider'); if (msl && +msl.value !== v) msl.value = v;
+  const mval = ge('miniThVal'); if (mval) mval.textContent = pct + '%';
 }
 
 // ─── Quality Panel ────────────────────────────────────────────
@@ -430,10 +437,12 @@ function syncConvUI() {
 
 // ─── Sync helpers ─────────────────────────────────────────────
 function syncBtns(hasContent) {
-  const ids = ['dtmsBtn','pngBtn','dotpadBtn','hexBtn'];
+  const ids = ['dtmsBtn','pngBtn','dotpadBtn','hexBtn','miniSendBtn','miniDtmsBtn','miniPngBtn'];
   ids.forEach(id => { const el = ge(id); if (el) el.disabled = !hasContent; });
   const aiBadge = ge('aiBadge');
   if (aiBadge) aiBadge.style.display = hasContent ? '' : 'none';
+  // quick-adjust chips in mini mode
+  document.querySelectorAll('.mini-quick-btn').forEach(b => b.disabled = !hasContent);
 }
 
 function syncConn() {
@@ -929,7 +938,7 @@ function wireFullMode() {
   padEl.addEventListener('drop', e => {
     e.preventDefault();
     const file = e.dataTransfer.files[0]; if (!file) return;
-    if (file.name.endsWith('.dtms') || file.name.endsWith('.json')) loadTactileFile(file);
+    if (file.name.endsWith('.dtms') || file.name.endsWith('.dtm') || file.name.endsWith('.json')) loadTactileFile(file);
     else loadImageFile(file);
   });
 
@@ -1161,11 +1170,61 @@ function wireFullMode() {
 
 // ─── Mini Mode wiring ─────────────────────────────────────────
 function wireMiniMode() {
+  // file input
   ge('miniImgInput')?.addEventListener('change', e => {
     const f = e.target.files[0]; if (f) loadImageFile(f);
     e.target.value = '';
   });
-  ge('miniDropZone')?.addEventListener('click', () => ge('miniImgInput')?.click());
+
+  // "이미지 추가" button routes to the same hidden input
+  ge('miniAddImgBtn')?.addEventListener('click', () => ge('miniImgInput')?.click());
+
+  // drop zone — click + drag-and-drop
+  const dz = ge('miniDropZone');
+  if (dz) {
+    dz.addEventListener('click', () => ge('miniImgInput')?.click());
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('drag-over');
+      const f = e.dataTransfer?.files[0]; if (f && f.type.startsWith('image/')) loadImageFile(f);
+    });
+  }
+
+  // command prompt form
+  ge('miniPromptForm')?.addEventListener('submit', e => {
+    e.preventDefault();
+    const inp = ge('miniPromptInput');
+    const text = inp?.value.trim(); if (!text) return;
+    parseCommand(text);
+    if (inp) inp.value = '';
+  });
+
+  // resolution chips
+  document.querySelectorAll('[data-mini-res]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-mini-res]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const [c, r] = this.dataset.miniRes.split('x').map(Number);
+      setResolution(c, r);
+    });
+  });
+
+  // quick-adjust chips
+  document.querySelectorAll('.mini-quick-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      parseCommand(this.dataset.cmd || this.textContent.trim());
+    });
+  });
+
+  // density slider
+  ge('miniThSlider')?.addEventListener('input', function() {
+    const v = Math.max(20, Math.min(240, +this.value));
+    conversionState.threshold = v; conversionState.method = 'global';
+    paintSlider(v); rebuild(120);
+  });
+
+  // output actions
   ge('miniSendBtn')?.addEventListener('click', () => {
     if (!dotPadState.connected) { toast(t('toast_not_conn', appState.language)); return; }
     sendGraphicData(gridToHex(canvasState.data, canvasState.width, canvasState.height), true);
@@ -1178,11 +1237,6 @@ function wireMiniMode() {
   ge('miniPngBtn')?.addEventListener('click', () => {
     exportPng(canvasState.data, canvasState.width, canvasState.height, appState.fileName);
     toast(t('toast_png', appState.language), 'ok');
-  });
-  ge('miniThSlider')?.addEventListener('input', function() {
-    const v = Math.max(20, Math.min(240, +this.value));
-    conversionState.threshold = v; conversionState.method = 'global';
-    paintSlider(v); rebuild(120);
   });
 
   initDotPad(

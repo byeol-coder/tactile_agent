@@ -85,14 +85,51 @@ export async function copyHexToClipboard(canvasData, cols, rows) {
 }
 
 /**
- * Parse a .dtms file (JSON) and return { fileName, pages[] }.
+ * Parse a .dtms (multi-page JSON) or .dtm (single-page JSON / raw hex) file.
+ * Returns { fileName, pages[], cols?, rows? }.
  */
 export function parseDtms(text) {
-  const obj = JSON.parse(text);
-  const pages = (obj.items || []).map(item => ({
-    title: item.title || 'Page',
-    hex: item.graphic?.data || '',
-    altText: item.text?.plain || '',
-  }));
-  return { fileName: obj.title || 'Untitled', pages };
+  const trimmed = text.trim();
+
+  // Raw hex string — no JSON wrapper (some .dtm exports from DotPad Studio)
+  if (/^[0-9a-fA-F\s]+$/.test(trimmed) && trimmed.length >= 2) {
+    const hex = trimmed.replace(/\s/g, '');
+    return {
+      fileName: 'Untitled',
+      pages: [{ title: 'Page', hex, altText: '' }],
+    };
+  }
+
+  const obj = JSON.parse(trimmed);
+
+  // .dtms — multi-page bundle: { title, resolution, items[] }
+  if (Array.isArray(obj.items)) {
+    const cols = obj.resolution?.cols || null;
+    const rows = obj.resolution?.rows || null;
+    const pages = obj.items.map(item => ({
+      title: item.title || 'Page',
+      hex: item.graphic?.data || '',
+      altText: item.text?.plain || item.text?.data || '',
+    }));
+    return { fileName: obj.title || 'Untitled', pages, cols, rows };
+  }
+
+  // .dtm — single graphic: { title?, graphic: { data } } or { graphic: { data } }
+  if (obj.graphic?.data) {
+    return {
+      fileName: obj.title || 'Untitled',
+      pages: [{ title: obj.title || 'Page', hex: obj.graphic.data, altText: obj.text?.plain || '' }],
+    };
+  }
+
+  // Fallback: wrapped in a single item at root level
+  const hex = obj.data || obj.hex || '';
+  if (hex) {
+    return {
+      fileName: obj.title || 'Untitled',
+      pages: [{ title: obj.title || 'Page', hex, altText: '' }],
+    };
+  }
+
+  throw new Error('Unrecognized file format');
 }
