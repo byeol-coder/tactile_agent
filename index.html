@@ -278,7 +278,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
 /* ── MODAL ── */
 .modal-bg{position:fixed;inset:0;background:rgba(26,26,26,.4);backdrop-filter:blur(2px);
   display:none;align-items:center;justify-content:center;z-index:180;padding:20px}
-.modal-bg
+.modal-bg.show{display:flex}
 .modal{background:var(--white);border-radius:var(--r-2xl);max-width:340px;width:100%;
   padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.15)}
 .modal h2{font-size:15px;font-weight:700;margin-bottom:6px}
@@ -1531,7 +1531,15 @@ function loadSample(){const c=document.createElement('canvas');c.width=240;c.hei
    TACTILE LOAD (DTM·DTMS) — 원본 핀 데이터 보존, 임계값 재적용 금지
    ============================================================ */
 function cleanHex(s){return (s||'').replace(/[^0-9A-Fa-f]/g,'').toUpperCase();}
-function resForHexLen(len){ return len===600?[60,40]:len===1536?[96,64]:null; }
+/* Dot 템플릿 크기(셀=2×4 도트, HEXLEN=W*H/4) — 표준 60×40·96×64 + 추가 템플릿 사이즈 */
+const DOT_TEMPLATES=[
+  {w:28, h:40, cells:140, name:'140셀'},
+  {w:60, h:40, cells:300, name:'300셀 · DotPad 320'},
+  {w:96, h:40, cells:480, name:'480셀'},
+  {w:96, h:64, cells:768, name:'768셀'},
+  {w:100,h:64, cells:800, name:'800셀'}
+];
+function resForHexLen(len){ const m=DOT_TEMPLATES.find(t=>t.w*t.h/4===len); return m?[m.w,m.h]:(len===600?[60,40]:len===1536?[96,64]:null); }
 function parseDTM(text){
   const hex=cleanHex(text);
   if(!hex.length)throw {code:'parse',msg:'DTM 파일에서 핀 데이터를 찾지 못했습니다.'};
@@ -4091,7 +4099,8 @@ document.addEventListener('mousedown', ()=>{
    ============================================================ */
 (function resControl(){
   if(window.__resWired) return; window.__resWired=true;
-  try{ Object.assign(I18N.ko,{res_title:'해상도 (Dot Pad)'}); Object.assign(I18N.en,{res_title:'Resolution (Dot Pad)'}); }catch(e){}
+  try{ Object.assign(I18N.ko,{res_title:'캔버스 크기 (Dot 템플릿)'}); Object.assign(I18N.en,{res_title:'Canvas size (Dot template)'}); }catch(e){}
+  const TPL=(typeof DOT_TEMPLATES!=='undefined')?DOT_TEMPLATES:[{w:60,h:40,name:'300셀'},{w:96,h:64,name:'768셀'}];
   const TL=k=>{ try{return t(k);}catch(e){return k;} };
   function updateMetaLabel(){ const l=document.getElementById('canvasMetaLabel'); if(l){ try{ l.textContent=t('canvas_meta').replace(/\d+\s*[×x]\s*\d+/, GW+'×'+GH); }catch(e){} } }
   function setCanvasRes(w,h){
@@ -4110,27 +4119,24 @@ document.addEventListener('mousedown', ()=>{
   window.__setRes=setCanvasRes;
 
   const css=`#resSec{display:none} #resSec[data-on="1"]{display:block}
-  #resSeg{display:flex;gap:6px}
-  #resSeg button{flex:1;min-height:32px;border-radius:8px;border:1.5px solid #e3ddd2;background:#fff;color:#2c2c2a;font-size:12px;font-weight:700;cursor:pointer}
-  #resSeg button[aria-pressed="true"]{background:var(--orange,#ff5a1f);color:#fff;border-color:var(--orange,#ff5a1f)}`;
+  #resSel{width:100%;min-height:36px;border-radius:8px;border:1.5px solid #e3ddd2;background:#fff;color:#2c2c2a;font-size:12px;font-weight:700;cursor:pointer;padding:0 10px}
+  #resSel:focus-visible{outline:2px solid var(--orange,#ff5a1f);outline-offset:1px}`;
   const st=document.createElement('style'); st.textContent=css; document.head.appendChild(st);
 
   const sec=document.createElement('div'); sec.id='resSec'; sec.dataset.on='0';
+  const opts=TPL.map(t=>`<option value="${t.w}x${t.h}">${t.w}×${t.h} · ${t.name}</option>`).join('');
   sec.innerHTML=`<div class="sec-title" style="margin-bottom:var(--sp-s,6px)"><span id="resTitle"></span></div>
-    <div id="resSeg" role="radiogroup">
-      <button type="button" data-w="60" data-h="40" aria-pressed="true">60×40</button>
-      <button type="button" data-w="96" data-h="64" aria-pressed="false">96×64</button>
-    </div>`;
+    <select id="resSel" aria-label="캔버스 크기 선택">${opts}</select>`;
   /* 점 농도(densitySec) 섹션 앞에 배치 — "해상도 → 농도" 순서 */
   const densSec=document.getElementById('densitySec');
   if(densSec && densSec.parentElement){ densSec.parentElement.insertBefore(sec, densSec); }
   else { const sv=document.querySelector('[data-i18n="save"]'); const svs=sv&&sv.closest('div')&&sv.closest('div').parentElement; if(svs&&svs.parentElement) svs.parentElement.insertBefore(sec,svs); }
-  sec.querySelectorAll('#resSeg button').forEach(b=>b.addEventListener('click',()=>setCanvasRes(+b.dataset.w,+b.dataset.h)));
+  const resSel=sec.querySelector('#resSel');
+  resSel&&resSel.addEventListener('change',()=>{ const [w,h]=resSel.value.split('x').map(Number); setCanvasRes(w,h); });
 
-  function relabel(){ const ti=document.getElementById('resTitle'); if(ti) ti.textContent=TL('res_title');
-    document.querySelectorAll('#resSeg button').forEach(b=>b.setAttribute('aria-label',b.dataset.w+'×'+b.dataset.h)); }
+  function relabel(){ const ti=document.getElementById('resTitle'); if(ti) ti.textContent=TL('res_title'); }
   function refresh(){ const s=document.getElementById('resSec'); if(s) s.dataset.on=(typeof fileKind!=='undefined'&&fileKind!=='tactile')?'1':'0';
-    document.querySelectorAll('#resSeg button').forEach(b=>b.setAttribute('aria-pressed',(+b.dataset.w===GW&&+b.dataset.h===GH)?'true':'false')); }
+    const sel=document.getElementById('resSel'); if(sel){ const cur=GW+'x'+GH; if([...sel.options].some(o=>o.value===cur)) sel.value=cur; } }
   relabel(); refresh(); updateMetaLabel();
   try{ if(typeof setAppState==='function'){ const _a=setAppState; setAppState=function(s){ _a(s); try{refresh();updateMetaLabel();}catch(e){} }; } }catch(e){}
   try{ if(typeof applyLang==='function'){ const _l=applyLang; applyLang=function(){ _l(); try{relabel();updateMetaLabel();}catch(e){} }; } }catch(e){}
