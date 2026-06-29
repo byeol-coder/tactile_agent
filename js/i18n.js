@@ -5,7 +5,7 @@ export const I18N = {
     brand:            'Dot Canvas',
     brand_sub:        'AI 촉각그래픽 에이전트',
     file_label:       '파일명',
-    prompt_ph:        '더 단순하게 / 외곽선만 / Dot Pad에서 읽기 쉽게…',
+    prompt_ph:        '명령으로 변환·생성 — 최적화 / 외곽선만 / 원 그려줘 / 점자로…',
     btn_send:         'Dot Pad로 보내기',
     btn_save:         '저장',
 
@@ -127,7 +127,7 @@ export const I18N = {
     brand:            'Dot Canvas',
     brand_sub:        'AI Tactile Graphic Agent',
     file_label:       'File name',
-    prompt_ph:        'Simplify / outline only / make readable on Dot Pad…',
+    prompt_ph:        'Transform or create — optimize / outline / draw a circle / braille…',
     btn_send:         'Send to Dot Pad',
     btn_save:         'Save',
 

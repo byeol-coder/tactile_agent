@@ -114,9 +114,14 @@ svg { display: block; flex-shrink: 0 }
 }
 .prompt-suggest.show { display: flex; animation: ps-in .12s ease }
 @keyframes ps-in { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+.ps-group {
+  font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--hint); padding: 8px 10px 3px; margin-top: 2px;
+}
+.ps-group:first-child { margin-top: 0 }
 .ps-item {
   display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--r8);
-  font-size: 12px; font-weight: 500; color: var(--text); text-align: left; transition: background .1s;
+  font-size: 12px; font-weight: 500; color: var(--text); text-align: left; transition: background .1s; width: 100%;
 }
 .ps-item:hover { background: var(--surface2) }
 .ps-item.primary { color: var(--accent); font-weight: 600 }

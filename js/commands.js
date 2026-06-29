@@ -14,6 +14,13 @@
 
 const R = (ko, en) => ({ ko, en });
 
+// Pick the Korean object particle 을/를 by final-consonant (받침) of the last char.
+function josaEulReul(word) {
+  const c = word.charCodeAt(word.length - 1);
+  if (c < 0xAC00 || c > 0xD7A3) return '를';
+  return ((c - 0xAC00) % 28) !== 0 ? '을' : '를';
+}
+
 // Each rule: { test, patch?, optimize?, action?, reply }
 // `reply` is {ko, en}. Rules are evaluated in order; later patches win on conflict.
 const RULES = [
@@ -106,14 +113,92 @@ const RULES = [
   },
 ];
 
+// ── Creation lexicon: shape keyword → primitive name ─────────
+const SHAPE_LEX = [
+  [/동그라미|원형|circle|동그란|\b원\b|원\s*그/i, 'circle'],
+  [/타원|ellipse|oval/i, 'ellipse'],
+  [/정사각|\bsquare\b|네모/i, 'square'],
+  [/직사각|사각형|rect|박스|box/i, 'rect'],
+  [/세모|삼각|triangle/i, 'triangle'],
+  [/마름모|다이아|diamond|rhombus/i, 'diamond'],
+  [/대각선|diagonal/i, 'diagonal'],
+  [/십자|\bcross\b|plus|\+/i, 'cross'],
+  [/엑스|\bx\b자|\bx\b\s*표/i, 'x'],
+  [/화살표|arrow|화살/i, 'arrow'],
+  [/별표|\bstar\b|\b별\b|별\s*그/i, 'star'],
+  [/하트|heart|♥/i, 'heart'],
+  [/사인|싸인|sine|sin\b/i, 'sine'],
+  [/코사인|cosine|\bcos\b/i, 'cosine'],
+  [/물결|파동|wave/i, 'sine'],
+  [/테두리|프레임|border|frame|외곽\s*틀/i, 'border'],
+  [/격자|모눈|그리드|grid|lattice|좌표/i, 'grid'],
+  [/직선|가로선|\bline\b|\b선\b\s*그/i, 'line'],
+];
+
+// Detect "draw a shape" intent and extract { shape, fill }.
+function detectCreate(s) {
+  // require a draw-ish verb OR a bare shape word at the start
+  const drawVerb = /그려|그리|만들|넣어|추가|insert|draw|add|생성|create/i.test(s);
+  for (const [re, shape] of SHAPE_LEX) {
+    if (re.test(s)) {
+      if (!drawVerb && !/^\s*(원|별|선|네모|세모|하트|circle|star|line|square|triangle|heart)/i.test(s)) {
+        // shape word present but no draw verb and not leading — skip, let transforms handle
+        if (!/도형|모양|shape/i.test(s)) continue;
+      }
+      const fill = /채운|채워|채우|속\s*찬|꽉|filled|solid|fill/i.test(s);
+      return { shape, fill };
+    }
+  }
+  return null;
+}
+
+// Extract braille text: "점자로 안녕", "안녕 점자로", "점자 안녕하세요"
+function detectBrailleText(s, lang) {
+  if (!/점자|브라유|braille/i.test(s)) return null;
+  let text = s.replace(/점자로|점자|브라유|braille|로\s*(써|적어|변환|만들)|으로|써줘|적어줘|변환|만들어줘|보내줘|출력/gi, ' ')
+    .replace(/\s+/g, ' ').trim();
+  // strip stray particles
+  text = text.replace(/^(을|를|이|가|로|으로)\s*/i, '').trim();
+  return text.length ? text : null;  // empty → send existing braille (handled as action)
+}
+
 /**
  * Interpret a natural-language command.
  * @param {string} text
  * @param {'ko'|'en'} lang
- * @returns {{patch:object, deltaThreshold:number, optimize:boolean, action:?string, reply:string, matched:boolean}}
+ * @returns {{patch:object, deltaThreshold:number, optimize:boolean, action:?string, create:?object, brailleText:?string, reply:string, matched:boolean}}
  */
 export function interpretCommand(text, lang = 'ko') {
   const s = (text || '').trim();
+
+  // ① Creation commands take priority — they synthesize a new graphic.
+  const create = detectCreate(s);
+  if (create) {
+    const koName = { circle:'원', ellipse:'타원', rect:'사각형', square:'정사각형', triangle:'삼각형',
+      diamond:'마름모', line:'직선', diagonal:'대각선', cross:'십자', x:'X자', arrow:'화살표',
+      star:'별', heart:'하트', sine:'사인파', cosine:'코사인파', border:'테두리', grid:'격자' }[create.shape] || create.shape;
+    const reply = lang === 'ko'
+      ? `${create.fill ? '채운 ' : ''}${koName}${josaEulReul(koName)} 그렸어요`
+      : `Drew a ${create.fill ? 'filled ' : ''}${create.shape}`;
+    return { patch: {}, deltaThreshold: 0, optimize: false, action: null, create, brailleText: null, reply, matched: true };
+  }
+
+  // ② Braille text → render typed text as braille cells.
+  if (/점자|브라유|braille/i.test(s)) {
+    const bt = detectBrailleText(s, lang);
+    if (bt) {
+      return { patch: {}, deltaThreshold: 0, optimize: false, action: 'brailleText', create: null, brailleText: bt,
+        reply: (lang === 'ko' ? `"${bt}"를 점자로 변환했어요` : `Rendered "${bt}" as braille`), matched: true };
+    }
+    // no text → send existing braille description (handled below by 'braille' rule)
+  }
+
+  // ③ Describe the current graphic.
+  if (/설명|묘사|describe|alt\s*text|뭐가\s*있|무엇/i.test(s)) {
+    return { patch: {}, deltaThreshold: 0, optimize: false, action: 'describe', create: null, brailleText: null,
+      reply: (lang === 'ko' ? '그래픽을 설명할게요' : 'Describing the graphic'), matched: true };
+  }
+
   const patch = {};
   let deltaThreshold = 0;
   let optimize = false;
@@ -140,7 +225,7 @@ export function interpretCommand(text, lang = 'ko') {
         ? '명령을 이해하지 못했어요. "단순하게", "외곽선만", "최적화" 같은 표현을 써보세요.'
         : "Didn't catch that. Try \"simplify\", \"outline only\", or \"optimize\".");
 
-  return { patch, deltaThreshold, optimize, action, reply, matched };
+  return { patch, deltaThreshold, optimize, action, create: null, brailleText: null, reply, matched };
 }
 
 /**
@@ -148,11 +233,18 @@ export function interpretCommand(text, lang = 'ko') {
  * `text` is fed straight back into interpretCommand.
  */
 export const QUICK_COMMANDS = [
-  { icon: '✨', text: { ko: 'Dot Pad에 맞게 최적화', en: 'Optimize for Dot Pad' }, primary: true },
+  { group: { ko: '변환', en: 'Transform' },
+    icon: '✨', text: { ko: 'Dot Pad에 맞게 최적화', en: 'Optimize for Dot Pad' }, primary: true },
   { icon: '◯', text: { ko: '외곽선만 남기기',       en: 'Outline only' } },
   { icon: '▢', text: { ko: '더 단순하게',           en: 'Simplify' } },
-  { icon: '◆', text: { ko: '디테일 살리기',         en: 'More detail' } },
-  { icon: '⬤', text: { ko: '점 굵게',               en: 'Thicker dots' } },
   { icon: '⊙', text: { ko: '노이즈 정리',           en: 'Clean up noise' } },
   { icon: '⇄', text: { ko: '밝고 어두움 반전',      en: 'Invert' } },
+
+  { group: { ko: '만들기', en: 'Create' },
+    icon: '○', text: { ko: '원 그려줘',             en: 'Draw a circle' } },
+  { icon: '△', text: { ko: '삼각형 그려줘',         en: 'Draw a triangle' } },
+  { icon: '∿', text: { ko: '사인파 그려줘',         en: 'Draw a sine wave' } },
+  { icon: '▦', text: { ko: '격자 그려줘',           en: 'Draw a grid' } },
+  { icon: '⠿', text: { ko: '점자로 안녕하세요',     en: 'Braille: hello' } },
+  { icon: '☷', text: { ko: '이 그래픽 설명해줘',    en: 'Describe this graphic' } },
 ];

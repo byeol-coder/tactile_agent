@@ -18,6 +18,7 @@ import {
 } from './engine.js';
 
 import { interpretCommand, QUICK_COMMANDS } from './commands.js';
+import { drawPrimitive, renderBrailleGrid, describeTactile } from './generate.js';
 
 import {
   computeCanvasLayout, applyLayout, renderGrid,
@@ -611,6 +612,43 @@ function parseCommand(text) {
   const lang = appState.language;
   const page = pagesState.activePage;
   const intent = interpretCommand(text, lang);
+  const { width: cols, height: rows } = canvasState;
+
+  // ── Creation: synthesize a graphic from scratch (no image needed) ──
+  if (intent.create) {
+    pushUndo();
+    canvasState.data = drawPrimitive(cols, rows, intent.create.shape, { fill: intent.create.fill });
+    setActivePageSourceImage(null, null);   // hand-drawn → no source image
+    appState.isDirty = true;
+    if (appState.phase !== 'ready') setPhase('ready');
+    afterChange();
+    toast(intent.reply, 'ok');
+    return;
+  }
+
+  // ── Braille text: render typed text as braille cells ──
+  if (intent.action === 'brailleText' && intent.brailleText) {
+    import('./engine.js').then(({ textToBraillePages }) => {
+      pushUndo();
+      const lines = textToBraillePages(intent.brailleText, Math.floor(cols / 3));
+      canvasState.data = renderBrailleGrid(lines, cols, rows);
+      brailleState.brailleText = intent.brailleText;
+      if (page) { page.brailleText = intent.brailleText; page.altText = intent.brailleText; }
+      if (appState.phase !== 'ready') setPhase('ready');
+      appState.isDirty = true;
+      afterChange();
+      toast(intent.reply, 'ok');
+    });
+    return;
+  }
+
+  // ── Describe: announce a text summary of the current graphic ──
+  if (intent.action === 'describe') {
+    const desc = describeTactile(canvasState.data, cols, rows, lang);
+    showDescription(desc);
+    toast(intent.reply, 'ok');
+    return;
+  }
 
   // Actions that don't require a source image.
   if (intent.action === 'send' || intent.action === 'braille') {
@@ -687,11 +725,13 @@ function syncControlsFromState() {
 function renderPromptSuggestions() {
   const box = ge('promptSuggest'); if (!box) return;
   const lang = appState.language;
-  box.innerHTML = QUICK_COMMANDS.map(c =>
-    `<button class="ps-item${c.primary ? ' primary' : ''}" data-cmd="${(c.text[lang] || c.text.ko).replace(/"/g, '&quot;')}">
-       <span class="ps-icon">${c.icon}</span>${c.text[lang] || c.text.ko}
-     </button>`
-  ).join('');
+  box.innerHTML = QUICK_COMMANDS.map(c => {
+    const label = c.text[lang] || c.text.ko;
+    const grp = c.group ? `<div class="ps-group">${c.group[lang] || c.group.ko}</div>` : '';
+    return `${grp}<button class="ps-item${c.primary ? ' primary' : ''}" role="option" data-cmd="${label.replace(/"/g, '&quot;')}">
+       <span class="ps-icon">${c.icon}</span>${label}
+     </button>`;
+  }).join('');
   box.querySelectorAll('.ps-item').forEach(b => b.addEventListener('mousedown', e => {
     e.preventDefault();
     hidePromptSuggestions();
@@ -701,6 +741,17 @@ function renderPromptSuggestions() {
 }
 function showPromptSuggestions() { const b = ge('promptSuggest'); if (b) { renderPromptSuggestions(); b.classList.add('show'); } }
 function hidePromptSuggestions() { const b = ge('promptSuggest'); if (b) b.classList.remove('show'); }
+
+/** Surface a generated description in the AI feedback card + screen-reader live region. */
+function showDescription(text) {
+  const card = ge('aiFeedbackCard');
+  const txt = ge('aiFeedbackText');
+  const empty = ge('aiFeedbackEmpty');
+  if (txt) txt.textContent = text;
+  if (card) card.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+  const live = ge('liveRegion'); if (live) live.textContent = text;
+}
 
 // ─── Language toggle ──────────────────────────────────────────
 function setLanguage(lang) {
