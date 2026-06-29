@@ -192,7 +192,7 @@ function startAnalyze(img, name) {
     if (id !== _currentConvId) return;
     const sourceState = createSourceImageState(img, canvasState.width, canvasState.height);
     const meta = analyzeImageType(sourceState.grayBuf, sourceState.alphaBuf, canvasState.width, canvasState.height);
-    setActivePageSourceImage(sourceState, meta);
+    setActivePageSourceImage(sourceState, meta, img);
 
     const bestParams = autoSelectParams(sourceState, canvasState.width, canvasState.height);
     Object.assign(conversionState, bestParams);
@@ -883,13 +883,36 @@ function updatePresetChip() {
 // ─── Resolution change ────────────────────────────────────────
 function setResolution(cols, rows) {
   if (canvasState.width === cols && canvasState.height === rows) return;
-  canvasState.width  = cols; canvasState.height = rows;
-  canvasState.data   = new Uint8Array(cols * rows);
-  pagesState.pages   = [createBlankPage(cols, rows)];
-  pagesState.activePageIndex = 0;
-  toolState.undoStack = []; toolState.redoStack = [];
-  appState.phase = 'empty';
-  setPhase('empty');
+  canvasState.width  = cols;
+  canvasState.height = rows;
+
+  // The gray/alpha buffers are rendered at a fixed resolution, so a resolution
+  // change requires re-rendering the *original* image — not just re-running the
+  // converter. Pages keep the decoded original for exactly this reason.
+  const active = pagesState.activePage;
+  for (const page of pagesState.pages) {
+    page.width  = cols;
+    page.height = rows;
+    if (page.sourceImage) {
+      page.sourceImageState = createSourceImageState(page.sourceImage, cols, rows);
+      page.sourceImageMeta  = analyzeImageType(
+        page.sourceImageState.grayBuf, page.sourceImageState.alphaBuf, cols, rows);
+      const conv = page === active ? conversionState : page.conversionState;
+      page.canvasData = convertToDots(page.sourceImageState, conv, cols, rows);
+    } else {
+      // no retained original (blank or dots-only page) → resized empty buffer
+      page.sourceImageState = null;
+      page.canvasData = new Uint8Array(cols * rows);
+    }
+    page.activeDots = page.canvasData.reduce((n, v) => n + (v ? 1 : 0), 0);
+  }
+
+  // Sync the live canvas from the re-converted active page.
+  canvasState.data = new Uint8Array(active.canvasData);
+  toolState.undoStack = [];
+  toolState.redoStack = [];
+
+  setPhase(active.sourceImage ? 'ready' : 'empty');
   fitCanvas(); syncQuality(); syncPageUI();
 }
 
