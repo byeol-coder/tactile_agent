@@ -261,10 +261,10 @@ export const QUICK_COMMANDS = [
   { icon: '⇄', text: { ko: '밝고 어두움 반전',      en: 'Invert' } },
 
   { group: { ko: '만들기', en: 'Create' },
-    icon: '○', text: { ko: '원 그려줘',             en: 'Draw a circle' } },
-  { icon: '△', text: { ko: '삼각형 그려줘',         en: 'Draw a triangle' } },
+    icon: '❤️', text: { ko: '하트 그려줘',           en: 'Draw a heart' } },
+  { icon: '🌍', text: { ko: '지구 그려줘',           en: 'Draw the earth' } },
+  { icon: '🦋', text: { ko: '나비 그려줘',           en: 'Draw a butterfly' } },
   { icon: 'ƒ', text: { ko: 'y = sin(x)',           en: 'y = sin(x)' } },
-  { icon: '▦', text: { ko: '격자 그려줘',           en: 'Draw a grid' } },
   { icon: '⠿', text: { ko: '점자로 안녕하세요',     en: 'Braille: hello' } },
   { icon: '☷', text: { ko: '이 그래픽 설명해줘',    en: 'Describe this graphic' } },
 ];

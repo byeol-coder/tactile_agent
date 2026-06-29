@@ -19,6 +19,7 @@ import {
 
 import { interpretCommand, QUICK_COMMANDS } from './commands.js';
 import { drawPrimitive, renderBrailleGrid, describeTactile } from './generate.js';
+import { initBank, loadSymbol } from './bank.js';
 import { renderMathGraph } from './mathgraph.js';
 import { setSonify, sonifyMove, sonifySweep, isSonifyEnabled } from './sense.js';
 
@@ -53,6 +54,7 @@ function toast(msg, kind = '') {
 
 // ─── Canvas elements ──────────────────────────────────────────
 let padEl, ctx, layout;
+let bankReady = false;   // symbol bank loaded (see initBank in init())
 
 function initCanvas() {
   const canvasId = appState.mode === 'full' ? 'pad' : 'pad-mini';
@@ -616,8 +618,20 @@ function guardUnsavedChanges() {
   });
 }
 
+/** Place a freshly-generated pin grid as the current canvas (no source image). */
+function placeGeneratedGrid(data, altText) {
+  pushUndo();
+  canvasState.data = data;
+  setActivePageSourceImage(null, null);
+  const page = pagesState.activePage;
+  if (page && altText) { page.altText = altText; page.brailleText = altText; }
+  if (appState.phase !== 'ready') setPhase('ready');
+  appState.isDirty = true;
+  afterChange();
+}
+
 // ─── Command bar (Figma-mini prompt brain) ───────────────────
-function parseCommand(text) {
+async function parseCommand(text) {
   const lang = appState.language;
   const page = pagesState.activePage;
   const intent = interpretCommand(text, lang);
@@ -627,24 +641,30 @@ function parseCommand(text) {
   if (intent.action === 'math' && intent.mathExpr) {
     const { data, error } = renderMathGraph(cols, rows, intent.mathExpr);
     if (error) { toast((lang === 'ko' ? '수식 오류: ' : 'Math error: ') + error); return; }
-    pushUndo();
-    canvasState.data = data;
-    setActivePageSourceImage(null, null);
-    if (appState.phase !== 'ready') setPhase('ready');
-    appState.isDirty = true;
-    afterChange();
+    placeGeneratedGrid(data);
     toast(`y = ${intent.mathExpr}`, 'ok');
     return;
   }
 
-  // ── Creation: synthesize a graphic from scratch (no image needed) ──
+  // ── Symbol bank: curated, hand-tuned symbols beat generic primitives ──
+  // Try for creation requests and otherwise-unrecognized short/draw prompts,
+  // so "하트", "지구 그려줘", "나비" all resolve to the best available glyph.
+  const looksCreative = intent.create ||
+    (!intent.matched && (/그려|그리|만들|넣|draw|generate|create/i.test(text) || text.trim().length <= 8));
+  if (bankReady && looksCreative) {
+    try {
+      const sym = await loadSymbol(text, cols, rows);
+      if (sym.source !== 'none' && sym.data) {
+        placeGeneratedGrid(sym.data, sym.altText || sym.label);
+        toast(`${sym.emoji || ''} ${sym.label} 그렸어요`.trim(), 'ok');
+        return;
+      }
+    } catch (err) { console.warn('[bank] resolve failed:', err.message); }
+  }
+
+  // ── Creation: synthesize a primitive from scratch (no image needed) ──
   if (intent.create) {
-    pushUndo();
-    canvasState.data = drawPrimitive(cols, rows, intent.create.shape, { fill: intent.create.fill });
-    setActivePageSourceImage(null, null);   // hand-drawn → no source image
-    appState.isDirty = true;
-    if (appState.phase !== 'ready') setPhase('ready');
-    afterChange();
+    placeGeneratedGrid(drawPrimitive(cols, rows, intent.create.shape, { fill: intent.create.fill }));
     toast(intent.reply, 'ok');
     return;
   }
@@ -1157,6 +1177,12 @@ export function init() {
 
   window.addEventListener('resize', fitCanvas);
   document.fonts?.ready?.then(fitCanvas);
+
+  // Curated symbol bank — async, non-blocking. If it fails the prompt simply
+  // falls back to geometric primitives, so we never block startup on it.
+  initBank('js/symbol-bank.json')
+    .then(() => { bankReady = true; })
+    .catch(err => console.warn('[bank] init failed — symbols disabled:', err.message));
 }
 
 if (document.readyState === 'loading') {
