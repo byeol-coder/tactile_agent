@@ -127,9 +127,11 @@ svg { display: block; flex-shrink: 0 }
 .ps-item.primary { color: var(--accent); font-weight: 600 }
 .ps-item.primary:hover { background: var(--accent-bg) }
 .ps-icon {
-  width: 20px; height: 20px; border-radius: 6px; background: var(--surface2);
-  display: grid; place-items: center; font-size: 11px; flex-shrink: 0; color: var(--sub);
+  width: 22px; height: 22px; border-radius: 6px; background: var(--surface2);
+  display: grid; place-items: center; flex-shrink: 0; color: var(--sub);
 }
+.ps-icon svg { width: 14px; height: 14px }
+.ps-item:hover .ps-icon { color: var(--text) }
 .ps-item.primary .ps-icon { background: var(--accent-bg); color: var(--accent) }
 
 .hd-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0 }

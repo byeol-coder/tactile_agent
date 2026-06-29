@@ -254,17 +254,17 @@ export function interpretCommand(text, lang = 'ko') {
  */
 export const QUICK_COMMANDS = [
   { group: { ko: '변환', en: 'Transform' },
-    icon: '✨', text: { ko: 'Dot Pad에 맞게 최적화', en: 'Optimize for Dot Pad' }, primary: true },
-  { icon: '◯', text: { ko: '외곽선만 남기기',       en: 'Outline only' } },
-  { icon: '▢', text: { ko: '더 단순하게',           en: 'Simplify' } },
-  { icon: '⊙', text: { ko: '노이즈 정리',           en: 'Clean up noise' } },
-  { icon: '⇄', text: { ko: '밝고 어두움 반전',      en: 'Invert' } },
+    icon: 'sparkle', text: { ko: 'Dot Pad에 맞게 최적화', en: 'Optimize for Dot Pad' }, primary: true },
+  { icon: 'outline',  text: { ko: '외곽선만 남기기',     en: 'Outline only' } },
+  { icon: 'simplify', text: { ko: '더 단순하게',         en: 'Simplify' } },
+  { icon: 'noise',    text: { ko: '노이즈 정리',         en: 'Clean up noise' } },
+  { icon: 'invert',   text: { ko: '밝고 어두움 반전',    en: 'Invert' } },
 
   { group: { ko: '만들기', en: 'Create' },
-    icon: '❤️', text: { ko: '하트 그려줘',           en: 'Draw a heart' } },
-  { icon: '🌍', text: { ko: '지구 그려줘',           en: 'Draw the earth' } },
-  { icon: '🦋', text: { ko: '나비 그려줘',           en: 'Draw a butterfly' } },
-  { icon: 'ƒ', text: { ko: 'y = sin(x)',           en: 'y = sin(x)' } },
-  { icon: '⠿', text: { ko: '점자로 안녕하세요',     en: 'Braille: hello' } },
-  { icon: '☷', text: { ko: '이 그래픽 설명해줘',    en: 'Describe this graphic' } },
+    icon: 'heart',    text: { ko: '하트 그려줘',         en: 'Draw a heart' } },
+  { icon: 'globe',    text: { ko: '지구 그려줘',         en: 'Draw the earth' } },
+  { icon: 'butterfly',text: { ko: '나비 그려줘',         en: 'Draw a butterfly' } },
+  { icon: 'wave',     text: { ko: 'y = sin(x)',         en: 'y = sin(x)' } },
+  { icon: 'braille',  text: { ko: '점자로 안녕하세요',   en: 'Braille: hello' } },
+  { icon: 'describe', text: { ko: '이 그래픽 설명해줘',  en: 'Describe this graphic' } },
 ];

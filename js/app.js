@@ -20,6 +20,7 @@ import {
 import { interpretCommand, QUICK_COMMANDS } from './commands.js';
 import { drawPrimitive, renderBrailleGrid, describeTactile } from './generate.js';
 import { initBank, loadSymbol } from './bank.js';
+import { svgIcon } from './icons.js';
 import { renderMathGraph } from './mathgraph.js';
 import { setSonify, sonifyMove, sonifySweep, isSonifyEnabled } from './sense.js';
 
@@ -656,7 +657,7 @@ async function parseCommand(text) {
       const sym = await loadSymbol(text, cols, rows);
       if (sym.source !== 'none' && sym.data) {
         placeGeneratedGrid(sym.data, sym.altText || sym.label);
-        toast(`${sym.emoji || ''} ${sym.label} 그렸어요`.trim(), 'ok');
+        toast(`${sym.label} 그렸어요`, 'ok');
         return;
       }
     } catch (err) { console.warn('[bank] resolve failed:', err.message); }
@@ -779,7 +780,7 @@ function renderPromptSuggestions() {
     const label = c.text[lang] || c.text.ko;
     const grp = c.group ? `<div class="ps-group">${c.group[lang] || c.group.ko}</div>` : '';
     return `${grp}<button class="ps-item${c.primary ? ' primary' : ''}" role="option" data-cmd="${label.replace(/"/g, '&quot;')}">
-       <span class="ps-icon">${c.icon}</span>${label}
+       <span class="ps-icon">${svgIcon(c.icon)}</span>${label}
      </button>`;
   }).join('');
   box.querySelectorAll('.ps-item').forEach(b => b.addEventListener('mousedown', e => {
