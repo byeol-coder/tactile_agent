@@ -137,21 +137,21 @@ svg { display: block; flex-shrink: 0 }
 .hd-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0 }
 
 /* lang */
-.hd-lang { display: flex; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px }
-.lang-btn { height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--hint) }
+.hd-lang { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; gap: 2px }
+.lang-btn { display: flex; align-items: center; justify-content: center; height: 22px; padding: 0 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--hint); white-space: nowrap }
 .lang-btn.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08) }
 
 /* header buttons */
 .hd-btn {
   height: 32px; padding: 0 12px; border-radius: var(--r8); font-size: 12px; font-weight: 600;
-  display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all .12s; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; transition: all .12s; flex-shrink: 0;
 }
 .hd-btn.ghost { border: 1px solid var(--border); background: var(--surface); color: var(--text) }
 .hd-btn.ghost:hover { background: var(--surface2) }
 .hd-btn.accent { background: var(--accent); color: #fff; border: 1px solid transparent }
 .hd-btn.accent:hover { background: var(--accent-d) }
 .hd-btn:disabled { opacity: .38; cursor: not-allowed }
-.hd-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
+.hd-btn svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
 
 /* conn dot in header */
 .hd-conn { width: 7px; height: 7px; border-radius: 50%; background: var(--hint); flex-shrink: 0; transition: .2s }
@@ -331,6 +331,7 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 .th-method-btn {
   flex: 1; height: 26px; border-radius: var(--r6); font-size: 10px; font-weight: 700;
   border: 1px solid var(--border); background: var(--surface2); color: var(--sub);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   transition: .12s;
 }
 .th-method-btn.active { background: var(--accent); border-color: var(--accent); color: #fff }
@@ -359,6 +360,7 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 .th-btn {
   height: 24px; padding: 0 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface2); color: var(--sub);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   transition: .12s;
 }
 .th-btn:hover { background: var(--surface); color: var(--text) }
@@ -377,6 +379,7 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 .outline-btn, .proc-btn {
   flex: 1; height: 28px; border-radius: var(--r6); font-size: 11px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface2); color: var(--sub); transition: .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .outline-btn.active, .proc-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(255,77,0,.35) }
 .outline-btn:hover:not(.active), .proc-btn:hover:not(.active) { background: var(--surface); color: var(--text) }
@@ -422,6 +425,14 @@ details.adv > summary:hover { color: var(--ink) }
 .preset-name { font-size: 11px; font-weight: 700; color: var(--ink) }
 .preset-desc { font-size: 10px; color: var(--hint) }
 .preset-btn.active .preset-name { color: var(--accent) }
+/* active-preset summary chip */
+.sec-hd-row { display: flex; align-items: center; justify-content: space-between; gap: 8px }
+.preset-chip {
+  font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: none;
+  padding: 2px 9px; border-radius: 999px;
+  background: var(--surface2); color: var(--hint); white-space: nowrap;
+}
+.preset-chip.is-active { background: var(--accent-bg); color: var(--accent) }
 
 /* DotPad section */
 .dp-status { display: flex; align-items: center; gap: 8px; padding: 8px 10px;
@@ -433,6 +444,7 @@ details.adv > summary:hover { color: var(--ink) }
 .dp-btn {
   height: 26px; padding: 0 10px; border-radius: var(--r6); font-size: 11px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .dp-btn:hover { background: var(--surface2) }
 .live-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0 }
@@ -443,6 +455,7 @@ details.adv > summary:hover { color: var(--ink) }
 .pin-btn {
   flex: 1; height: 26px; border-radius: var(--r6); font-size: 11px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface2); color: var(--sub); transition: .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .pin-btn:hover { background: var(--surface); color: var(--text) }
 
@@ -459,10 +472,14 @@ details.adv > summary:hover { color: var(--ink) }
 .exp-btn {
   flex: 1; height: 30px; border-radius: var(--r8); font-size: 11px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .exp-btn:hover { background: var(--surface); border-color: var(--border2) }
 .exp-btn:disabled { opacity: .35; cursor: not-allowed }
-.exp-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
+.exp-btn svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
+.dp-btn svg, .pin-btn svg, .mini-btn svg, .th-btn svg, .th-method-btn svg, .outline-btn svg, .proc-btn svg {
+  width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+}
 
 /* ── Bottom Bar ───────────────────────────────────────────── */
 .btm {
@@ -574,6 +591,7 @@ details.adv > summary:hover { color: var(--ink) }
 .mini-btn {
   flex: 1; height: 34px; border-radius: var(--r8); font-size: 12px; font-weight: 600;
   border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: .12s;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .mini-btn:hover { background: var(--surface); border-color: var(--border2) }
 .mini-btn.acc { background: var(--accent); border-color: var(--accent); color: #fff }
@@ -627,7 +645,7 @@ details.adv > summary:hover { color: var(--ink) }
   <div class="hd-right">
     <div class="hd-lang" role="group" aria-label="언어">
       <button class="lang-btn active" data-lang="ko" aria-pressed="true">한국어</button>
-      <button class="lang-btn" data-lang="en" aria-pressed="false">영어</button>
+      <button class="lang-btn" data-lang="en" aria-pressed="false">English</button>
     </div>
     <div class="hd-conn" id="bbDot" title="Dot Pad 연결 상태"></div>
     <span class="sr-only" id="bbStatus">Dot Pad 연결 안 됨</span>
@@ -733,11 +751,53 @@ details.adv > summary:hover { color: var(--ink) }
 <aside class="panel" role="complementary" aria-label="설정 패널">
   <div class="panel-scroll">
 
-    <!-- ① 변환 설정: 프리셋 → 슬라이더 → 윤곽선 → 고급(접힘) -->
+    <!-- ① 점 밀도 통계 -->
     <div>
-      <div class="sec-hd">변환 설정</div>
+      <div class="sec-hd" data-i18n="panel_quality">촉각 품질</div>
+      <div class="stat-card">
+        <div>
+          <div class="stat-num" id="qDotCount">0</div>
+          <div class="stat-unit" id="qDotSub">/ 2,400 핀</div>
+          <div class="density-track" style="width:120px">
+            <div class="density-fill" id="densityFill"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+          <div class="qual-row" style="border:none;padding:0;gap:8px;flex-direction:column;align-items:flex-end">
+            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+              <span style="font-size:10px;color:var(--hint)">판독성</span>
+              <span class="pill pill-n" id="qClarity">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+              <span style="font-size:10px;color:var(--hint)">밀도</span>
+              <span class="pill pill-n" id="qDensity">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+              <span style="font-size:10px;color:var(--hint)">구조</span>
+              <span class="pill pill-n" id="qStructure">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- AI feedback -->
+      <div class="ai-card" id="aiFeedbackCard" style="margin-top:8px">
+        <div class="ai-badge" data-i18n="ai_title">AI 추천</div>
+        <div class="ai-text" id="aiFeedbackText"></div>
+        <div class="ai-chips" id="aiChips"></div>
+      </div>
+      <div class="ai-empty" id="aiFeedbackEmpty" data-i18n="ai_empty" style="margin-top:8px">
+        이미지를 가져오면 AI가 촉각그래픽으로 변환해드려요.
+      </div>
+    </div>
 
-      <!-- Presets (2×2 chip grid — one-click workflow setup) -->
+    <!-- ② 변환 설정 (Presets + Threshold) -->
+    <div>
+      <div class="sec-hd sec-hd-row">
+        <span>변환 설정</span>
+        <span class="preset-chip" id="presetChip" data-i18n="preset_none">사용자 지정</span>
+      </div>
+
+      <!-- Presets -->
       <div class="preset-grid" style="margin-bottom:10px">
         <button class="preset-btn" data-preset="braille">
           <span class="preset-name">점자</span>
@@ -784,7 +844,7 @@ details.adv > summary:hover { color: var(--ink) }
         </div>
       </div>
 
-      <!-- Advanced (collapsed — method / proc / invert / resolution) -->
+      <!-- Advanced (collapsed by default) -->
       <details class="adv">
         <summary data-i18n="adv_settings">고급 설정</summary>
         <div class="adv-body">
@@ -808,59 +868,37 @@ details.adv > summary:hover { color: var(--ink) }
             <span class="toggle-lbl" data-i18n="tone_invert">명암 반전</span>
             <button class="sw" id="invertToggle" role="switch" aria-checked="false"></button>
           </div>
-
-          <!-- Resolution — rarely changed, lives here out of main flow -->
-          <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
-            <div class="ctrl-lbl">해상도</div>
-            <div style="display:flex;gap:5px">
-              <button class="exp-btn res-btn active" data-res="60x40" style="flex:1;justify-content:center">60×40</button>
-              <button class="exp-btn res-btn" data-res="96x64" style="flex:1;justify-content:center">96×64</button>
-            </div>
-          </div>
         </div>
       </details>
     </div>
 
-    <!-- ② 촉각 품질 — informational, after conversion controls -->
+    <!-- ③ Dot Pad 연결 -->
     <div>
-      <div class="sec-hd" data-i18n="panel_quality">촉각 품질</div>
-      <div class="stat-card">
-        <div>
-          <div class="stat-num" id="qDotCount">0</div>
-          <div class="stat-unit" id="qDotSub">/ 2,400 핀</div>
-          <div class="density-track" style="width:120px">
-            <div class="density-fill" id="densityFill"></div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
-          <div class="qual-row" style="border:none;padding:0;gap:8px;flex-direction:column;align-items:flex-end">
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">판독성</span>
-              <span class="pill pill-n" id="qClarity">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">밀도</span>
-              <span class="pill pill-n" id="qDensity">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">구조</span>
-              <span class="pill pill-n" id="qStructure">—</span>
-            </div>
-          </div>
-        </div>
+      <div class="sec-hd" data-i18n="panel_dotpad">Dot Pad</div>
+      <div class="dp-status">
+        <div class="dp-dot" id="dpDot"></div>
+        <span class="dp-lbl" id="dpLbl" data-i18n="conn_off">연결 안 됨</span>
       </div>
-      <!-- AI feedback -->
-      <div class="ai-card" id="aiFeedbackCard" style="margin-top:8px">
-        <div class="ai-badge" data-i18n="ai_title">AI 추천</div>
-        <div class="ai-text" id="aiFeedbackText"></div>
-        <div class="ai-chips" id="aiChips"></div>
+      <div class="dp-conn-row" style="margin-top:6px">
+        <button class="dp-btn" id="bleBtn" data-i18n="conn_btn_ble">BLE 연결</button>
+        <button class="dp-btn" id="usbBtn" data-i18n="conn_btn_usb">USB 연결</button>
       </div>
-      <div class="ai-empty" id="aiFeedbackEmpty" data-i18n="ai_empty" style="margin-top:8px">
-        이미지를 가져오면 AI가 촉각그래픽으로 변환해드려요.
+      <div class="live-row">
+        <span class="live-lbl" data-i18n="live_label">라이브 미리보기</span>
+        <button class="sw" id="liveSwitch" role="switch" aria-checked="false" disabled></button>
+      </div>
+
+      <div style="margin-top:8px">
+        <div style="font-size:10px;color:var(--hint);margin-bottom:5px;font-weight:600" data-i18n="pin_ctrl_title">핀 제어</div>
+        <div class="pin-row">
+          <button class="pin-btn" id="pinUpBtn" data-i18n="pin_up">전체 올리기</button>
+          <button class="pin-btn" id="pinDownBtn" data-i18n="pin_down">전체 내리기</button>
+          <button class="pin-btn" id="pinInvBtn" data-i18n="pin_invert">반전</button>
+        </div>
       </div>
     </div>
 
-    <!-- ③ 내보내기 — end-of-workflow, above hardware section -->
+    <!-- ④ 저장 / 내보내기 -->
     <div>
       <div class="sec-hd" data-i18n="panel_export">내보내기</div>
       <div class="exp-stack">
@@ -878,35 +916,19 @@ details.adv > summary:hover { color: var(--ink) }
             HEX
           </button>
         </div>
-        <button class="exp-btn" id="jsonBtn" style="width:100%;justify-content:center;gap:5px">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <button class="exp-btn" id="jsonBtn" style="width:100%">
+          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           JSON 내보내기
         </button>
       </div>
     </div>
 
-    <!-- ④ Dot Pad 연결 — hardware, least-frequent -->
+    <!-- Resolution selector (hidden but accessible) -->
     <div>
-      <div class="sec-hd" data-i18n="panel_dotpad">Dot Pad</div>
-      <div class="dp-status">
-        <div class="dp-dot" id="dpDot"></div>
-        <span class="dp-lbl" id="dpLbl" data-i18n="conn_off">연결 안 됨</span>
-      </div>
-      <div class="dp-conn-row" style="margin-top:6px">
-        <button class="dp-btn" id="bleBtn" data-i18n="conn_btn_ble">BLE 연결</button>
-        <button class="dp-btn" id="usbBtn" data-i18n="conn_btn_usb">USB 연결</button>
-      </div>
-      <div class="live-row">
-        <span class="live-lbl" data-i18n="live_label">라이브 미리보기</span>
-        <button class="sw" id="liveSwitch" role="switch" aria-checked="false" disabled></button>
-      </div>
-      <div style="margin-top:8px">
-        <div style="font-size:10px;color:var(--hint);margin-bottom:5px;font-weight:600" data-i18n="pin_ctrl_title">핀 제어</div>
-        <div class="pin-row">
-          <button class="pin-btn" id="pinUpBtn" data-i18n="pin_up">전체 올리기</button>
-          <button class="pin-btn" id="pinDownBtn" data-i18n="pin_down">전체 내리기</button>
-          <button class="pin-btn" id="pinInvBtn" data-i18n="pin_invert">반전</button>
-        </div>
+      <div class="sec-hd">해상도</div>
+      <div style="display:flex;gap:5px">
+        <button class="exp-btn res-btn active" data-res="60x40" style="flex:1;justify-content:center">60×40</button>
+        <button class="exp-btn res-btn" data-res="96x64" style="flex:1;justify-content:center">96×64</button>
       </div>
     </div>
 
