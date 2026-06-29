@@ -644,7 +644,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
     <div style="flex:1"></div>
 
     <!-- 전체 지우기 (하단 고정) -->
-    <button class="tr-btn danger" id="clearBtn2" title="전체 지우기 — 모든 핀을 지웁니다">
+    <button class="tr-btn danger" id="clearBtn2" title="캔버스 비우기 — 모든 점을 지웁니다">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
         stroke-linecap="round" stroke-linejoin="round">
         <polyline points="3 6 5 6 21 6"/>
@@ -652,7 +652,7 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
         <path d="M10 11v6M14 11v6"/>
         <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
       </svg>
-      <span class="tr-label">전체 지우기</span>
+      <span class="tr-label">캔버스 비우기</span>
     </button>
 
   </aside>
@@ -813,17 +813,17 @@ body[data-state="analyzing"] #analyzeOv{display:flex}
       <div>
         <div class="sec-title" class="sec-title-wrap" style="margin-bottom:var(--sp-s)"><span data-i18n="pin_control">핀 제어</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
-          <button class="pin-ctrl-btn" id="btnAllUp" disabled title="모든 핀을 올립니다 (전체 채움)">
+          <button class="pin-ctrl-btn" id="btnAllUp" disabled title="캔버스의 모든 점을 채웁니다 (전체 채우기)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12l4-4 4 4"/></svg>
-            전체 올리기
+            전체 채우기
           </button>
-          <button class="pin-ctrl-btn" id="btnAllDown" disabled title="모든 핀을 내립니다 (전체 지움)">
+          <button class="pin-ctrl-btn" id="btnAllDown" disabled title="캔버스의 모든 점을 비웁니다 (전체 비우기)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V8M8 12l4 4 4-4"/></svg>
-            전체 내리기
+            전체 비우기
           </button>
-          <button class="pin-ctrl-btn" id="btnInvert" disabled title="켜진 핀과 꺼진 핀을 반전합니다">
+          <button class="pin-ctrl-btn" id="btnInvert" disabled title="켜진 점과 꺼진 점을 반전합니다 (점 반전)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            핀 반전
+            점 반전
           </button>
         </div>
       </div>
@@ -2753,7 +2753,7 @@ const I18N = {
     tool_eraser:      '지우개',
     tool_undo:        '되돌리기',
     tool_redo:        '다시하기',
-    tool_clear:       '전체 지우기',
+    tool_clear:       '캔버스 비우기',
     size_label:       '크기',
 
     /* 캔버스 */
@@ -2789,9 +2789,9 @@ const I18N = {
     ai_title:         'AI 추천',
     ai_empty:         '이미지를 가져오면 AI가 주요 윤곽과 핵심 구조를 분석해 Dot Pad용 촉각그래픽으로 변환해드려요.',
     pin_ctrl_title:   '핀 제어',
-    pin_up:           '전체 올리기',
-    pin_down:         '전체 내리기',
-    pin_invert:       '반전',
+    pin_up:           '전체 채우기',
+    pin_down:         '전체 비우기',
+    pin_invert:       '점 반전',
     conn_title:       'Dot Pad 연결',
     conn_off:         'Dot Pad 연결 안 됨',
     conn_hint:        '연결하면 Dot Pad에서 직접 확인할 수 있어요',
@@ -2917,7 +2917,7 @@ const I18N = {
     tool_eraser:      'Eraser',
     tool_undo:        'Undo',
     tool_redo:        'Redo',
-    tool_clear:       'Clear All',
+    tool_clear:       'Clear canvas',
     size_label:       'Size',
 
     /* Canvas */
@@ -2953,9 +2953,9 @@ const I18N = {
     ai_title:         'AI Suggestions',
     ai_empty:         'Import an image and AI will analyze its outline and core structure to convert it into a Dot Pad tactile graphic.',
     pin_ctrl_title:   'Pin Control',
-    pin_up:           'All On',
-    pin_down:         'All Off',
-    pin_invert:       'Invert',
+    pin_up:           'Fill all',
+    pin_down:         'Clear all',
+    pin_invert:       'Invert dots',
     conn_title:       'Dot Pad',
     conn_off:         'Not Connected',
     conn_hint:        'Connect to preview on an actual Dot Pad',
@@ -4699,13 +4699,17 @@ document.addEventListener('mousedown', ()=>{
   const css=`
   .right-panel{display:none!important}   /* 우측 고정 패널 제거 — 스크롤 문제 해소 */
   .workspace{display:block;overflow:auto}
-  .canvas-area{max-width:880px;margin:0 auto;width:100%}
-  /* 변환 설정: 캔버스 위 compact 카드 (가로 wrap) */
+  /* 작업 카드 컬럼: 폭 제한 + 단일 스크롤(workspace), CTA는 이 흐름의 마지막 = 캔버스 안 가림 */
+  .canvas-area{max-width:1140px;margin:0 auto;width:100%;overflow:visible;padding:10px var(--sp-l) 22px}
+  /* 변환 설정: compact 3열 (캔버스 크기 35 · 임계값 35 · 굵기+효과 30) */
   #studioControls{width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--border2);
-    border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
-  #studioControls>*{flex:1 1 220px;min-width:0;margin:0!important}
-  #studioControls .sec-title{margin-bottom:6px!important}
-  #studioControls #resSel{min-height:36px}
+    border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
+  #studioControls>*{min-width:0;margin:0!important}
+  #studioControls>#resSec{flex:1 1 30%} #studioControls>#densitySec{flex:1 1 33%} #studioControls>#convExtra{flex:1 1 28%}
+  #studioControls .sec-title{margin-bottom:4px!important}
+  #studioControls .th-desc{display:none}   /* 설명은 슬라이더 helper로 충분 — compact */
+  #studioControls #resSel{min-height:34px}
+  #studioControls .th-actions{margin-top:6px}
   /* AI 요약 (접힘) */
   #aiSummary{width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--border2);border-radius:14px;padding:12px 16px;margin-top:10px}
   #aiSummary .ais-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -4714,9 +4718,9 @@ document.addEventListener('mousedown', ()=>{
   #aiSummary .ais-toggle{flex-shrink:0;min-height:30px;padding:0 12px;border-radius:999px;border:1.5px solid var(--border2);background:#fff;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer}
   #aiSummary .ais-body{display:none;margin-top:10px}
   #aiSummary .ais-body[data-on="1"]{display:block}
-  /* 하단 CTA */
-  .cta-bar{width:100%;box-sizing:border-box;max-width:880px;margin:14px auto 0;background:var(--white);
-    border:1px solid var(--border2);border-radius:14px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  /* 하단 CTA — 캔버스 아래 정상 흐름(겹침 없음), compact */
+  .cta-bar{width:100%;box-sizing:border-box;margin:14px 0 0;background:var(--white);
+    border:1px solid var(--border2);border-radius:14px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .cta-status{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--muted);flex:1 1 100%;margin-bottom:2px}
   .cta-status .dp-dot{flex-shrink:0}
   .cta-btn{min-height:46px;padding:0 18px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid;display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:1 1 auto}
@@ -4812,8 +4816,9 @@ document.addEventListener('mousedown', ()=>{
   if(liveSwitch){ const liveRow=document.createElement('div'); liveRow.className='cta-live';
     const lr=liveSwitch.closest('.live-row'); if(lr){ liveRow.appendChild(lr); } else { liveRow.appendChild(liveSwitch); }
     cta.appendChild(liveRow); }
-  if(bottomBar&&bottomBar.parentElement) bottomBar.parentElement.insertBefore(cta,bottomBar);
-  else if(canvasArea&&canvasArea.parentElement) canvasArea.parentElement.appendChild(cta);
+  // 캔버스 영역(작업 카드) 흐름의 마지막에 배치 → 캔버스를 덮지 않음, 스크롤해도 아래에 위치
+  if(canvasArea) canvasArea.appendChild(cta);
+  else if(bottomBar&&bottomBar.parentElement) bottomBar.parentElement.insertBefore(cta,bottomBar);
   // 기존 하단바는 숨김 (CTA로 통합)
   if(bottomBar) bottomBar.style.display='none';
   if(dpSec) dpSec.style.display='none';   // 원래 DotPad 섹션(연결 행)은 CTA 상태줄로 대체
