@@ -4372,6 +4372,335 @@ document.addEventListener('mousedown', ()=>{
   try{ if(typeof applyLang==='function'){ const _l=applyLang; applyLang=function(){ _l(); try{relabel();}catch(e){} }; } }catch(e){}
 })();
 
+/* ============================================================
+   UI PRO — 제품화 레이아웃 재구성 (좌 단계패널 · 하단 편집툴바 · 우 4섹션 카드
+   · AI 촉각 피드백 · 캔버스 상태줄). 기능/함수/ID는 그대로 두고 위치·라벨만 정리.
+   ============================================================ */
+(function uiPro(){
+  if(window.__uiProWired) return; window.__uiProWired=true;
+  const $=id=>document.getElementById(id);
+  const TL=k=>{ try{return t(k);}catch(e){return k;} };
+  const announce=m=>{ try{ if(typeof say==='function') say(m); }catch(e){} };
+  const ready=()=>typeof appState!=='undefined'&&appState==='ready';
+  const hasImg=()=>typeof hasImage!=='undefined'&&hasImage;
+
+  try{ Object.assign(I18N.ko,{
+    step_title:'작업 단계', step1:'이미지 가져오기', step2:'AI 변환 설정', step3:'캔버스 편집', step4:'촉각 품질 확인', step5:'출력 / 저장',
+    card_conv:'변환 설정', card_ai:'AI 촉각 피드백', card_out:'Dot Pad 출력', card_export:'내보내기',
+    density_control:'변환 민감도',
+    conv_method:'변환 방식', conv_outline:'외곽선 변환', conv_fill:'면 채움 변환',
+    conv_thick:'변환 선 굵기', t_thin:'얇게', t_normal:'보통', t_thick:'굵게', t_thicker:'더 굵게',
+    conv_effect:'효과', fx_invert:'흑백 반전', fx_denoise:'작은 점 정리',
+    ai_density:'점 밀도', ai_legib:'손끝 판독성', ai_struct:'구조 단순화',
+    lv_low:'낮음', lv_ok:'적정', lv_high:'높음', lg_good:'좋음', lg_warn:'주의', lg_adj:'조정 필요', st_done:'완료', st_adj:'조정 필요',
+    ai_empty:'이미지를 변환하면 촉각 품질 피드백을 보여드려요.',
+    act_denoise:'작은 점 정리', act_lower:'민감도 낮추기', act_thick:'선 굵기 올리기',
+    out_send:'Dot Pad로 출력', adv_more:'고급 옵션', edit_tools:'편집 도구', tool_line:'직선', cs_dots:'활성 점', cs_zoom:'확대',
+    hint_select:'선택 모드 — 드래그해 영역을 고른 뒤 Delete·Enter·I', hint_pen:'그리기 모드 — 점을 눌러 그려요',
+    hint_eraser:'지우기 모드 — 점을 눌러 비워요', hint_line:'직선 모드 — 시작점을 누른 뒤 끌어 직선을 그려요',
+    hint_fill:'영역 채우기 — 닫힌 영역을 채워요'
+  }); Object.assign(I18N.en,{
+    step_title:'Steps', step1:'Import image', step2:'AI convert', step3:'Edit canvas', step4:'Check quality', step5:'Export / Save',
+    card_conv:'Conversion', card_ai:'AI tactile feedback', card_out:'Dot Pad output', card_export:'Export',
+    density_control:'Conversion sensitivity',
+    conv_method:'Conversion mode', conv_outline:'Outline', conv_fill:'Filled',
+    conv_thick:'Line weight', t_thin:'Thin', t_normal:'Normal', t_thick:'Thick', t_thicker:'Thicker',
+    conv_effect:'Effects', fx_invert:'Invert', fx_denoise:'Clean dots',
+    ai_density:'Dot density', ai_legib:'Fingertip legibility', ai_struct:'Structure',
+    lv_low:'Low', lv_ok:'OK', lv_high:'High', lg_good:'Good', lg_warn:'Caution', lg_adj:'Adjust', st_done:'Done', st_adj:'Adjust',
+    ai_empty:'Convert an image to see tactile feedback.',
+    act_denoise:'Clean dots', act_lower:'Lower sensitivity', act_thick:'Increase weight',
+    out_send:'Send to Dot Pad', adv_more:'Advanced', edit_tools:'Edit tools', tool_line:'Line', cs_dots:'active dots', cs_zoom:'zoom',
+    hint_select:'Select — drag a region, then Delete·Enter·I', hint_pen:'Draw — tap dots to raise',
+    hint_eraser:'Erase — tap dots to lower', hint_line:'Line — press a start point then drag',
+    hint_fill:'Fill — fills an enclosed area'
+  }); }catch(e){}
+
+  /* ---------- CSS ---------- */
+  const css=`
+  .workspace{align-items:stretch}
+  /* 좌측 작업 단계 패널 */
+  .step-panel{width:188px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);
+    padding:var(--sp-l) var(--sp-m);display:flex;flex-direction:column;gap:4px;overflow:auto}
+  .step-panel h2{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--subtle);margin:2px 4px 8px}
+  .step-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:1.5px solid transparent;
+    background:none;color:var(--muted);cursor:pointer;text-align:left;transition:all .12s;width:100%}
+  .step-item:hover{background:var(--surface)}
+  .step-item .num{width:22px;height:22px;border-radius:7px;background:var(--surface);color:var(--subtle);
+    display:grid;place-items:center;font-size:10px;font-weight:800;flex-shrink:0}
+  .step-item .lbl{font-size:12px;font-weight:600;line-height:1.2}
+  .step-item[aria-current="step"]{background:var(--orange-bg);border-color:var(--orange);color:var(--ink)}
+  .step-item[aria-current="step"] .num{background:var(--orange);color:#fff}
+  .step-item[data-done="1"] .num{background:#d8efe0;color:#1c7a4d}
+  .step-item:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+  /* 하단 편집 툴바 */
+  .edit-bar{display:flex;align-items:center;gap:10px;background:var(--white);border-top:1px solid var(--border);
+    padding:6px var(--sp-xl);flex-shrink:0;flex-wrap:wrap}
+  .edit-bar .et-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle);flex-shrink:0}
+  .edit-bar .tool-rail{flex-direction:row;width:auto;border-right:none;padding:0;gap:3px;align-items:center;background:none;flex-wrap:wrap}
+  .edit-bar .tool-rail .tr-btn{flex-direction:row;width:auto;min-width:0;gap:6px;padding:7px 11px}
+  .edit-bar .tool-rail .tr-btn svg{width:17px;height:17px}
+  .edit-bar .tool-rail .tr-label{font-size:11px;text-transform:none;letter-spacing:0;font-weight:600}
+  .edit-bar .tr-sep{width:1px;height:26px;margin:0 4px;background:var(--border)}
+  .edit-bar #brushSizeGroup{flex-direction:row!important;width:auto!important;gap:4px;align-items:center}
+  .edit-bar #brushSizeGroup>span{margin:0 2px 0 0}
+  .edit-bar .et-spacer{flex:1}
+  #toolStatus{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+  /* 우측 카드 */
+  .rp-card{background:var(--white);border:1px solid var(--border2);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+  .rp-card>.rp-card-h{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--ink);margin:0 0 12px;letter-spacing:-.01em}
+  .rp-card>.rp-card-h .ic{width:18px;height:18px;border-radius:6px;background:var(--orange-bg);color:var(--orange);display:grid;place-items:center;font-size:11px;flex-shrink:0}
+  .rp-card>div+div,.rp-card>section+section{margin-top:14px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{flex:1 1 auto;min-width:0;min-height:32px;padding:0 10px;border-radius:8px;border:1.5px solid var(--border2);background:#fff;color:#2c2c2a;font-size:11px;font-weight:700;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .seg button:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+  .ui-sub{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--subtle);margin-bottom:6px}
+  /* AI 피드백 */
+  #aiFb .fb-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--border)}
+  #aiFb .fb-row:last-of-type{border-bottom:none}
+  #aiFb .fb-k{font-size:12px;color:var(--muted)}
+  #aiFb .fb-v{font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px}
+  #aiFb .fb-v .dotc{width:8px;height:8px;border-radius:50%}
+  #aiFb .v-good .dotc,#aiFb .v-ok .dotc{background:#1c9d5e}
+  #aiFb .v-warn .dotc{background:#e0992a}
+  #aiFb .v-adj .dotc{background:#d9534f}
+  #aiFb .fb-msg{font-size:11.5px;line-height:1.55;color:var(--muted);margin:10px 0 4px}
+  #aiFb .fb-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  #aiFb .fb-acts button{min-height:30px;padding:0 10px;border-radius:999px;border:1.5px solid #f0c46a;background:#fff;color:var(--orange);font-size:11px;font-weight:700;cursor:pointer}
+  #aiFb .fb-acts button:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+  #outSend{width:100%;min-height:38px;border-radius:10px;border:2px solid var(--orange);background:var(--orange);color:#fff;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  #outSend:disabled{opacity:.45;cursor:default}
+  .adv-toggle{width:100%;min-height:34px;border-radius:8px;border:1.5px dashed var(--border2);background:#fff;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer}
+  .adv-body{display:none;margin-top:10px;flex-direction:column;gap:var(--sp-xs)}
+  .adv-body[data-on="1"]{display:flex}
+  /* 캔버스 상태줄 */
+  #canvasStatus{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    font-size:11px;font-weight:600;color:var(--muted);margin-top:8px}
+  #canvasStatus .cs-chip{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:3px 10px}
+  #canvasStatus .cs-chip b{color:var(--ink);font-weight:800}
+  @media(max-width:1023px){
+    .step-panel{width:100%;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border);padding:8px 12px;gap:6px}
+    .step-panel h2{display:none}
+    .step-item{width:auto;flex:0 0 auto;padding:6px 9px}
+    .step-item .lbl{font-size:11px}
+    .edit-bar{position:sticky;bottom:0;z-index:60;padding:6px 12px;
+      padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  }
+  @media(max-width:767px){
+    .step-item .lbl{display:none}
+    .step-item{padding:6px}
+  }`;
+  const stEl=document.createElement('style'); stEl.textContent=css; document.head.appendChild(stEl);
+
+  const workspace=document.querySelector('.workspace');
+  const rail=document.querySelector('.tool-rail');
+  const rpScroll=document.querySelector('.rp-scroll');
+  const bottomBar=document.querySelector('.bottom-bar');
+
+  /* ---------- 1) 좌측 작업 단계 패널 ---------- */
+  const steps=[['step1'],['step2'],['step3'],['step4'],['step5']];
+  const sp=document.createElement('aside'); sp.className='step-panel'; sp.id='stepPanel'; sp.setAttribute('aria-label',TL('step_title'));
+  sp.innerHTML=`<h2 id="stepTitle">${TL('step_title')}</h2>`+steps.map((s,i)=>
+    `<button class="step-item" type="button" data-step="${i+1}" id="stepItem${i+1}"><span class="num">0${i+1}</span><span class="lbl" data-sk="${s[0]}">${TL(s[0])}</span></button>`).join('');
+  if(workspace&&rail) workspace.insertBefore(sp,rail);
+  function curStep(){ if(!hasImg()) return 1; if(typeof appState!=='undefined'&&appState==='analyzing') return 2;
+    if(typeof connected!=='undefined'&&connected) return 5; return 3; }
+  function syncSteps(){ const c=curStep();
+    sp.querySelectorAll('.step-item').forEach(b=>{ const n=+b.dataset.step;
+      if(n===c) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
+      b.dataset.done=(n<c)?'1':'0'; }); }
+  sp.querySelectorAll('.step-item').forEach(b=>b.addEventListener('click',()=>{
+    const n=+b.dataset.step;
+    if(n===1){ const inp=$('anyFileInput')||$('imageFileInput'); if(inp){inp.value='';inp.click();} }
+    else if(n===5){ const d=$('dtmsBtn'); if(d&&!d.disabled) d.focus(); }
+    else { const pad=$('pad'); if(pad) pad.focus(); }
+    announce(TL('step'+n)); }));
+
+  /* ---------- 2) 하단 편집 툴바 (도구 레일 이동 + 직선 도구) ---------- */
+  // 직선 도구 버튼 삽입 (채우기 다음)
+  const fillBtn=rail&&rail.querySelector('.tr-btn[data-tool="fill"]');
+  if(fillBtn){ const lb=document.createElement('button'); lb.className='tr-btn'; lb.dataset.tool='line'; lb.setAttribute('aria-pressed','false');
+    lb.setAttribute('title',TL('tool_line')+' (L) — '+TL('hint_line')); lb.setAttribute('aria-label',TL('tool_line'));
+    lb.innerHTML=`<svg viewBox="0 0 40 40"><line x1="11" y1="29" x2="29" y2="11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="11" cy="29" r="2.4" fill="currentColor"/><circle cx="29" cy="11" r="2.4" fill="currentColor"/></svg><span class="tr-label" data-sk="tool_line">${TL('tool_line')}</span>`;
+    fillBtn.insertAdjacentElement('afterend',lb); }
+  const editBar=document.createElement('div'); editBar.className='edit-bar'; editBar.setAttribute('role','toolbar'); editBar.setAttribute('aria-label',TL('edit_tools'));
+  editBar.innerHTML=`<span class="et-title" id="etTitle">${TL('edit_tools')}</span>`;
+  if(rail) editBar.appendChild(rail);
+  const spc=document.createElement('span'); spc.className='et-spacer'; editBar.appendChild(spc);
+  const tStat=document.createElement('span'); tStat.id='toolStatus'; tStat.setAttribute('role','status'); tStat.setAttribute('aria-live','polite'); editBar.appendChild(tStat);
+  if(bottomBar&&bottomBar.parentElement) bottomBar.parentElement.insertBefore(editBar,bottomBar);
+
+  /* 직선 도구 엔진 (capture 단계로 기존 핸들러보다 먼저 가로채기) */
+  const pad=$('pad');
+  let lineStart=null;
+  const lineMode=()=>window.__lineMode===true;
+  function drawPreview(a,b){ try{ if(typeof draw==='function')draw(); const ctx2=pad.getContext('2d'); const pts=(typeof bres==='function')?bres(a.x,a.y,b.x,b.y):[[b.x,b.y]];
+      ctx2.save(); ctx2.fillStyle='rgba(255,90,31,.55)'; pts.forEach(p=>ctx2.fillRect(off+p[0]*cell+2,off+p[1]*cell+2,cell-4,cell-4)); ctx2.restore(); }catch(e){} }
+  function commitLine(a,b){ try{ if(typeof pushUndo==='function')pushUndo(); const pts=(typeof bres==='function')?bres(a.x,a.y,b.x,b.y):[[b.x,b.y]];
+      pts.forEach(p=>{ if(typeof setPin==='function') setPin(p[0],p[1],1); }); if(typeof pages!=='undefined')pages[curPage]=grid; if(typeof afterChange==='function')afterChange(); announce(TL('tool_line')); }catch(e){} }
+  if(pad){
+    pad.addEventListener('pointerdown',ev=>{ if(!lineMode()||!hasImg()||!ready())return; ev.preventDefault(); ev.stopImmediatePropagation(); try{pad.setPointerCapture(ev.pointerId);}catch(_){} lineStart=cellAt(ev); },true);
+    pad.addEventListener('pointermove',ev=>{ if(!lineMode()||!lineStart)return; ev.stopImmediatePropagation(); drawPreview(lineStart,cellAt(ev)); },true);
+    pad.addEventListener('pointerup',ev=>{ if(!lineMode()||!lineStart)return; ev.stopImmediatePropagation(); commitLine(lineStart,cellAt(ev)); lineStart=null; },true);
+    pad.addEventListener('pointercancel',()=>{ lineStart=null; },true);
+  }
+  function setToolActive(name){ document.querySelectorAll('.tool-rail .tr-btn[data-tool]').forEach(b=>{
+    const on=b.dataset.tool===name; b.classList.toggle('active',on); b.setAttribute('aria-pressed',on?'true':'false'); }); }
+  function curToolName(){ return lineMode()?'line':(typeof tool!=='undefined'?tool:'select'); }
+  function updateHint(){ const n=curToolName(); const e=$('toolStatus'); if(e) e.textContent=TL('hint_'+(n==='move'?'select':n))||''; }
+  // 도구 버튼 위임 클릭: line 모드 토글 + 힌트
+  editBar.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.tr-btn[data-tool]'); if(!b)return;
+    const tn=b.dataset.tool;
+    if(tn==='line'){ window.__lineMode=true; if(typeof selectTool==='function') selectTool('select'); setToolActive('line'); }
+    else { window.__lineMode=false; setToolActive(tn); }
+    updateHint(); });
+  // L 단축키
+  document.addEventListener('keydown',e=>{ if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+    if((e.key==='l'||e.key==='L')&&hasImg()&&ready()){ window.__lineMode=true; if(typeof selectTool==='function')selectTool('select'); setToolActive('line'); updateHint(); } });
+  // 기존 selectTool 래핑: 다른 도구 선택 시 line 모드 해제 + 힌트
+  try{ if(typeof selectTool==='function'){ const _st=selectTool; selectTool=function(tt){ if(tt!=='select'||!window.__lineMode){ if(tt!=='select') window.__lineMode=false; } _st(tt); try{ if(!window.__lineMode) setToolActive(tt); updateHint(); }catch(_){} }; } }catch(e){}
+
+  /* ---------- 3) 우측 4섹션 카드 ---------- */
+  function card(id,key,icon){ const c=document.createElement('section'); c.className='rp-card'; c.id=id;
+    c.innerHTML=`<h3 class="rp-card-h"><span class="ic" aria-hidden="true">${icon}</span><span data-ck="${key}">${TL(key)}</span></h3>`; return c; }
+  const cConv=card('cardConv','card_conv','◐'), cAI=card('cardAI','card_ai','✦'), cOut=card('cardOut','card_out','⠿'), cExp=card('cardExp','card_export','↧');
+  const moveIn=(card,node)=>{ if(node) card.appendChild(node); };
+  // 노드 핸들
+  const densitySec=$('densitySec'), resSec=$('resSec'), altSec=$('altSec'), pgSec=$('pgSec'), libSec=$('libSec');
+  const pinSec=($('btnAllUp')&&$('btnAllUp').parentElement)?$('btnAllUp').parentElement.parentElement:null;
+  const dpSec=$('connRow')?$('connRow').parentElement:null;
+  const expSec=$('dtmsBtn')?$('dtmsBtn').parentElement.parentElement:null;
+  const hexBtn=$('hexBtn');   /* 노드 이동 전에 참조 확보 (이동 후엔 getElementById가 못 찾음) */
+
+  // 변환 설정: 해상도 → 방식 → 굵기 → 효과 → 민감도
+  moveIn(cConv,resSec);
+  const conv=document.createElement('div'); conv.id='convExtra';
+  conv.innerHTML=`
+    <div class="ui-sub" data-ck="conv_method">${TL('conv_method')}</div>
+    <div class="seg" id="methodSeg" role="group" aria-label="${TL('conv_method')}">
+      <button type="button" data-m="outline" data-ck="conv_outline">${TL('conv_outline')}</button>
+      <button type="button" data-m="fill" data-ck="conv_fill">${TL('conv_fill')}</button></div>
+    <div class="ui-sub" style="margin-top:12px" data-ck="conv_thick">${TL('conv_thick')}</div>
+    <div class="seg" id="thickSeg" role="group" aria-label="${TL('conv_thick')}">
+      <button type="button" data-w="thin" data-ck="t_thin">${TL('t_thin')}</button>
+      <button type="button" data-w="normal" aria-pressed="true" data-ck="t_normal">${TL('t_normal')}</button>
+      <button type="button" data-w="thick" data-ck="t_thick">${TL('t_thick')}</button>
+      <button type="button" data-w="thicker" data-ck="t_thicker">${TL('t_thicker')}</button></div>
+    <div class="ui-sub" style="margin-top:12px" data-ck="conv_effect">${TL('conv_effect')}</div>
+    <div class="seg" id="fxSeg" role="group" aria-label="${TL('conv_effect')}">
+      <button type="button" data-fx="invert" data-ck="fx_invert">${TL('fx_invert')}</button>
+      <button type="button" data-fx="denoise" data-ck="fx_denoise">${TL('fx_denoise')}</button></div>`;
+  cConv.appendChild(conv);
+  moveIn(cConv,densitySec);
+
+  // 엔진 헬퍼: 굵기(팽창/침식)
+  function dilate(times){ if(!hasImg())return; try{ if(typeof pushUndo==='function')pushUndo();
+    for(let k=0;k<times;k++){ const s=grid.slice(); for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){ if(s[y*GW+x]){ for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++) setPin(x+dx,y+dy,1); } } }
+    pages[curPage]=grid; if(typeof afterChange==='function')afterChange(); }catch(e){} }
+  function erode(times){ if(!hasImg())return; try{ if(typeof pushUndo==='function')pushUndo();
+    for(let k=0;k<times;k++){ const s=grid.slice(); for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){ let keep=s[y*GW+x]; if(keep){ for(let dy=-1;dy<=1&&keep;dy++)for(let dx=-1;dx<=1&&keep;dx++){ const nx=x+dx,ny=y+dy; if(nx<0||ny<0||nx>=GW||ny>=GH||!s[ny*GW+nx])keep=0; } } grid[y*GW+x]=keep?1:0; } }
+    pages[curPage]=grid; if(typeof afterChange==='function')afterChange(); }catch(e){} }
+  function pressSeg(seg,el){ seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===el?'true':'false')); }
+  conv.querySelector('#methodSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!hasImg())return;
+    pressSeg(conv.querySelector('#methodSeg'),b);
+    if(b.dataset.m==='outline'){ if(typeof applyOp==='function')applyOp('outline'); }
+    else { try{ if(typeof outline!=='undefined')outline=0; if(typeof rebuild==='function')rebuild(); if(typeof afterChange==='function')afterChange(); if(typeof updateOutlineDesc==='function')updateOutlineDesc(); }catch(_){} announce(TL('conv_fill')); } });
+  conv.querySelector('#thickSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!hasImg())return;
+    pressSeg(conv.querySelector('#thickSeg'),b); const w=b.dataset.w;
+    if(w==='thin')erode(1); else if(w==='thick')dilate(1); else if(w==='thicker')dilate(2);
+    announce(TL('conv_thick')+' '+TL('t_'+w)); });
+  conv.querySelector('#fxSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!hasImg())return;
+    if(typeof applyOp==='function')applyOp(b.dataset.fx); });
+
+  // AI 촉각 피드백
+  const aiFb=document.createElement('div'); aiFb.id='aiFb';
+  aiFb.innerHTML=`
+    <div class="fb-row"><span class="fb-k" data-ck="ai_density">${TL('ai_density')}</span><span class="fb-v" id="fbDensity">—</span></div>
+    <div class="fb-row"><span class="fb-k" data-ck="ai_legib">${TL('ai_legib')}</span><span class="fb-v" id="fbLegib">—</span></div>
+    <div class="fb-row"><span class="fb-k" data-ck="ai_struct">${TL('ai_struct')}</span><span class="fb-v" id="fbStruct">—</span></div>
+    <p class="fb-msg" id="fbMsg">${TL('ai_empty')}</p>
+    <div class="fb-acts" id="fbActs"></div>`;
+  cAI.appendChild(aiFb);
+  function setV(el,cls,txt){ if(!el)return; el.className='fb-v '+cls; el.innerHTML='<span class="dotc"></span>'+txt; }
+  function aiUpdate(){ try{
+    const dEl=$('fbDensity'),lEl=$('fbLegib'),sEl=$('fbStruct'),mEl=$('fbMsg'),aEl=$('fbActs');
+    if(!dEl)return;
+    if(!hasImg()){ dEl.textContent=lEl.textContent=sEl.textContent='—'; dEl.className=lEl.className=sEl.className='fb-v'; if(mEl)mEl.textContent=TL('ai_empty'); if(aEl)aEl.innerHTML=''; return; }
+    let on=0; for(let i=0;i<N;i++) on+=grid[i]?1:0;
+    let iso=0; for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){ if(grid[y*GW+x]){ let nb=0; if(x>0&&grid[y*GW+x-1])nb++; if(x<GW-1&&grid[y*GW+x+1])nb++; if(y>0&&grid[(y-1)*GW+x])nb++; if(y<GH-1&&grid[(y+1)*GW+x])nb++; if(nb===0)iso++; } }
+    const dens=on/N, isoR=on?iso/on:0;
+    const acts=[];
+    if(dens<0.06){ setV(dEl,'v-warn',TL('lv_low')); } else if(dens>0.40){ setV(dEl,'v-adj',TL('lv_high')); acts.push('lower'); } else setV(dEl,'v-ok',TL('lv_ok'));
+    if(isoR>0.18){ setV(lEl,'v-adj',TL('lg_adj')); acts.push('denoise'); } else if(isoR>0.08){ setV(lEl,'v-warn',TL('lg_warn')); acts.push('denoise'); } else setV(lEl,'v-good',TL('lg_good'));
+    const structAdj=(dens>0.40||isoR>0.12);
+    setV(sEl,structAdj?'v-adj':'v-good',structAdj?TL('st_adj'):TL('st_done'));
+    let msg;
+    if(isoR>0.18) msg=TL('reason_noise')||'작은 점이 많아 손끝으로 읽기 어려울 수 있어요.';
+    else if(dens>0.40) msg='점 밀도가 높아요. 민감도를 조금 낮춰보세요.';
+    else if(dens<0.06) msg='핀이 적어요. 민감도를 높이거나 선 굵기를 올려보세요.';
+    else msg=(GW+'×'+GH)+' 기준으로 주요 윤곽이 잘 유지되었어요.';
+    if(mEl)mEl.textContent=msg;
+    if(aEl){ if(dens<0.06&&!acts.includes('thick'))acts.push('thick');
+      const uniq=[...new Set(acts)].slice(0,3);
+      aEl.innerHTML=uniq.map(a=>`<button type="button" data-act="${a}">${TL('act_'+a)}</button>`).join(''); }
+  }catch(e){} }
+  cAI.addEventListener('click',e=>{ const b=e.target.closest('#fbActs button'); if(!b||!hasImg())return; const a=b.dataset.act;
+    if(a==='denoise'){ if(typeof applyOp==='function')applyOp('denoise'); }
+    else if(a==='thick'){ dilate(1); }
+    else if(a==='lower'){ const sl=$('clarity2'); if(sl){ sl.value=Math.max(+sl.min, (+sl.value)-30); sl.dispatchEvent(new Event('input',{bubbles:true})); } } });
+
+  // Dot Pad 출력: 연결/라이브 + 핀 제어 + 출력 버튼
+  moveIn(cOut,dpSec); moveIn(cOut,pinSec);
+  const outSend=document.createElement('button'); outSend.id='outSend'; outSend.type='button'; outSend.disabled=true;
+  outSend.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span data-ck="out_send">${TL('out_send')}</span>`;
+  outSend.addEventListener('click',()=>{ try{ if(typeof forceSend==='function'){ if(typeof lastSentHex!=='undefined')lastSentHex=null; forceSend(); announce(TL('out_send')); } }catch(e){} });
+  cOut.appendChild(outSend);
+
+  // 내보내기: 저장 + 그림설명 + 페이지 + 보관함 + 고급옵션
+  moveIn(cExp,expSec); moveIn(cExp,altSec); moveIn(cExp,pgSec); moveIn(cExp,libSec);
+  const adv=document.createElement('div');
+  const advBtn=document.createElement('button'); advBtn.className='adv-toggle'; advBtn.type='button'; advBtn.setAttribute('aria-expanded','false');
+  advBtn.innerHTML=`<span data-ck="adv_more">${TL('adv_more')}</span> ▾`;
+  const advBody=document.createElement('div'); advBody.className='adv-body'; advBody.dataset.on='0';
+  if(hexBtn) advBody.appendChild(hexBtn);
+  advBtn.addEventListener('click',()=>{ const on=advBody.dataset.on==='1'?'0':'1'; advBody.dataset.on=on; advBtn.setAttribute('aria-expanded',on==='1'?'true':'false'); });
+  adv.appendChild(advBtn); adv.appendChild(advBody); cExp.appendChild(adv);
+
+  // 카드 삽입
+  if(rpScroll){ rpScroll.appendChild(cConv); rpScroll.appendChild(cAI); rpScroll.appendChild(cOut); rpScroll.appendChild(cExp); }
+
+  /* ---------- 4) 캔버스 상태줄 ---------- */
+  const gridWrap=$('dotGridWrap');
+  const cStat=document.createElement('div'); cStat.id='canvasStatus'; cStat.setAttribute('role','status'); cStat.setAttribute('aria-live','polite');
+  if(gridWrap&&gridWrap.parentElement) gridWrap.parentElement.insertBefore(cStat,gridWrap.nextSibling);
+  function statusUpdate(){ try{ const e=$('canvasStatus'); if(!e)return;
+    if(!hasImg()){ e.innerHTML=`<span class="cs-chip"><b>${GW}×${GH}</b></span>`; return; }
+    let on=0; for(let i=0;i<N;i++) on+=grid[i]?1:0;
+    const z=(typeof vpZoom!=='undefined'&&vpZoom)?vpZoom:1;
+    e.innerHTML=`<span class="cs-chip"><b>${GW}×${GH}</b></span>`+
+      `<span class="cs-chip">${TL('cs_dots')} <b>${on}</b></span>`+
+      `<span class="cs-chip">${TL('cs_zoom')} <b>${(Math.round(z*10)/10)}×</b></span>`; }catch(e){} }
+
+  /* ---------- 공통 갱신 훅 ---------- */
+  function refreshAll(){ syncSteps(); aiUpdate(); statusUpdate(); updateHint();
+    const os=$('outSend'); if(os) os.disabled=!(typeof connected!=='undefined'&&connected); }
+  try{ if(typeof updateScoreUI==='function'){ const _u=updateScoreUI; updateScoreUI=function(){ _u(); try{refreshAll();}catch(e){} }; } }catch(e){}
+  try{ if(typeof setAppState==='function'){ const _a=setAppState; setAppState=function(s){ _a(s); try{refreshAll();}catch(e){} }; } }catch(e){}
+  try{ if(typeof setDpState==='function'){ const _d=setDpState; setDpState=function(s){ _d(s); try{const os=$('outSend'); if(os) os.disabled=!(typeof connected!=='undefined'&&connected); syncSteps();}catch(e){} }; } }catch(e){}
+  // 언어 토글 시 재라벨 (data-ck/ data-sk 텍스트 갱신)
+  function relabelAll(){ try{
+    document.querySelectorAll('[data-ck]').forEach(el=>el.textContent=TL(el.dataset.ck));
+    document.querySelectorAll('.tool-rail [data-sk]').forEach(el=>el.textContent=TL(el.dataset.sk));
+    const st2=$('stepTitle'); if(st2)st2.textContent=TL('step_title');
+    sp.querySelectorAll('.step-item .lbl').forEach(el=>el.textContent=TL(el.dataset.sk));
+    updateHint(); }catch(e){} }
+  try{ if(typeof applyLang==='function'){ const _l=applyLang; applyLang=function(){ _l(); relabelAll(); }; } }catch(e){}
+
+  window.__uiPro={ syncSteps, aiUpdate, statusUpdate, curStep, lineCommit:commitLine, dilate, erode };
+  refreshAll(); relabelAll();
+})();
+
 /* ── 확장된 IIFE 닫기 ── */
 })();
 </script>
