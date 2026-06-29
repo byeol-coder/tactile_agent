@@ -4709,6 +4709,21 @@ document.addEventListener('mousedown', ()=>{
     display:flex;flex-direction:column;gap:6px;flex-shrink:0;
     max-height:calc(50vh - var(--h-bar,48px));overflow-y:auto;overflow-x:hidden}
   body[data-state="empty"] #studioFooter{display:none!important}
+  /* CTA 바 숨김 — 저장 드롭다운으로 대체 */
+  .cta-bar{display:none!important}
+  /* 저장 드롭다운 */
+  #saveDropWrap{position:relative;display:inline-flex}
+  #saveDropMenu{position:absolute;top:calc(100% + 6px);right:0;min-width:172px;
+    background:var(--white);border:1px solid var(--border2);border-radius:12px;
+    box-shadow:0 8px 28px rgba(0,0,0,.13);z-index:400;padding:5px;
+    flex-direction:column;gap:1px;display:none}
+  #saveDropMenu[data-open="1"]{display:flex}
+  #saveDropMenu button{width:100%;min-height:32px;text-align:left;padding:0 12px;
+    border-radius:8px;border:none;background:none;font-size:12px;font-weight:600;
+    cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:8px}
+  #saveDropMenu button:hover{background:var(--surface)}
+  #saveDropMenu .drop-sep{height:1px;background:var(--border);margin:3px 0}
+  #hdrExportBtn[aria-expanded="true"]{background:var(--surface)}
   /* 안 B: 변환 설정 접기 — 헤더와 바디를 분리 */
   #scHead{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;user-select:none;min-height:40px}
   #scHead:hover{background:rgba(0,0,0,.02)}
@@ -5091,6 +5106,48 @@ document.addEventListener('mousedown', ()=>{
   try{ if(typeof selectTool==='function'){ const _s=selectTool; selectTool=function(tt){ _s(tt); try{statusUpdate();}catch(e){} }; } }catch(e){}
   // 언어 토글 시 라벨 갱신
   try{ if(typeof applyLang==='function'){ const _l=applyLang; applyLang=function(){ _l(); try{ const ao=$('advOpenBtn'); if(ao)ao.textContent=TL('adv_title'); const pb=$('pubBtn'); if(pb)pb.textContent=TL('cta_pub'); const zf=$('zFit'); if(zf)zf.textContent=TL('zoom_fit'); statusUpdate(); }catch(e){} }; } }catch(e){}
+
+  /* -- 헤더 "저장" 버튼 → 드롭다운 (DTMS / PNG / 커뮤니티 / 고급) -- */
+  (function(){
+    const exportBtn=document.getElementById('hdrExportBtn');
+    if(!exportBtn) return;
+    // 위치 기준 래퍼
+    const wrap=document.createElement('div'); wrap.id='saveDropWrap';
+    exportBtn.parentNode.insertBefore(wrap, exportBtn);
+    wrap.appendChild(exportBtn);
+    // 드롭다운 메뉴
+    const menu=document.createElement('div'); menu.id='saveDropMenu';
+    const items=[
+      {label:'.dtms 저장', svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>', id:'dtmsProxy'},
+      {label:'PNG 저장', svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>', id:'pngProxy'},
+      {sep:true},
+      {label:'커뮤니티에 공개', svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>', id:'pubProxy'},
+      {label:'고급 옵션', svg:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>', id:'advProxy'},
+    ];
+    items.forEach(item=>{
+      if(item.sep){ const sep=document.createElement('div'); sep.className='drop-sep'; menu.appendChild(sep); return; }
+      const btn=document.createElement('button'); btn.type='button'; btn.id=item.id;
+      btn.innerHTML=item.svg+'<span>'+item.label+'</span>';
+      btn.addEventListener('click',e=>{ e.stopPropagation(); closeMenu(); });
+      menu.appendChild(btn);
+    });
+    wrap.appendChild(menu);
+    // 열기/닫기
+    function closeMenu(){ menu.removeAttribute('data-open'); exportBtn.setAttribute('aria-expanded','false'); }
+    exportBtn.setAttribute('aria-haspopup','true'); exportBtn.setAttribute('aria-expanded','false');
+    exportBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const open=menu.getAttribute('data-open')==='1';
+      if(open){ closeMenu(); } else { menu.setAttribute('data-open','1'); exportBtn.setAttribute('aria-expanded','true'); }
+    });
+    document.addEventListener('click', closeMenu);
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMenu(); });
+    // 각 버튼 → 기존 버튼 클릭 위임
+    document.getElementById('dtmsProxy')?.addEventListener('click',()=>document.getElementById('saveTopBtn')?.click());
+    document.getElementById('pngProxy')?.addEventListener('click',()=>document.getElementById('pngBtn')?.click());
+    document.getElementById('pubProxy')?.addEventListener('click',()=>document.getElementById('pubBtn')?.click());
+    document.getElementById('advProxy')?.addEventListener('click',()=>document.getElementById('advOpenBtn')?.click());
+  })();
 
   /* -- 초기 로드 시 변환 설정 자동 접기 (캔버스 공간 확보) -- */
   try{ scCollapse(true, false); }catch(e){}
