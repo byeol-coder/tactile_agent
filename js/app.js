@@ -803,6 +803,24 @@ function wireFullMode() {
     rebuild(80);
   }));
 
+  // processing toggles (dilate / erode / denoise / edge)
+  qsa('[data-proc]').forEach(b => b.addEventListener('click', () => {
+    const page = pagesState.activePage;
+    if (!page?.sourceImageState) { toast(t('toast_need_image', appState.language)); return; }
+    const key = b.dataset.proc;
+    if (key === 'edge') {
+      const next = conversionState.edge === 'sobel' ? 'none' : 'sobel';
+      conversionState.edge = next;
+      b.classList.toggle('active', next === 'sobel');
+      b.setAttribute('aria-pressed', String(next === 'sobel'));
+    } else {
+      conversionState[key] = !conversionState[key];
+      b.classList.toggle('active', !!conversionState[key]);
+      b.setAttribute('aria-pressed', String(!!conversionState[key]));
+    }
+    rebuild();
+  }));
+
   // save btn
   ge('saveBtn')?.addEventListener('click', () => {
     exportDtms(pagesState.pages, appState.fileName, canvasState.width, canvasState.height);
