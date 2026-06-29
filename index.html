@@ -5187,6 +5187,25 @@ document.addEventListener('mousedown', ()=>{
   /* -- 초기 로드 시 변환 설정 자동 접기 (캔버스 공간 확보) -- */
   try{ scCollapse(true, false); }catch(e){}
 
+  /* -- 접근성 정리: display:none 구버전 요소를 접근성 트리에서도 제거 -- */
+  (function(){
+    // 통째로 숨겨진 패널 → inert + aria-hidden
+    ['.right-panel','.bottom-bar'].forEach(sel=>{
+      document.querySelectorAll(sel).forEach(el=>{
+        el.setAttribute('aria-hidden','true');
+        el.setAttribute('inert','');
+      });
+    });
+    // 개별 숨겨진 구버전 버튼/그룹
+    ['exportJsonBtn','brushSizeGroup','canvasStatus','liveToggleRow'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.setAttribute('aria-hidden','true'); }
+    });
+    // 우측 패널 내 AI 피드백 카드 (studio aiSummary로 대체됨)
+    const oldAiFb=document.getElementById('aiFeedbackCard');
+    if(oldAiFb){ oldAiFb.setAttribute('aria-hidden','true'); }
+  })();
+
   /* -- 하단 요소를 canvas-area 밖 footer로 이동 (dotGridWrap flex:1이 캔버스를 채우도록) -- */
   (function(){
     const ca=document.querySelector('.canvas-area');
