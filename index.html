@@ -4727,19 +4727,6 @@ document.addEventListener('mousedown', ()=>{
   #saveDropMenu button:hover{background:var(--surface)}
   #saveDropMenu .drop-sep{height:1px;background:var(--border);margin:3px 0}
   #hdrExportBtn[aria-expanded="true"]{background:var(--surface)}
-  /* 안 B: 변환 설정 접기 — 헤더와 바디를 분리 */
-  #scHead{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;user-select:none;min-height:40px}
-  #scHead:hover{background:rgba(0,0,0,.02)}
-  #scSummary{font-size:11px;font-weight:600;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #scToggle{flex-shrink:0;min-height:26px;padding:0 10px;border-radius:999px;border:1.5px solid var(--border2);
-    background:#fff;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s}
-  #scToggle:hover{border-color:var(--orange);color:var(--orange)}
-  #scBody{overflow:hidden;transition:max-height .25s cubic-bezier(.4,0,.2,1),opacity .2s,padding .25s;
-    padding:0 14px 12px;max-height:400px;opacity:1}
-  #studioControls.sc-collapsed #scBody{max-height:0;opacity:0;padding:0 14px}
-  #studioControls.sc-collapsed #scHead{border-bottom:none}
-  #studioControls{width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--border2);
-    border-radius:14px;margin-bottom:8px;flex-shrink:0;padding:0}
   /* 빈 상태: 변환 설정·편집바·캔버스·CTA 등 모두 숨겨 canvas-area 높이를 뷰포트 높이로만 유지 */
   body[data-state="empty"] #studioControls,
   body[data-state="empty"] .edit-bar,
@@ -4749,14 +4736,7 @@ document.addEventListener('mousedown', ()=>{
   body[data-state="empty"] .cta-bar,
   body[data-state="empty"] #studioStatus,
   body[data-state="empty"] #canvasStatus { display:none!important }
-  /* 변환 설정 바디: compact 3열 */
-  #scBody{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:flex-start}
-  #studioControls>*{min-width:0;margin:0!important}
-  #scBody>#resSec{flex:1 1 30%} #scBody>#densitySec{flex:1 1 33%} #scBody>#convExtra{flex:1 1 28%}
-  #studioControls .sec-title{margin-bottom:4px!important}
-  #studioControls .th-desc{display:none}
-  #studioControls #resSel{min-height:34px}
-  #studioControls .th-actions{margin-top:6px}
+  /* 변환 설정: popover 구조로 대체 — scBody 관련 레이아웃 불필요 */
   /* AI 요약 (접힘) */
   #aiSummary{width:100%;box-sizing:border-box;background:var(--white);border:1px solid var(--border2);border-radius:14px;padding:8px 16px;margin-top:0}
   #aiSummary .ais-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -4800,7 +4780,6 @@ document.addEventListener('mousedown', ()=>{
   #advModal .adv-sec+.adv-sec{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
   @media(max-width:1023px){ .canvas-area,.cta-bar{max-width:none} }
   @media(max-width:767px){
-    #scBody{gap:12px;padding:0 12px 12px}
     .cta-btn{flex:1 1 100%;min-height:48px}
     .cta-btn.ghost{flex:1 1 100%}
   }`;
@@ -4809,54 +4788,230 @@ document.addEventListener('mousedown', ()=>{
   const canvasArea=$('canvasArea'), canvasMeta=$('canvasMeta'), editBar=document.querySelector('.edit-bar');
   const gridWrap=$('dotGridWrap'), canvasStatus=$('canvasStatus'), bottomBar=document.querySelector('.bottom-bar');
 
-  /* ---------- 1) 변환 설정 → 캔버스 위 compact 그룹 (헤더+바디 접기 구조) ---------- */
+  /* ---------- 1) 변환 설정 → 요약바 + popover 구조 ---------- */
+  // CSS 추가
+  const scCss=`
+  #studioControls{width:100%;box-sizing:border-box;flex-shrink:0;padding:0;background:none;border:none;border-radius:0;margin-bottom:0}
+  #scSummaryBar{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border2);
+    border-radius:12px;padding:6px 10px 6px 14px;min-height:44px;flex-wrap:wrap;row-gap:4px}
+  body[data-state="empty"] #studioControls{display:none!important}
+  #scSumText{flex:1;min-width:0;font-size:11px;font-weight:600;color:var(--muted);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #scSumText b{color:var(--ink);font-weight:800}
+  #scAdjBtn{flex-shrink:0;min-height:30px;padding:0 12px;border-radius:999px;
+    border:1.5px solid var(--border2);background:#fff;font-size:11px;font-weight:700;
+    color:var(--muted);cursor:pointer;white-space:nowrap}
+  #scAdjBtn:hover{border-color:var(--orange);color:var(--orange)}
+  #scAdjBtn[aria-expanded="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  #scAdjBtn:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+  /* Popover */
+  #scPopover{position:absolute;z-index:300;background:var(--white);border:1px solid var(--border2);
+    border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.16);padding:18px;
+    width:min(400px, calc(100vw - 32px));display:none;flex-direction:column;gap:14px}
+  #scPopover[data-open="1"]{display:flex}
+  #scPopover .scp-row{display:flex;align-items:center;gap:8px}
+  #scPopover .scp-label{font-size:11px;font-weight:700;color:var(--muted);min-width:64px;flex-shrink:0}
+  #scPopover .scp-seg{display:flex;gap:4px;flex-wrap:wrap}
+  #scPopover .scp-seg button{min-height:28px;padding:0 10px;border-radius:8px;
+    border:1.5px solid var(--border2);background:#fff;font-size:11px;font-weight:700;
+    color:var(--ink);cursor:pointer;white-space:nowrap}
+  #scPopover .scp-seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  #scPopover .scp-seg button:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+  #scPopover .scp-slider{display:flex;align-items:center;gap:8px;flex:1}
+  #scPopover .scp-slider input[type=range]{flex:1;accent-color:var(--orange)}
+  #scPopover .scp-pct{font-size:11px;font-weight:700;color:var(--ink);min-width:32px;text-align:right}
+  #scPopover .scp-apply{width:100%;min-height:36px;border-radius:10px;border:none;
+    background:var(--orange);color:#fff;font-size:12px;font-weight:800;cursor:pointer;margin-top:4px}
+  #scPopover .scp-apply:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+  #scPopoverAnchor{position:relative;width:100%}
+  /* Mobile: bottom sheet */
+  @media(max-width:600px){
+    #scPopover{position:fixed!important;left:0!important;right:0!important;bottom:0!important;
+      top:auto!important;width:100%!important;max-width:100%!important;border-radius:20px 20px 0 0;
+      max-height:75vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px)}
+  }`;
+  const scStEl=document.createElement('style'); scStEl.textContent=scCss; document.head.appendChild(scStEl);
+
+  // 요약바 생성
   const ctrls=document.createElement('div'); ctrls.id='studioControls'; ctrls.setAttribute('role','group'); ctrls.setAttribute('aria-label',TL('studio_controls'));
-  // 헤더 (요약 + 토글 버튼)
-  const scHead=document.createElement('div'); scHead.id='scHead'; scHead.setAttribute('role','button'); scHead.setAttribute('aria-expanded','true'); scHead.setAttribute('aria-controls','scBody'); scHead.tabIndex=0;
-  scHead.innerHTML=`<span id="scSummary">변환 설정</span><button id="scToggle" type="button" aria-label="설정 접기">접기</button>`;
-  ctrls.appendChild(scHead);
-  // 바디 (실제 컨트롤들)
-  const scBody=document.createElement('div'); scBody.id='scBody';
-  ['resSec','densitySec','convExtra'].forEach(id=>{ const n=$(id); if(n) scBody.appendChild(n); });
-  ctrls.appendChild(scBody);
+  const anchor=document.createElement('div'); anchor.id='scPopoverAnchor';
+  const bar=document.createElement('div'); bar.id='scSummaryBar';
+  bar.innerHTML=`<span id="scSumText"><b>변환 설정</b></span>
+    <button type="button" id="scAdjBtn" aria-label="변환 설정 조정 열기" aria-expanded="false" aria-haspopup="dialog">조정</button>`;
+  anchor.appendChild(bar);
+
+  // Popover 생성 (원본 섹션 노드 이동)
+  const pop=document.createElement('div'); pop.id='scPopover'; pop.setAttribute('role','dialog'); pop.setAttribute('aria-label','변환 설정'); pop.setAttribute('aria-modal','false');
+  // 해상도 행
+  const resRow=document.createElement('div'); resRow.className='scp-row';
+  resRow.innerHTML=`<span class="scp-label">크기</span><div class="scp-seg" id="scResSeg"></div>`;
+  pop.appendChild(resRow);
+  // 민감도 행
+  const thRow=document.createElement('div'); thRow.className='scp-row';
+  thRow.innerHTML=`<span class="scp-label">민감도</span>
+    <div class="scp-slider">
+      <span style="font-size:10px;color:var(--muted)">적게</span>
+      <input type="range" id="scThSlider" min="20" max="240" value="128" aria-label="변환 민감도">
+      <span style="font-size:10px;color:var(--muted)">많게</span>
+    </div>
+    <span class="scp-pct" id="scThPct">52%</span>`;
+  pop.appendChild(thRow);
+  // 선 굵기 행
+  const tkRow=document.createElement('div'); tkRow.className='scp-row';
+  tkRow.innerHTML=`<span class="scp-label">선 굵기</span><div class="scp-seg" id="scThickSeg">
+    <button type="button" data-w="thin">얇게</button>
+    <button type="button" data-w="normal" aria-pressed="true">보통</button>
+    <button type="button" data-w="thick">굵게</button>
+    <button type="button" data-w="thicker">더 굵게</button></div>`;
+  pop.appendChild(tkRow);
+  // 효과 행
+  const fxRow=document.createElement('div'); fxRow.className='scp-row';
+  fxRow.innerHTML=`<span class="scp-label">효과</span><div class="scp-seg" id="scFxSeg">
+    <button type="button" data-fx="denoise">점 정리</button>
+    <button type="button" data-fx="invert">흑백 반전</button></div>`;
+  pop.appendChild(fxRow);
+  // 적용 버튼
+  const applyBtn=document.createElement('button'); applyBtn.className='scp-apply'; applyBtn.type='button'; applyBtn.textContent='적용';
+  pop.appendChild(applyBtn);
+  anchor.appendChild(pop);
+  ctrls.appendChild(anchor);
+
   if(editBar&&editBar.parentElement) editBar.parentElement.insertBefore(ctrls,editBar);
   else if(canvasMeta) canvasMeta.insertAdjacentElement('afterend',ctrls);
 
-  // 접기/펼치기 토글
-  function scCollapse(v, announce2){
-    const collapsed=(v===undefined)?!ctrls.classList.contains('sc-collapsed'):v;
-    ctrls.classList.toggle('sc-collapsed',collapsed);
-    scHead.setAttribute('aria-expanded',String(!collapsed));
-    const btn=document.getElementById('scToggle'); if(btn) btn.textContent=collapsed?'펼치기':'접기';
-    if(announce2) _stAnnounce(collapsed?'변환 설정 접힘':'변환 설정 펼침');
-    setTimeout(()=>{ try{ if(typeof measureAndRelayout==='function') measureAndRelayout(); }catch(e){} }, 280);
-  }
-  scHead.addEventListener('click',()=>scCollapse(undefined,true));
-  scHead.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.preventDefault();scCollapse(undefined,true);} });
-  document.getElementById('scToggle').addEventListener('click',e=>{ e.stopPropagation(); scCollapse(undefined,true); });
+  // 크기 옵션 버튼 채우기
+  const RES_OPTS=[{v:'60x40',l:'60×40'},{v:'96x64',l:'96×64'},{v:'96x40',l:'96×40'},{v:'28x40',l:'28×40'},{v:'100x64',l:'100×64'}];
+  const resSeg=document.getElementById('scResSeg');
+  RES_OPTS.forEach(o=>{
+    const b=document.createElement('button'); b.type='button'; b.dataset.res=o.v; b.textContent=o.l;
+    if(o.v===GW+'x'+GH) b.setAttribute('aria-pressed','true');
+    resSeg.appendChild(b);
+  });
 
-  // 요약 텍스트 갱신 함수 (접혔을 때 현재 설정을 한 줄로 표시)
-  function updateScSummary(){
+  // 민감도 슬라이더 sync
+  const scSlider=document.getElementById('scThSlider');
+  const scPct=document.getElementById('scThPct');
+  function thPct(v){ return Math.round((v-20)/(240-20)*100)+'%'; }
+  function syncScSlider(){
+    try{ const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+      if(engSl){ scSlider.value=engSl.value; scPct.textContent=thPct(+engSl.value); } }catch(e){}
+  }
+  scSlider.addEventListener('input',()=>{
+    scPct.textContent=thPct(+scSlider.value);
+    _stAnnounce('변환 민감도 '+thPct(+scSlider.value)+'로 변경됨');
+  });
+
+  // 선 굵기 버튼
+  function pressSeg2(seg,btn){ seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===btn?'true':'false')); }
+  document.getElementById('scThickSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    pressSeg2(document.getElementById('scThickSeg'),b);
+  });
+
+  // 효과 버튼 (press toggle)
+  document.getElementById('scFxSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const prev=b.getAttribute('aria-pressed')==='true';
+    b.setAttribute('aria-pressed',prev?'false':'true');
+  });
+
+  // 크기 버튼
+  document.getElementById('scResSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    pressSeg2(document.getElementById('scResSeg'),b);
+  });
+
+  // 적용 버튼: popover 값을 엔진에 반영
+  applyBtn.addEventListener('click',()=>{
     try{
-      const sumEl=document.getElementById('scSummary'); if(!sumEl) return;
-      if(!ctrls.classList.contains('sc-collapsed')){ sumEl.textContent='변환 설정'; return; }
-      const resSel=document.getElementById('resSel'); const resText=resSel?resSel.options[resSel.selectedIndex]?.text:'';
-      const thPctEl=document.querySelector('#thPct'); const thText=thPctEl?thPctEl.textContent:'';
-      const activeThick=document.querySelector('#thickSeg button[aria-pressed="true"],.thick-seg button[aria-pressed="true"]');
-      const thickText=activeThick?activeThick.textContent:'';
-      sumEl.textContent=[resText,thText?'임계값 '+thText:'',thickText].filter(Boolean).join(' · ')||'변환 설정';
+      // 크기
+      const resBtn=document.querySelector('#scResSeg button[aria-pressed="true"]');
+      if(resBtn&&resBtn.dataset.res){
+        const [w,h]=resBtn.dataset.res.split('x').map(Number);
+        if(typeof setCanvasRes==='function'&&(w!==GW||h!==GH)) setCanvasRes(w,h);
+      }
+      // 민감도 → clarity2/clarity sync
+      const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+      if(engSl&&+scSlider.value!==+engSl.value){
+        engSl.value=scSlider.value; engSl.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      // 선 굵기
+      const tkBtn=document.querySelector('#scThickSeg button[aria-pressed="true"]');
+      if(tkBtn&&hasImg()){
+        const w=tkBtn.dataset.w;
+        if(w==='thin' && typeof erode==='function') erode(1);
+        else if(w==='thick' && typeof dilate==='function') dilate(1);
+        else if(w==='thicker' && typeof dilate==='function') dilate(2);
+        // 'normal'은 추가 변환 없음
+      }
+      // 효과 (pressed인 것만 적용)
+      const fxBtns=document.querySelectorAll('#scFxSeg button[aria-pressed="true"]');
+      fxBtns.forEach(fb=>{ if(typeof applyOp==='function') applyOp(fb.dataset.fx); });
+      // 효과 버튼 초기화 (1회 적용 후 off)
+      fxBtns.forEach(fb=>fb.setAttribute('aria-pressed','false'));
+      // 선 굵기 → normal로 리셋 (상대 변환이므로)
+      pressSeg2(document.getElementById('scThickSeg'), document.querySelector('#scThickSeg button[data-w="normal"]'));
+    }catch(e){ console.warn('sc apply',e); }
+    closePopover();
+    updateSummary();
+    _stAnnounce('변환 설정이 적용되었습니다.');
+    // thApply(임계값 변환 엔진 적용 버튼)도 호출
+    try{ const thAp=document.getElementById('thApply'); if(thAp) thAp.click(); }catch(e){}
+  });
+
+  // popover 열기/닫기
+  const adjBtn=document.getElementById('scAdjBtn');
+  function openPopover(){
+    syncScSlider();
+    // 위치 계산: 버튼 아래, 화면 오른쪽에서 넘치지 않게
+    try{
+      const isMob=window.innerWidth<=600;
+      if(!isMob){
+        const barRect=bar.getBoundingClientRect();
+        const scrollY=window.scrollY||0;
+        pop.style.top=(barRect.height+8)+'px';
+        pop.style.right='0';
+        pop.style.left='auto';
+      }
+    }catch(e){}
+    pop.dataset.open='1';
+    adjBtn.setAttribute('aria-expanded','true');
+    setTimeout(()=>{ try{ pop.querySelector('input,button')?.focus(); }catch(e){} },50);
+  }
+  function closePopover(){
+    pop.dataset.open='0';
+    adjBtn.setAttribute('aria-expanded','false');
+    adjBtn.focus();
+  }
+  adjBtn.addEventListener('click',e=>{ e.stopPropagation(); pop.dataset.open==='1'?closePopover():openPopover(); });
+  document.addEventListener('click',e=>{ if(pop.dataset.open==='1'&&!anchor.contains(e.target)) closePopover(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&pop.dataset.open==='1'){ e.stopPropagation(); closePopover(); } });
+
+  // 요약바 텍스트 갱신
+  function updateSummary(){
+    try{
+      const sumEl=document.getElementById('scSumText'); if(!sumEl) return;
+      const resBtn=document.querySelector('#scResSeg button[aria-pressed="true"]');
+      const resT=resBtn?resBtn.textContent:GW+'×'+GH;
+      const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+      const thT=engSl?thPct(+engSl.value):'';
+      const tkBtn=document.querySelector('#scThickSeg button[aria-pressed="true"]');
+      const tkT=tkBtn?tkBtn.textContent:'';
+      const parts=[resT,thT?'민감도 '+thT:'',tkT].filter(Boolean);
+      sumEl.innerHTML='<b>변환 설정</b> · '+parts.join(' · ');
     }catch(e){}
   }
 
-  // 적용 버튼 클릭 후 자동 접기 (변환 완료 시)
+  // scCollapse 호환 stub (다른 IIFE에서 참조할 수 있으므로)
+  function scCollapse(v){ /* no-op: popover 구조로 대체됨 */ }
+  window.__scCollapse=scCollapse;
+
+  // 적용 완료(엔진) 후 요약 갱신 훅
   try{
-    const apBtn=$('thApply');
-    if(apBtn) apBtn.addEventListener('click',()=>{
-      setTimeout(()=>{
-        if(!ctrls.classList.contains('sc-collapsed')){ scCollapse(true,false); updateScSummary(); }
-      },400);
-    });
+    const apBtn2=document.getElementById('thApply');
+    if(apBtn2) apBtn2.addEventListener('click',()=>setTimeout(updateSummary,300));
   }catch(e){}
+  updateSummary();
 
   /* ---------- 2) 핀 제어(전체 채우기/비우기/점 반전) → 편집 툴바 '캔버스' 그룹 ---------- */
   const pinSec=($('btnAllUp')&&$('btnAllUp').parentElement)?$('btnAllUp').parentElement.parentElement:null;
