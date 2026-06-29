@@ -4855,9 +4855,10 @@ document.addEventListener('mousedown', ()=>{
   const thRow=document.createElement('div'); thRow.className='scp-row';
   thRow.innerHTML=`<span class="scp-label">민감도</span>
     <div class="scp-slider">
-      <span style="font-size:10px;color:var(--muted)">적게</span>
-      <input type="range" id="scThSlider" min="20" max="240" value="128" aria-label="변환 민감도">
-      <span style="font-size:10px;color:var(--muted)">많게</span>
+      <span style="font-size:10px;color:var(--muted)">단순</span>
+      <input type="range" id="scThSlider" min="20" max="240" value="128"
+        aria-label="변환 민감도 조절" aria-valuemin="0" aria-valuemax="100">
+      <span style="font-size:10px;color:var(--muted)">선명</span>
     </div>
     <span class="scp-pct" id="scThPct">52%</span>`;
   pop.appendChild(thRow);
@@ -4898,12 +4899,52 @@ document.addEventListener('mousedown', ()=>{
   const scPct=document.getElementById('scThPct');
   function thPct(v){ return Math.round((v-20)/(240-20)*100)+'%'; }
   function syncScSlider(){
-    try{ const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
-      if(engSl){ scSlider.value=engSl.value; scPct.textContent=thPct(+engSl.value); } }catch(e){}
+    try{
+      const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+      if(engSl){
+        const v=+engSl.value;
+        scSlider.value=v;
+        const pct=thPct(v);
+        scPct.textContent=pct;
+        const pctNum=parseInt(pct);
+        scSlider.setAttribute('aria-valuenow',pctNum);
+        scSlider.setAttribute('aria-valuetext','변환 민감도 '+pctNum+'퍼센트');
+      }
+    }catch(e){}
   }
+  // input: 실시간 미리보기
+  // threshold는 메인 IIFE 스코프에 있으므로 clarity2 input 이벤트를 통해 엔진에 전달
+  let _scDebT=null;
   scSlider.addEventListener('input',()=>{
-    scPct.textContent=thPct(+scSlider.value);
-    _stAnnounce('변환 민감도 '+thPct(+scSlider.value)+'로 변경됨');
+    const v=Math.max(20,Math.min(240,+scSlider.value));
+    const pct=thPct(v); const pctNum=parseInt(pct);
+    scPct.textContent=pct;
+    scSlider.setAttribute('aria-valuenow',pctNum);
+    scSlider.setAttribute('aria-valuetext','변환 민감도 '+pctNum+'퍼센트');
+    // aria 알림 (200ms throttle)
+    clearTimeout(scSlider._ariaT);
+    scSlider._ariaT=setTimeout(()=>_stAnnounce('변환 민감도 '+thPct(v)),200);
+    // 디바운스 후 clarity2 input 이벤트 발화 → 엔진 threshold 갱신 + rebuild
+    if(_scDebT) clearTimeout(_scDebT);
+    _scDebT=setTimeout(()=>{
+      _scDebT=null;
+      const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+      if(!engSl) return;
+      if(+engSl.value!==v) engSl.value=v;
+      engSl.dispatchEvent(new Event('input',{bubbles:true}));
+    },100);
+  });
+  // change: 드래그 종료 → 즉시 최종 반영 (디바운스 취소 후 직접 dispatch)
+  scSlider.addEventListener('change',()=>{
+    if(_scDebT){ clearTimeout(_scDebT); _scDebT=null; }
+    const v=Math.max(20,Math.min(240,+scSlider.value));
+    scPct.textContent=thPct(v);
+    const engSl=document.getElementById('clarity2')||document.getElementById('clarity');
+    if(!engSl) return;
+    if(+engSl.value!==v) engSl.value=v;
+    engSl.dispatchEvent(new Event('change',{bubbles:true}));
+    engSl.dispatchEvent(new Event('input',{bubbles:true}));
+    if(typeof updateSummary==='function') setTimeout(updateSummary,200);
   });
 
   // 선 굵기 버튼
