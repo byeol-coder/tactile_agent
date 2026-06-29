@@ -70,6 +70,7 @@ function initCanvas() {
   padEl = ge(canvasId) || ge('pad');
   if (!padEl) return;
   ctx = padEl.getContext('2d');
+  padEl.style.cursor = toolState.currentTool === 'move' ? 'grab' : 'crosshair';
   fitCanvas();
 }
 
@@ -80,7 +81,29 @@ function fitCanvas() {
   const ah = Math.max(160, area.clientHeight - 24);
   layout = computeCanvasLayout(aw, ah, canvasState.width, canvasState.height, viewportState.zoom);
   applyLayout(padEl, layout);
+  // a layout change re-centers the view
+  viewportState.panX = 0;
+  viewportState.panY = 0;
+  applyPan();
   drawCanvas();
+}
+
+// Apply the current pan offset as a transform on the canvas wrapper.
+function applyPan() {
+  const wrap = ge('dotGridWrap');
+  if (wrap) wrap.style.transform =
+    `translate(${Math.round(viewportState.panX)}px, ${Math.round(viewportState.panY)}px)`;
+}
+
+// Keep the pan within bounds: no panning when the canvas fits; otherwise
+// allow dragging up to the overflow on each side (plus a small margin).
+function clampPan() {
+  const area = qs('.canvas-area'); const wrap = ge('dotGridWrap');
+  if (!area || !wrap) return;
+  const maxX = Math.max(0, (wrap.offsetWidth  - area.clientWidth)  / 2 + 20);
+  const maxY = Math.max(0, (wrap.offsetHeight - area.clientHeight) / 2 + 20);
+  viewportState.panX = Math.max(-maxX, Math.min(maxX, viewportState.panX));
+  viewportState.panY = Math.max(-maxY, Math.min(maxY, viewportState.panY));
 }
 
 function drawCanvas() {
@@ -474,6 +497,7 @@ function selectTool(name) {
     b.classList.toggle('active', b.dataset.tool === name);
     b.setAttribute('aria-pressed', String(b.dataset.tool === name));
   });
+  if (padEl) padEl.style.cursor = name === 'move' ? 'grab' : 'crosshair';
   drawCanvas();
 }
 
@@ -487,13 +511,20 @@ function setSize(s) {
 
 // ─── Pointer events ───────────────────────────────────────────
 let _drawing = false, _prevCell = null, _paintValue = 1;
+let _panning = false, _panStart = null;
 
 function onPointerDown(e) {
   if (e.button !== 0) return;
   padEl.setPointerCapture(e.pointerId);
+  const tool = toolState.currentTool;
+  if (tool === 'move') {
+    _panning = true;
+    _panStart = { x: e.clientX, y: e.clientY, panX: viewportState.panX, panY: viewportState.panY };
+    padEl.style.cursor = 'grabbing';
+    return;
+  }
   _drawing = true;
   const { col, row } = getPointerCell(e, padEl, layout);
-  const tool = toolState.currentTool;
   if (tool === 'pen' || tool === 'eraser') {
     pushUndo();
     _paintValue = tool === 'pen' ? 1 : 0;
@@ -509,6 +540,13 @@ function onPointerDown(e) {
 }
 
 function onPointerMove(e) {
+  if (_panning && _panStart) {
+    viewportState.panX = _panStart.panX + (e.clientX - _panStart.x);
+    viewportState.panY = _panStart.panY + (e.clientY - _panStart.y);
+    clampPan();
+    applyPan();
+    return;
+  }
   const { col, row } = getPointerCell(e, padEl, layout);
   const tool = toolState.currentTool;
   if (tool === 'pen' || tool === 'eraser') {
@@ -530,6 +568,12 @@ function onPointerMove(e) {
 }
 
 function onPointerUp(e) {
+  if (_panning) {
+    _panning = false;
+    _panStart = null;
+    if (padEl) padEl.style.cursor = 'grab';
+    return;
+  }
   if (!_drawing) return;
   _drawing = false;
   _prevCell = null;
