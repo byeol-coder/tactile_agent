@@ -1169,16 +1169,16 @@ body[data-kind="image"] #recropRow { display: block }
   <div class="import-wrap">
     <button class="hd-btn ghost" id="importBtn" aria-haspopup="menu" aria-controls="importMenu" aria-expanded="false">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span>불러오기</span>
+      <span data-i18n="btn_import">불러오기</span>
     </button>
     <div class="import-menu" id="importMenu" role="menu">
       <button class="import-menu-item" id="importImageBtn" role="menuitem">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        이미지 불러오기
+        <span data-i18n="btn_import_image">이미지 불러오기</span>
       </button>
       <button class="import-menu-item" id="importTactileBtn" role="menuitem">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        촉각 파일 불러오기
+        <span data-i18n="btn_import_tactile">촉각 파일 불러오기</span>
       </button>
     </div>
   </div>
@@ -1201,7 +1201,7 @@ body[data-kind="image"] #recropRow { display: block }
     <span class="sr-only" id="bbStatus">Dot Pad 연결 안 됨</span>
     <button class="hd-btn ghost" id="saveBtn" title="저장 (⌘S)">
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span>저장</span>
+      <span data-i18n="btn_save">저장</span>
     </button>
     <button class="hd-btn accent" id="dotpadBtn" disabled>
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
@@ -1256,7 +1256,7 @@ body[data-kind="image"] #recropRow { display: block }
   <!-- ── Empty Hero — command-first landing ─────────────── -->
   <div id="emptyHero" class="empty-command" role="region" aria-label="시작 안내">
     <div class="hero-inner">
-      <p class="hero-heading">무엇을 촉각그래픽으로 만들까요?</p>
+      <p class="hero-heading" data-i18n="hero_heading">무엇을 촉각그래픽으로 만들까요?</p>
       <form class="hero-form" id="heroPromptForm" autocomplete="off">
         <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z"/>
@@ -1265,26 +1265,26 @@ body[data-kind="image"] #recropRow { display: block }
         <input id="heroPromptInput" type="text"
                placeholder="하트 그려줘 / y=sin(x) / 나비 그려줘 / 외곽선만 / 점자로 안녕하세요…"
                aria-label="명령어 입력"/>
-        <button type="submit" class="hero-submit" id="heroPromptSubmit">생성</button>
+        <button type="submit" class="hero-submit" id="heroPromptSubmit" data-i18n="hero_submit">생성</button>
       </form>
       <div class="hero-chips" role="group" aria-label="예시 명령어">
-        <button class="hero-chip" data-cmd="Dot Pad에 맞게 최적화" type="button">✦ 최적화</button>
-        <button class="hero-chip" data-cmd="하트 그려줘" type="button">하트 그려줘</button>
-        <button class="hero-chip" data-cmd="나비 그려줘" type="button">나비 그려줘</button>
+        <button class="hero-chip" data-cmd="Dot Pad에 맞게 최적화" type="button" data-i18n="hero_chip_optimize">✦ 최적화</button>
+        <button class="hero-chip" data-cmd="하트 그려줘" type="button" data-i18n="hero_chip_heart">하트 그려줘</button>
+        <button class="hero-chip" data-cmd="나비 그려줘" type="button" data-i18n="hero_chip_butterfly">나비 그려줘</button>
         <button class="hero-chip" data-cmd="y=sin(x)" type="button">y=sin(x)</button>
-        <button class="hero-chip" data-cmd="별 그려줘" type="button">별 그려줘</button>
-        <button class="hero-chip" data-cmd="외곽선만 남기기" type="button">외곽선만</button>
-        <button class="hero-chip" data-cmd="점자로 안녕하세요" type="button">점자로 안녕하세요</button>
+        <button class="hero-chip" data-cmd="별 그려줘" type="button" data-i18n="hero_chip_star">별 그려줘</button>
+        <button class="hero-chip" data-cmd="외곽선만 남기기" type="button" data-i18n="hero_chip_outline">외곽선만</button>
+        <button class="hero-chip" data-cmd="점자로 안녕하세요" type="button" data-i18n="hero_chip_braille">점자로 안녕하세요</button>
         <button class="hero-chip" data-cmd="y=x*x-4" type="button">y=x²−4</button>
       </div>
       <div class="hero-secondary">
         <button type="button" id="heroAddImgBtn" class="ov-btn outline">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          이미지 가져오기
+          <span data-i18n="empty_import">이미지 가져오기</span>
         </button>
         <button type="button" id="heroOpenDtmsBtn" class="ov-btn outline">
           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          .dtms 열기
+          <span data-i18n="open_dtms">.dtms 열기</span>
         </button>
       </div>
     </div>
@@ -1328,15 +1328,15 @@ body[data-kind="image"] #recropRow { display: block }
         <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
           <div class="qual-row" style="border:none;padding:0;gap:8px;flex-direction:column;align-items:flex-end">
             <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">판독성</span>
+              <span style="font-size:10px;color:var(--hint)" data-i18n="q_clarity_lbl">판독성</span>
               <span class="pill pill-n" id="qClarity">—</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">밀도</span>
+              <span style="font-size:10px;color:var(--hint)" data-i18n="q_density_lbl">밀도</span>
               <span class="pill pill-n" id="qDensity">—</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">구조</span>
+              <span style="font-size:10px;color:var(--hint)" data-i18n="q_structure_lbl">구조</span>
               <span class="pill pill-n" id="qStructure">—</span>
             </div>
           </div>
@@ -1363,20 +1363,20 @@ body[data-kind="image"] #recropRow { display: block }
       <!-- Presets -->
       <div class="preset-grid" style="margin-bottom:10px">
         <button class="preset-btn" data-preset="braille" aria-pressed="false">
-          <span class="preset-name">점자</span>
-          <span class="preset-desc">세밀한 윤곽</span>
+          <span class="preset-name" data-i18n="preset_braille_name">점자</span>
+          <span class="preset-desc" data-i18n="preset_braille_desc">세밀한 윤곽</span>
         </button>
         <button class="preset-btn" data-preset="tactile" aria-pressed="false">
-          <span class="preset-name">촉각</span>
-          <span class="preset-desc">표준 점 밀도</span>
+          <span class="preset-name" data-i18n="preset_tactile_name">촉각</span>
+          <span class="preset-desc" data-i18n="preset_tactile_desc">표준 점 밀도</span>
         </button>
         <button class="preset-btn" data-preset="learning" aria-pressed="false">
-          <span class="preset-name">학습용</span>
-          <span class="preset-desc">굵고 단순하게</span>
+          <span class="preset-name" data-i18n="preset_learning_name">학습용</span>
+          <span class="preset-desc" data-i18n="preset_learning_desc">굵고 단순하게</span>
         </button>
         <button class="preset-btn" data-preset="detail" aria-pressed="false">
-          <span class="preset-name">세밀</span>
-          <span class="preset-desc">최대 해상도</span>
+          <span class="preset-name" data-i18n="preset_detail_name">세밀</span>
+          <span class="preset-desc" data-i18n="preset_detail_desc">최대 해상도</span>
         </button>
       </div>
 
@@ -1407,14 +1407,14 @@ body[data-kind="image"] #recropRow { display: block }
         <div class="dot-edit-panel" id="dotEditPanel" aria-labelledby="dotEditTitle">
           <div class="dot-edit-head">
             <span class="dot-edit-title" id="dotEditTitle">점 편집 모드</span>
-            <span class="mode-chip">원본 이미지 없음</span>
+            <span class="mode-chip" data-i18n="conv_chip_dot">원본 이미지 없음</span>
           </div>
           <p id="dotEditHelp">현재 그래픽은 점 편집 모드예요. 펜과 지우개로 점을 직접 편집할 수 있고, 이미지를 다시 불러오면 감도를 조정할 수 있어요.</p>
           <div class="dot-edit-tools" role="group" aria-label="점 편집 도구">
-            <button type="button" class="dot-tool-btn" data-dot-tool="move" aria-pressed="true">이동</button>
-            <button type="button" class="dot-tool-btn" data-dot-tool="pen" aria-pressed="false">펜</button>
-            <button type="button" class="dot-tool-btn" data-dot-tool="eraser" aria-pressed="false">지우개</button>
-            <button type="button" class="dot-tool-btn" data-dot-tool="select" aria-pressed="false">선택</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="move" aria-pressed="true" data-i18n="tool_move">이동</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="pen" aria-pressed="false" data-i18n="tool_pen">펜</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="eraser" aria-pressed="false" data-i18n="tool_eraser">지우개</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="select" aria-pressed="false" data-i18n="tool_select">선택</button>
           </div>
           <div class="dot-size-row" role="group" aria-label="브러시 크기">
             <button type="button" class="dot-size-btn" data-dot-size="1" aria-pressed="true">1×</button>
@@ -1422,27 +1422,27 @@ body[data-kind="image"] #recropRow { display: block }
             <button type="button" class="dot-size-btn" data-dot-size="3" aria-pressed="false">3×</button>
           </div>
           <div class="dot-edit-actions" role="group" aria-label="전체 핀 편집">
-            <button type="button" class="dot-edit-action" data-dot-action="up">전체 올리기</button>
-            <button type="button" class="dot-edit-action" data-dot-action="down">전체 내리기</button>
-            <button type="button" class="dot-edit-action" data-dot-action="invert">반전</button>
+            <button type="button" class="dot-edit-action" data-dot-action="up" data-i18n="pin_up">전체 올리기</button>
+            <button type="button" class="dot-edit-action" data-dot-action="down" data-i18n="pin_down">전체 내리기</button>
+            <button type="button" class="dot-edit-action" data-dot-action="invert" data-i18n="pin_invert">반전</button>
           </div>
-          <button type="button" class="th-cta" id="dotEditImportImageBtn">이미지 불러오기</button>
+          <button type="button" class="th-cta" id="dotEditImportImageBtn" data-i18n="btn_import_image">이미지 불러오기</button>
         </div>
       </div>
 
       <!-- Style row: only for generated graphics -->
       <div id="genStyleRow">
-        <div class="ctrl-lbl" style="margin-top:12px;margin-bottom:6px">스타일</div>
+        <div class="ctrl-lbl" style="margin-top:12px;margin-bottom:6px" data-i18n="gen_style_label">스타일</div>
         <div class="gen-style-btns">
-          <button class="gen-style-btn" data-density="60">얇게</button>
-          <button class="gen-style-btn active" data-density="128">기본</button>
-          <button class="gen-style-btn" data-density="200">굵게</button>
+          <button class="gen-style-btn" data-density="60" data-i18n="gen_style_thin">얇게</button>
+          <button class="gen-style-btn active" data-density="128" data-i18n="gen_style_normal">기본</button>
+          <button class="gen-style-btn" data-density="200" data-i18n="gen_style_thick">굵게</button>
         </div>
       </div>
 
       <!-- Re-crop: only for image sourceKind -->
       <div id="recropRow">
-        <button type="button" id="recropBtn" class="recrop-btn">다시 자르기</button>
+        <button type="button" id="recropBtn" class="recrop-btn" data-i18n="recrop_btn">다시 자르기</button>
       </div>
 
       <!-- Image-only controls (hidden for generated/tactile) -->
@@ -1537,7 +1537,7 @@ body[data-kind="image"] #recropRow { display: block }
 
     <!-- Resolution selector (hidden but accessible) -->
     <div class="panel-section">
-      <div class="sec-hd">해상도</div>
+      <div class="sec-hd" data-i18n="panel_resolution">해상도</div>
       <div class="res-row control-grid cols-2">
         <button class="exp-btn res-btn active" data-res="60x40" aria-pressed="true">60×40</button>
         <button class="exp-btn res-btn" data-res="96x64" aria-pressed="false">96×64</button>
@@ -1611,7 +1611,7 @@ body[data-kind="image"] #recropRow { display: block }
 
   <!-- ① Command prompt card -->
   <div class="mini-prompt-card">
-    <p class="mini-intro">무엇을 촉각그래픽으로 만들까요?</p>
+    <p class="mini-intro" data-i18n="mini_intro">무엇을 촉각그래픽으로 만들까요?</p>
     <form class="mini-prompt-form" id="miniPromptForm" autocomplete="off">
       <input type="text" id="miniPromptInput" placeholder="꽃 모양 테두리를 60×40으로 단순하게 만들어줘" aria-label="명령어 입력"/>
       <button type="submit" class="mini-prompt-submit" id="miniPromptSubmit" aria-label="생성">↵</button>
@@ -1622,14 +1622,14 @@ body[data-kind="image"] #recropRow { display: block }
           <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
         </svg>
-        이미지
+        <span data-i18n="empty_import">이미지</span>
       </button>
       <button class="mini-img-btn" id="miniOpenTactileBtn" type="button">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <path d="M14 2v6h6"/>
         </svg>
-        촉각 파일
+        <span data-i18n="open_dtms">촉각 파일</span>
       </button>
     </div>
     <div class="mini-row">
@@ -1643,7 +1643,7 @@ body[data-kind="image"] #recropRow { display: block }
 
   <!-- ② Canvas + density -->
   <div class="mini-canvas-card">
-    <button id="miniDropZone" class="mini-drop-zone" type="button" aria-label="이미지를 여기에 드래그하거나 클릭해서 선택">
+    <button id="miniDropZone" class="mini-drop-zone" type="button" aria-label="이미지를 여기에 드래그하거나 클릭해서 선택" data-i18n="mini_drop_zone">
       이미지를 드래그하거나 클릭해서 가져오기
     </button>
     <canvas id="pad-mini" aria-label="촉각그래픽 캔버스" role="img" style="border-radius:6px"></canvas>
@@ -1653,17 +1653,17 @@ body[data-kind="image"] #recropRow { display: block }
     </div>
     <p class="mini-mode-help" id="miniModeHelp">이미지를 불러오면 감도를 조정할 수 있어요.</p>
     <div class="mini-th-row">
-      <label for="miniThSlider" id="miniThLabel">농도</label>
+      <label for="miniThSlider" id="miniThLabel" data-i18n="mini_density">농도</label>
       <input type="range" id="miniThSlider" min="20" max="240" value="128" aria-label="점 농도"/>
       <span id="miniThVal">50%</span>
     </div>
     <div class="mini-dot-edit-panel" id="miniDotEditPanel" aria-labelledby="miniModeTitle">
-      <p>현재 그래픽은 점 편집 모드예요. 펜과 지우개로 점을 직접 편집할 수 있어요.</p>
+      <p id="miniDotEditHelp" data-i18n="dot_edit_help">현재 그래픽은 점 편집 모드예요. 펜과 지우개로 점을 직접 편집할 수 있어요.</p>
       <div class="mini-dot-tools" role="group" aria-label="점 편집 도구">
-        <button type="button" class="dot-tool-btn" data-dot-tool="move" aria-pressed="true">이동</button>
-        <button type="button" class="dot-tool-btn" data-dot-tool="pen" aria-pressed="false">펜</button>
-        <button type="button" class="dot-tool-btn" data-dot-tool="eraser" aria-pressed="false">지우개</button>
-        <button type="button" class="dot-tool-btn" data-dot-tool="select" aria-pressed="false">선택</button>
+        <button type="button" class="dot-tool-btn" data-dot-tool="move" aria-pressed="true" data-i18n="tool_move">이동</button>
+        <button type="button" class="dot-tool-btn" data-dot-tool="pen" aria-pressed="false" data-i18n="tool_pen">펜</button>
+        <button type="button" class="dot-tool-btn" data-dot-tool="eraser" aria-pressed="false" data-i18n="tool_eraser">지우개</button>
+        <button type="button" class="dot-tool-btn" data-dot-tool="select" aria-pressed="false" data-i18n="tool_select">선택</button>
       </div>
       <div class="dot-size-row" role="group" aria-label="브러시 크기">
         <button type="button" class="dot-size-btn" data-dot-size="1" aria-pressed="true">1×</button>
@@ -1671,23 +1671,23 @@ body[data-kind="image"] #recropRow { display: block }
         <button type="button" class="dot-size-btn" data-dot-size="3" aria-pressed="false">3×</button>
       </div>
       <div class="mini-dot-actions" role="group" aria-label="전체 핀 편집">
-        <button type="button" class="dot-edit-action" data-dot-action="up">전체 올리기</button>
-        <button type="button" class="dot-edit-action" data-dot-action="down">전체 내리기</button>
-        <button type="button" class="dot-edit-action" data-dot-action="invert">반전</button>
+        <button type="button" class="dot-edit-action" data-dot-action="up" data-i18n="pin_up">전체 올리기</button>
+        <button type="button" class="dot-edit-action" data-dot-action="down" data-i18n="pin_down">전체 내리기</button>
+        <button type="button" class="dot-edit-action" data-dot-action="invert" data-i18n="pin_invert">반전</button>
       </div>
     </div>
     <!-- ③ Quick adjustment chips -->
     <div class="mini-quick-row" id="miniQuickRow">
-      <button class="mini-quick-btn" data-cmd="단순하게" type="button" disabled>단순하게</button>
-      <button class="mini-quick-btn" data-cmd="또렷하게" type="button" disabled>또렷하게</button>
-      <button class="mini-quick-btn" data-cmd="점 정리" type="button" disabled>점 정리</button>
-      <button class="mini-quick-btn accent" data-cmd="Dot Pad에 맞게 최적화" type="button" disabled>최적화</button>
+      <button class="mini-quick-btn" data-cmd="단순하게" type="button" disabled data-i18n="mini_quick_simpler">단순하게</button>
+      <button class="mini-quick-btn" data-cmd="또렷하게" type="button" disabled data-i18n="mini_quick_sharper">또렷하게</button>
+      <button class="mini-quick-btn" data-cmd="점 정리" type="button" disabled data-i18n="mini_quick_clean">점 정리</button>
+      <button class="mini-quick-btn accent" data-cmd="Dot Pad에 맞게 최적화" type="button" disabled data-i18n="mini_quick_optimize">최적화</button>
     </div>
   </div>
 
   <!-- ④ Output actions -->
   <div class="mini-actions">
-    <button class="mini-btn acc" id="miniSendBtn" disabled>Dot Pad 전송</button>
+    <button class="mini-btn acc" id="miniSendBtn" disabled data-i18n="mini_send">Dot Pad 전송</button>
     <button class="mini-btn" id="miniDtmsBtn" disabled>DTMS</button>
     <button class="mini-btn" id="miniPngBtn" disabled>PNG</button>
   </div>
