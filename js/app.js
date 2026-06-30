@@ -151,6 +151,7 @@ function setPhase(phase) {
   document.body.dataset.state = phase;
   syncCommandUI();
   syncBottomBar();
+  syncConvPanel();
   if (phase === 'ready') {
     const badge = qs('.ai-done-badge');
     if (badge) badge.style.display = '';
@@ -235,6 +236,7 @@ function startAnalyze(img, name) {
     const sourceState = createSourceImageState(img, canvasState.width, canvasState.height);
     const meta = analyzeImageType(sourceState.grayBuf, sourceState.alphaBuf, canvasState.width, canvasState.height);
     setActivePageSourceImage(sourceState, meta, img);
+    { const pg = pagesState.activePage; if (pg) pg.sourceKind = 'image'; }
 
     const bestParams = autoSelectParams(sourceState, canvasState.width, canvasState.height);
     Object.assign(conversionState, bestParams);
@@ -256,6 +258,7 @@ function finishAnalyze() {
   drawCanvas();
   syncQuality();
   syncConvUI();
+  syncConvPanel();
   syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
   toast(t('toast_converted', appState.language), 'ok');
   // Accessibility: announce a one-line tactile summary to the live region so
@@ -285,21 +288,35 @@ async function loadTactileFile(file) {
       pagesState.pages = items.map(item => {
         const page = createBlankPage(w, h);
         page.title = item.title;
+        page.sourceKind = 'tactile';
         page.canvasData = hexToGrid(item.hex, w, h);
         page.activeDots = page.canvasData.reduce((s, v) => s + v, 0);
         page.altText = item.altText;
         return page;
       });
       canvasState.width = w; canvasState.height = h;
-      loadPageState(0);
+      loadPageState(0, { saveCurrent: false });
+      setPhase(canvasState.activeDots > 0 ? 'ready' : 'empty');
+      toolState.undoStack = [];
+      toolState.redoStack = [];
+      appState.isDirty = false;
       drawCanvas(); syncQuality();
-      syncPageUI(); fitCanvas();
+      syncPageUI(); syncConvUI(); syncConvPanel(); fitCanvas();
+      syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
       toast(fileName + ' 불러왔어요 ✓', 'ok');
-    } catch {
+      announce(describeTactile(canvasState.data, canvasState.width, canvasState.height, appState.language));
+    } catch (err) {
+      console.error('[dtms] load failed:', err);
       toast('파일을 읽을 수 없어요');
     }
   };
+  reader.onerror = () => toast('파일을 읽을 수 없어요');
   reader.readAsText(file);
+}
+
+function isTactileFile(file) {
+  const name = (file?.name || '').toLowerCase();
+  return name.endsWith('.dtms') || name.endsWith('.dtm') || name.endsWith('.json');
 }
 
 // ─── Conversion Rebuild ───────────────────────────────────────
@@ -326,6 +343,61 @@ function doRebuild(page) {
   syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
 }
 
+// ─── Morphology utilities (for generated graphics) ────────────
+function dilateGrid(src, cols, rows) {
+  const out = new Uint8Array(src);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (!src[y * cols + x]) continue;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < cols && ny < rows) out[ny * cols + nx] = 1;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function erodeGrid(src, cols, rows) {
+  const out = new Uint8Array(src);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const i = y * cols + x;
+      if (!src[i]) continue;
+      let keep = true;
+      outer: for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || !src[ny * cols + nx]) { keep = false; break outer; }
+        }
+      }
+      out[i] = keep ? 1 : 0;
+    }
+  }
+  return out;
+}
+
+function applyGeneratedDensity(value) {
+  const page = pagesState.activePage;
+  if (!page || page.sourceKind !== 'generated' || !page.generatedBaseData) return false;
+  const cols = canvasState.width, rows = canvasState.height;
+  let next = new Uint8Array(page.generatedBaseData);
+  const diff = value - 128;
+  const steps = Math.min(4, Math.round(Math.abs(diff) / 28));
+  if (diff > 0) {
+    for (let i = 0; i < steps; i++) next = dilateGrid(next, cols, rows);
+  } else if (diff < 0) {
+    for (let i = 0; i < steps; i++) next = erodeGrid(next, cols, rows);
+  }
+  canvasState.data = next;
+  page.canvasData = new Uint8Array(next);
+  drawCanvas(); syncQuality();
+  syncLivePreview(canvasState.data, cols, rows);
+  return true;
+}
+
 // ─── Threshold slider ─────────────────────────────────────────
 function paintSlider(v) {
   const pct = Math.round((v - 20) / 220 * 100);
@@ -340,6 +412,27 @@ function paintSlider(v) {
   // keep mini slider in sync
   const msl = ge('miniThSlider'); if (msl && +msl.value !== v) msl.value = v;
   const mval = ge('miniThVal'); if (mval) mval.textContent = pct + '%';
+}
+
+function updateThresholdOrDensity(value, delay = 120) {
+  const v = Math.max(20, Math.min(240, value));
+  conversionState.threshold = v;
+  const sl = ge('thSlider');
+  if (sl) sl.value = v;
+  paintSlider(v);
+  const page = pagesState.activePage;
+  if (page?.sourceKind === 'generated') {
+    qsa('.gen-style-btn').forEach(b => b.classList.toggle('active', +b.dataset.density === v));
+    applyGeneratedDensity(v);
+    return;
+  }
+  if (page?.sourceImageState) {
+    conversionState.method = 'global';
+    rebuild(delay);
+    syncConvUI();
+    return;
+  }
+  toast('이 그래픽은 원본 이미지가 없어 점 편집만 가능해요');
 }
 
 // ─── Quality Panel ────────────────────────────────────────────
@@ -493,6 +586,31 @@ function syncConvUI() {
   updatePresetChip();
 }
 
+function syncConvPanel() {
+  const page = pagesState.activePage;
+  const kind = page?.sourceKind || 'drawn';
+  document.body.dataset.kind = kind;
+  const thLabel = ge('thLabel');
+  const convTitle = ge('convPanelTitle');
+  if (kind === 'generated') {
+    if (thLabel) thLabel.textContent = '점 밀도';
+    if (convTitle) convTitle.textContent = '생성 그래픽 조정';
+  } else {
+    if (thLabel) thLabel.textContent = '임계값';
+    if (convTitle) convTitle.textContent = '변환 설정';
+  }
+}
+
+function noImageMsg(lang) {
+  const kind = pagesState.activePage?.sourceKind;
+  if (kind === 'generated' || kind === 'tactile') {
+    return lang === 'ko'
+      ? '이 그래픽은 원본 이미지가 없어 점 밀도와 직접 편집으로 조정할 수 있어요'
+      : 'No source image — use density slider or direct editing';
+  }
+  return t('toast_need_image', lang);
+}
+
 // ─── Sync helpers ─────────────────────────────────────────────
 function syncBtns(hasContent) {
   const ids = ['dtmsBtn','pngBtn','dotpadBtn','hexBtn','miniSendBtn','miniDtmsBtn','miniPngBtn'];
@@ -533,6 +651,7 @@ function syncPageUI() {
   const next = ge('pageNext'); if (next) next.disabled = cur === total - 1;
   const del = ge('pageDelete'); if (del) del.disabled = total <= 1;
   renderPageChips();
+  syncConvPanel();
 }
 
 function renderPageChips() {
@@ -745,12 +864,19 @@ function guardUnsavedChanges() {
 function placeGeneratedGrid(data, altText) {
   pushUndo();
   canvasState.data = data;
-  setActivePageSourceImage(null, null);
   const page = pagesState.activePage;
-  if (page && altText) { page.altText = altText; page.brailleText = altText; }
+  if (page) {
+    page.sourceKind = 'generated';
+    page.generatedBaseData = new Uint8Array(data);
+    page.sourceImageState = null;
+    page.sourceImageMeta = null;
+    page.sourceImage = null;
+    if (altText) { page.altText = altText; page.brailleText = altText; }
+  }
   if (appState.phase !== 'ready') setPhase('ready');
   appState.isDirty = true;
   afterChange();
+  syncConvPanel();
 }
 
 // ─── Command bar (Figma-mini prompt brain) ───────────────────
@@ -848,7 +974,7 @@ async function parseCommand(text) {
   }
 
   // Everything below needs a converted image.
-  if (!page?.sourceImageState) { toast(t('toast_need_image', lang)); return; }
+  if (!page?.sourceImageState) { toast(noImageMsg(lang)); return; }
   if (!intent.matched) { toast(intent.reply); return; }
 
   pushUndo();
@@ -1008,7 +1134,7 @@ function wireFullMode() {
   padEl.addEventListener('drop', e => {
     e.preventDefault();
     const file = e.dataTransfer.files[0]; if (!file) return;
-    if (file.name.endsWith('.dtms') || file.name.endsWith('.dtm') || file.name.endsWith('.json')) loadTactileFile(file);
+    if (isTactileFile(file)) loadTactileFile(file);
     else loadImageFile(file);
   });
 
@@ -1093,27 +1219,19 @@ function wireFullMode() {
 
   // threshold slider
   ge('thSlider')?.addEventListener('input', function() {
-    const v = Math.max(20, Math.min(240, +this.value));
-    conversionState.threshold = v; conversionState.method = 'global';
-    paintSlider(v);
-    rebuild(120);                       // live — no separate "적용" step
-    syncConvUI();            // reflect method→수동 on the chip
+    updateThresholdOrDensity(+this.value, 120);
   });
   ge('thMinus')?.addEventListener('click', () => {
     const sl = ge('thSlider'); if (!sl) return;
-    const v = Math.max(20, +sl.value - 1);
-    sl.value = v; conversionState.threshold = v; conversionState.method = 'global';
-    paintSlider(v); rebuild(80);
+    updateThresholdOrDensity(+sl.value - 1, 80);
   });
   ge('thPlus')?.addEventListener('click', () => {
     const sl = ge('thSlider'); if (!sl) return;
-    const v = Math.min(240, +sl.value + 1);
-    sl.value = v; conversionState.threshold = v; conversionState.method = 'global';
-    paintSlider(v); rebuild(80);
+    updateThresholdOrDensity(+sl.value + 1, 80);
   });
   ge('thAuto')?.addEventListener('click', () => {
     const page = pagesState.activePage;
-    if (!page?.sourceImageState) { toast(t('toast_need_image', appState.language)); return; }
+    if (!page?.sourceImageState) { toast(noImageMsg(appState.language)); return; }
     const p = autoSelectParams(page.sourceImageState, canvasState.width, canvasState.height);
     Object.assign(conversionState, p);
     paintSlider(conversionState.threshold);
@@ -1124,7 +1242,7 @@ function wireFullMode() {
   // method selector
   qsa('.th-method-btn').forEach(b => b.addEventListener('click', () => {
     const page = pagesState.activePage;
-    if (!page?.sourceImageState) { toast(t('toast_need_image', appState.language)); return; }
+    if (!page?.sourceImageState) { toast(noImageMsg(appState.language)); return; }
     conversionState.method = b.dataset.method;
     qsa('.th-method-btn').forEach(x => {
       const active = x === b;
@@ -1171,7 +1289,7 @@ function wireFullMode() {
   };
   qsa('.preset-btn').forEach(b => b.addEventListener('click', () => {
     const page = pagesState.activePage;
-    if (!page?.sourceImageState) { toast(t('toast_need_image', appState.language)); return; }
+    if (!page?.sourceImageState) { toast(noImageMsg(appState.language)); return; }
     const p = PRESETS[b.dataset.preset]; if (!p) return;
     pushUndo();
     Object.assign(conversionState, p);
@@ -1199,6 +1317,17 @@ function wireFullMode() {
     }
     syncConvUI();
     rebuild(80);
+  }));
+
+  // style buttons for generated graphics (얇게 / 기본 / 굵게)
+  qsa('.gen-style-btn').forEach(b => b.addEventListener('click', () => {
+    const v = +b.dataset.density;
+    conversionState.threshold = v;
+    const sl = ge('thSlider');
+    if (sl) sl.value = v;
+    paintSlider(v);
+    applyGeneratedDensity(v);
+    qsa('.gen-style-btn').forEach(x => x.classList.toggle('active', x === b));
   }));
 
   // save btn
@@ -1357,9 +1486,7 @@ function wireMiniMode() {
 
   // density slider
   ge('miniThSlider')?.addEventListener('input', function() {
-    const v = Math.max(20, Math.min(240, +this.value));
-    conversionState.threshold = v; conversionState.method = 'global';
-    paintSlider(v); rebuild(120);
+    updateThresholdOrDensity(+this.value, 120);
   });
 
   // output actions

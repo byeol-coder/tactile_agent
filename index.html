@@ -563,6 +563,21 @@ details.adv > summary:hover { color: var(--ink) }
 }
 .preset-chip.is-active { background: var(--accent-50); color: var(--accent-700) }
 
+/* sourceKind-based panel switching */
+body[data-kind="generated"] .image-ctrl { display: none !important }
+body[data-kind="tactile"]   .image-ctrl { display: none !important }
+body:not([data-kind="generated"]) #genStyleRow { display: none }
+body[data-kind="generated"] .preset-grid { opacity: .38; pointer-events: none }
+body[data-kind="tactile"]   .preset-grid { opacity: .38; pointer-events: none }
+/* style buttons for generated */
+.gen-style-btns { display: flex; gap: 4px }
+.gen-style-btn {
+  flex: 1; height: 30px; border-radius: var(--r8); border: 1px solid var(--border);
+  background: var(--surface2); font-size: 12px; color: var(--text); cursor: pointer; transition: all .12s;
+}
+.gen-style-btn.active { background: var(--accent-50); border-color: var(--accent-200); color: var(--accent-700) }
+.gen-style-btn:hover:not(.active) { background: var(--gray-100) }
+
 /* DotPad section */
 .dp-status {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;
@@ -1033,7 +1048,7 @@ details.adv > summary:hover { color: var(--ink) }
     <!-- ② 변환 설정 (Presets + Threshold) -->
     <div>
       <div class="sec-hd sec-hd-row">
-        <span>변환 설정</span>
+        <span id="convPanelTitle">변환 설정</span>
         <span class="preset-chip" id="presetChip" data-i18n="preset_none">사용자 지정</span>
       </div>
 
@@ -1059,6 +1074,7 @@ details.adv > summary:hover { color: var(--ink) }
 
       <!-- Threshold slider -->
       <div class="th-section">
+        <div class="ctrl-lbl" id="thLabel" style="margin-bottom:6px">임계값</div>
         <div class="th-slider-wrap">
           <div class="th-track"><div class="th-fill" id="thFill"></div></div>
           <div class="th-thumb" id="thThumb"></div>
@@ -1070,12 +1086,23 @@ details.adv > summary:hover { color: var(--ink) }
             <button class="th-step" id="thPlus"  aria-label="임계값 높이기">+</button>
           </div>
           <span class="th-val" id="thValDisplay">50%</span>
-          <button class="th-btn" id="thAuto" data-i18n="btn_auto">자동</button>
+          <button class="th-btn image-ctrl" id="thAuto" data-i18n="btn_auto">자동</button>
         </div>
       </div>
 
+      <!-- Style row: only for generated graphics -->
+      <div id="genStyleRow">
+        <div class="ctrl-lbl" style="margin-top:12px;margin-bottom:6px">스타일</div>
+        <div class="gen-style-btns">
+          <button class="gen-style-btn" data-density="60">얇게</button>
+          <button class="gen-style-btn active" data-density="128">기본</button>
+          <button class="gen-style-btn" data-density="200">굵게</button>
+        </div>
+      </div>
+
+      <!-- Image-only controls (hidden for generated/tactile) -->
       <!-- Outline -->
-      <div style="margin-top:12px">
+      <div class="image-ctrl" style="margin-top:12px">
         <div class="ctrl-lbl" data-i18n="outline_title">윤곽선</div>
         <div class="outline-row" role="group" aria-label="윤곽선 모드">
           <button class="outline-btn active" data-outline="0" aria-pressed="true" data-i18n="outline_none">없음</button>
@@ -1085,7 +1112,7 @@ details.adv > summary:hover { color: var(--ink) }
       </div>
 
       <!-- Advanced (collapsed by default) -->
-      <details class="adv">
+      <details class="adv image-ctrl">
         <summary data-i18n="adv_settings">고급 설정</summary>
         <div class="adv-body">
           <div class="ctrl-lbl" data-i18n="method_title">이진화 방식</div>
