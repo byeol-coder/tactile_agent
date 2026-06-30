@@ -1777,6 +1777,19 @@ body[data-kind="image"] #recropRow { display: block }
   </div>
 </div>
 
+<!-- Resolution Change Modal -->
+<div class="modal-bg" id="resChangeModal" role="dialog" aria-modal="true" aria-labelledby="resChangeTitle">
+  <div class="modal">
+    <h2 id="resChangeTitle" data-i18n="res_change_title">해상도 변경</h2>
+    <p id="resChangeDesc"></p>
+    <div class="modal-btns">
+      <button id="resChangeConfirm" class="acc">이미지 기준 재변환</button>
+      <button id="resChangeAlt">점 데이터 맞춤 변환</button>
+      <button id="resChangeCancel" data-i18n="guard_cancel">취소</button>
+    </div>
+  </div>
+</div>
+
 <!-- Guard Modal -->
 <div class="modal-bg" id="guardModal" role="dialog" aria-modal="true" aria-labelledby="guardTitle">
   <div class="modal">

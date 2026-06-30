@@ -186,6 +186,13 @@ export const I18N = {
     guard_proceed:    '저장 없이 불러오기',
     guard_cancel:     '취소',
 
+    res_change_title:       '해상도 변경',
+    res_change_warn_manual: '해상도를 변경하면 원본 이미지 기준으로 다시 변환돼요. 수동으로 편집한 내용이 일부 초기화될 수 있어요.',
+    res_change_no_src:      '원본 이미지가 없어서 자동 재변환할 수 없어요. 기존 점 데이터를 새 해상도로 맞추거나, 빈 캔버스로 시작할 수 있어요.',
+    res_change_reconvert:   '이미지 기준 재변환',
+    res_change_resample:    '점 데이터 맞춤 변환',
+    res_change_blank:       '빈 캔버스로 시작',
+
     cmd_simpler:      '더 단순하게',
     cmd_detailed:     '더 또렷하게',
     cmd_outline:      '외곽선만 살려줘',
@@ -428,6 +435,13 @@ export const I18N = {
     guard_save:       'Save and load',
     guard_proceed:    'Load without saving',
     guard_cancel:     'Cancel',
+
+    res_change_title:       'Change Resolution',
+    res_change_warn_manual: 'Changing resolution will re-convert from the original image. Any manual edits you\'ve made may be lost.',
+    res_change_no_src:      'No source image — cannot auto-convert. You can scale the existing dots to the new size, or start with a blank canvas.',
+    res_change_reconvert:   'Reconvert from image',
+    res_change_resample:    'Scale existing dots',
+    res_change_blank:       'Start blank',
 
     cmd_simpler:      'Simplify',
     cmd_detailed:     'More detail',

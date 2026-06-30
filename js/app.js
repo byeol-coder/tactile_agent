@@ -810,6 +810,7 @@ function syncPageUI() {
   const del = ge('pageDelete'); if (del) del.disabled = total <= 1;
   renderPageChips();
   syncConvPanel();
+  syncResBtns();
 }
 
 function renderPageChips() {
@@ -1285,25 +1286,148 @@ function updatePresetChip() {
 }
 
 // ─── Resolution change ────────────────────────────────────────
-function setResolution(cols, rows) {
+
+/** Nearest-neighbor scale of a dot grid to a new resolution. */
+function resampleDots(src, srcCols, srcRows, dstCols, dstRows) {
+  const dst = new Uint8Array(dstCols * dstRows);
+  for (let dy = 0; dy < dstRows; dy++) {
+    for (let dx = 0; dx < dstCols; dx++) {
+      const sx = Math.min(Math.round(dx * srcCols / dstCols), srcCols - 1);
+      const sy = Math.min(Math.round(dy * srcRows / dstRows), srcRows - 1);
+      dst[dy * dstCols + dx] = src[sy * srcCols + sx];
+    }
+  }
+  return dst;
+}
+
+/** Sync resolution button active states to current canvas size. */
+function syncResBtns() {
+  const key = `${canvasState.width}x${canvasState.height}`;
+  qsa('.res-btn[data-res]').forEach(b => {
+    const active = b.dataset.res === key;
+    b.classList.toggle('active', active);
+    setPressed(b, active);
+  });
+  qsa('[data-mini-res]').forEach(b => {
+    const active = b.dataset.miniRes === key;
+    b.classList.toggle('active', active);
+    setPressed(b, active);
+  });
+}
+
+/** Show resolution-change confirmation dialog.
+ *  mode 'manual_edit' → reconvert warning.
+ *  mode 'no_source'   → resample / blank choice.
+ *  Returns: 'reconvert' | 'resample' | 'blank' | null (cancel).
+ */
+function showResChangeDialog(mode) {
+  return new Promise(resolve => {
+    const modal = ge('resChangeModal');
+    if (!modal) return resolve(mode === 'manual_edit' ? 'reconvert' : null);
+    const lang = appState.language;
+    const desc        = ge('resChangeDesc');
+    const confirmBtn  = ge('resChangeConfirm');
+    const altBtn      = ge('resChangeAlt');
+    const cancelBtn   = ge('resChangeCancel');
+    if (desc) desc.textContent = t(
+      mode === 'manual_edit' ? 'res_change_warn_manual' : 'res_change_no_src', lang);
+    if (confirmBtn) confirmBtn.textContent = t(
+      mode === 'manual_edit' ? 'res_change_reconvert' : 'res_change_resample', lang);
+    if (altBtn) {
+      altBtn.textContent = t('res_change_blank', lang);
+      altBtn.style.display = mode === 'no_source' ? '' : 'none';
+    }
+    modal.style.display = 'flex';
+    const close = r => { modal.style.display = 'none'; resolve(r); };
+    confirmBtn?.addEventListener('click', () => close(mode === 'manual_edit' ? 'reconvert' : 'resample'), { once: true });
+    altBtn?.addEventListener('click',    () => close('blank'),   { once: true });
+    cancelBtn?.addEventListener('click', () => close(null),      { once: true });
+  });
+}
+
+let _resChangeBusy = false;
+
+async function setResolution(cols, rows) {
+  if (_resChangeBusy) return;
   if (canvasState.width === cols && canvasState.height === rows) return;
+
+  _resChangeBusy = true;
+  try {
+    const page    = pagesState.activePage;
+    const srcImg  = page?.sourceImage || page?.originalImage;
+    const hasContent = canvasState.data.some(v => v);
+
+    if (srcImg) {
+      // Source image available — reconvert at new resolution.
+      // Warn first if the user has manually edited since last conversion.
+      if (toolState.undoStack.length > 0) {
+        const choice = await showResChangeDialog('manual_edit');
+        if (!choice) return;
+      }
+      _doResolutionWithImage(srcImg, cols, rows);
+      return;
+    }
+
+    if (hasContent) {
+      // No source image but canvas has content — ask what to do.
+      const choice = await showResChangeDialog('no_source');
+      if (!choice) return;
+      if (choice === 'resample') _doResolutionResample(cols, rows);
+      else                       _doResolutionBlank(cols, rows);
+      return;
+    }
+
+    // Empty canvas — just resize silently.
+    _doResolutionBlank(cols, rows);
+  } finally {
+    _resChangeBusy = false;
+  }
+}
+
+function _doResolutionWithImage(srcImg, cols, rows) {
   const page = pagesState.activePage;
-  const srcImg = page?.sourceImage;
-  canvasState.width  = cols; canvasState.height = rows;
-  canvasState.data   = new Uint8Array(cols * rows);
+  const sourceState = createSourceImageState(srcImg, cols, rows);
+  const meta = analyzeImageType(sourceState.grayBuf, sourceState.alphaBuf, cols, rows);
+  canvasState.width = cols; canvasState.height = rows;
+  if (page) { page.width = cols; page.height = rows; }
+  toolState.undoStack = []; toolState.redoStack = [];
+  setActivePageSourceImage(sourceState, meta, srcImg);
+  canvasState.data = convertToDots(sourceState, conversionState, cols, rows);
+  saveCurrentPageState();
+  setPhase('ready');
+  _afterResolutionChange();
+}
+
+function _doResolutionResample(cols, rows) {
+  const page    = pagesState.activePage;
+  const srcData = new Uint8Array(canvasState.data);
+  const srcC = canvasState.width, srcR = canvasState.height;
+  canvasState.width = cols; canvasState.height = rows;
+  canvasState.data  = resampleDots(srcData, srcC, srcR, cols, rows);
+  if (page) { page.width = cols; page.height = rows; }
+  toolState.undoStack = []; toolState.redoStack = [];
+  saveCurrentPageState();
+  setPhase(canvasState.data.some(v => v) ? 'ready' : 'empty');
+  _afterResolutionChange();
+}
+
+function _doResolutionBlank(cols, rows) {
+  const page = pagesState.activePage;
+  canvasState.width = cols; canvasState.height = rows;
+  canvasState.data  = new Uint8Array(cols * rows);
   if (page) { page.width = cols; page.height = rows; page.canvasData = new Uint8Array(cols * rows); }
   toolState.undoStack = []; toolState.redoStack = [];
-  if (srcImg) {
-    const sourceState = createSourceImageState(srcImg, cols, rows);
-    const meta = analyzeImageType(sourceState.grayBuf, sourceState.alphaBuf, cols, rows);
-    setActivePageSourceImage(sourceState, meta, srcImg);
-    canvasState.data = convertToDots(sourceState, conversionState, cols, rows);
-    saveCurrentPageState();
-    appState.phase = 'ready'; setPhase('ready');
-  } else {
-    appState.phase = 'empty'; setPhase('empty');
-  }
-  fitCanvas(); syncQuality(); syncPageUI();
+  saveCurrentPageState();
+  setPhase('empty');
+  _afterResolutionChange();
+}
+
+function _afterResolutionChange() {
+  syncResBtns();
+  fitCanvas();
+  syncQuality();
+  syncPageUI();
+  syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
 }
 
 // ─── Full Mode wiring ─────────────────────────────────────────
@@ -1620,11 +1744,6 @@ function wireFullMode() {
   qsa('.res-btn').forEach(b => b.addEventListener('click', () => {
     const [c, r] = b.dataset.res.split('x').map(Number);
     setResolution(c, r);
-    qsa('.res-btn').forEach(x => {
-      const active = x === b;
-      x.classList.toggle('active', active);
-      setPressed(x, active);
-    });
   }));
 
   // File name
@@ -1687,11 +1806,6 @@ function wireMiniMode() {
   // resolution chips
   document.querySelectorAll('[data-mini-res]').forEach(btn => {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('[data-mini-res]').forEach(b => {
-        const active = b === this;
-        b.classList.toggle('active', active);
-        setPressed(b, active);
-      });
       const [c, r] = this.dataset.miniRes.split('x').map(Number);
       setResolution(c, r);
     });
