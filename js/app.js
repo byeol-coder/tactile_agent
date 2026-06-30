@@ -1500,6 +1500,7 @@ function wireFullMode() {
   ge('dotEditImportImageBtn')?.addEventListener('click', () => {
     ge('imgFileInput')?.click();
   });
+  ge('recropBtn')?.addEventListener('click', reCrop);
 
   // processing toggles (dilate / erode / denoise / edge)
   qsa('[data-proc]').forEach(b => b.addEventListener('click', () => {
