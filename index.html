@@ -456,6 +456,64 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 
 /* ── Density / Threshold ──────────────────────────────────── */
 .th-section { display: flex; flex-direction: column; gap: 10px }
+.sensitivity-controls { display: flex; flex-direction: column; gap: 10px }
+.th-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px }
+.mode-chip {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--sub); font-size: 10px; font-weight: 700; white-space: nowrap;
+}
+.th-helper {
+  display: none; margin-top: 4px; color: var(--hint);
+  font-size: 11px; line-height: 1.55;
+}
+.dot-edit-panel {
+  display: none; flex-direction: column; gap: 10px;
+  padding: 10px; border: 1px solid var(--border); border-radius: var(--r10);
+  background: var(--surface2);
+}
+.dot-edit-panel p {
+  margin: 0; color: var(--sub); font-size: 11px; line-height: 1.6;
+}
+.dot-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px }
+.dot-edit-title { font-size: 12px; font-weight: 700; color: var(--ink) }
+.dot-edit-tools,
+.dot-edit-actions { display: grid; gap: 6px }
+.dot-edit-tools { grid-template-columns: repeat(4, 1fr) }
+.dot-edit-actions { grid-template-columns: repeat(3, 1fr) }
+.dot-size-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px }
+.dot-tool-btn,
+.dot-size-btn,
+.dot-edit-action {
+  min-width: 0; height: 32px; border-radius: var(--r8);
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+}
+.dot-tool-btn:hover,
+.dot-size-btn:hover,
+.dot-edit-action:hover { background: var(--gray-100); color: var(--gray-700) }
+.dot-tool-btn.active,
+.dot-size-btn.active {
+  background: var(--accent-50); border-color: var(--accent-200); color: var(--accent-700);
+}
+.th-cta {
+  width: 100%; height: 32px; padding: 0 10px; border-radius: var(--r8);
+  border: 1px solid var(--border2); background: var(--surface);
+  color: var(--text); font-size: 11px; font-weight: 700;
+}
+.th-cta:hover { background: var(--gray-100); color: var(--gray-700) }
+body[data-control-mode="dot"] .sensitivity-controls { display: none }
+body[data-control-mode="dot"] .dot-edit-panel { display: flex }
+body[data-control-mode="image"] .dot-edit-panel,
+body[data-control-mode="generated"] .dot-edit-panel,
+body[data-control-mode="empty"] .dot-edit-panel { display: none }
+body[data-control-mode="empty"] .sensitivity-controls { display: flex; opacity: .72 }
+body[data-control-mode="empty"] .th-slider-wrap,
+body[data-control-mode="empty"] .th-foot { opacity: .58; pointer-events: none }
+body[data-control-mode="image"] .th-helper,
+body[data-control-mode="generated"] .th-helper,
+body[data-control-mode="empty"] .th-helper { display: block }
 .th-method-row { display: flex; gap: 3px }
 .th-method-btn {
   flex: 1; height: 26px; border-radius: var(--r6); font-size: 10px; font-weight: 700;
@@ -494,6 +552,10 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 }
 .th-btn:hover { background: var(--surface); color: var(--text) }
 .th-btn.acc { background: var(--accent); border-color: var(--accent); color: #fff }
+.th-btn:disabled,
+.th-step:disabled {
+  opacity: .55; cursor: not-allowed;
+}
 .th-step { width: 24px; height: 24px; border-radius: 6px; font-size: 14px; font-weight: 700;
   border: 1px solid var(--border); background: var(--surface2); color: var(--sub);
   display: grid; place-items: center; }
@@ -566,9 +628,11 @@ details.adv > summary:hover { color: var(--ink) }
 /* sourceKind-based panel switching */
 body[data-kind="generated"] .image-ctrl { display: none !important }
 body[data-kind="tactile"]   .image-ctrl { display: none !important }
+body[data-has-source-image="false"] .image-ctrl { display: none !important }
 body:not([data-kind="generated"]) #genStyleRow { display: none }
 body[data-kind="generated"] .preset-grid { opacity: .38; pointer-events: none }
 body[data-kind="tactile"]   .preset-grid { opacity: .38; pointer-events: none }
+body[data-has-source-image="false"] .preset-grid { opacity: .38; pointer-events: none }
 /* style buttons for generated */
 .gen-style-btns { display: flex; gap: 4px }
 .gen-style-btn {
@@ -716,6 +780,140 @@ body[data-kind="tactile"]   .preset-grid { opacity: .38; pointer-events: none }
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
 #toast.ok { background: var(--green-d) }
+
+/* ── Floating Help ───────────────────────────────────────── */
+.help-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 72px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s, box-shadow .12s, transform .12s;
+}
+.help-fab:hover {
+  background: var(--gray-50);
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+}
+.help-fab:active { transform: translateY(1px) }
+.help-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 124px;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.16);
+  z-index: 310;
+  padding: 16px;
+}
+.help-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.help-head strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+.help-head p {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.5;
+}
+.help-head button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--hint);
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.help-head button:hover { background: var(--gray-100); color: var(--gray-700) }
+.help-step {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.help-step:first-child {
+  border-top: 0;
+}
+.help-step span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-50);
+  color: var(--accent-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.help-step strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+.help-step p {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.5;
+}
+.help-nudge {
+  position: fixed;
+  right: 78px;
+  bottom: 78px;
+  display: none;
+  max-width: min(280px, calc(100vw - 96px));
+  padding: 9px 12px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  z-index: 305;
+}
+.help-nudge::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  bottom: 15px;
+  width: 12px;
+  height: 12px;
+  background: var(--ink);
+  transform: rotate(45deg);
+}
+body.show-help-nudge .help-nudge { display: block }
+@media (max-width: 520px) {
+  .help-fab { right: 16px; bottom: 64px }
+  .help-panel { left: 16px; right: 16px; bottom: 116px; width: auto; max-width: none }
+  .help-nudge {
+    right: 16px;
+    bottom: 116px;
+    max-width: calc(100vw - 32px);
+  }
+  .help-nudge::after { right: 16px; bottom: -6px }
+}
 
 /* ── Guard Modal ─────────────────────────────────────────── */
 .modal-bg {
@@ -1073,20 +1271,52 @@ body[data-kind="tactile"]   .preset-grid { opacity: .38; pointer-events: none }
       </div>
 
       <!-- Threshold slider -->
-      <div class="th-section">
-        <div class="ctrl-lbl" id="thLabel" style="margin-bottom:6px">임계값</div>
-        <div class="th-slider-wrap">
-          <div class="th-track"><div class="th-fill" id="thFill"></div></div>
-          <div class="th-thumb" id="thThumb"></div>
-          <input type="range" id="thSlider" min="20" max="240" value="128" aria-label="임계값"/>
-        </div>
-        <div class="th-foot">
-          <div class="th-btns">
-            <button class="th-step" id="thMinus" aria-label="임계값 낮추기">−</button>
-            <button class="th-step" id="thPlus"  aria-label="임계값 높이기">+</button>
+      <div class="th-section" id="thSection">
+        <div class="sensitivity-controls" id="sensitivityControls">
+          <div>
+            <div class="th-label-row">
+              <div class="ctrl-lbl" id="thLabel" style="margin-bottom:0">이미지 감도</div>
+              <span class="mode-chip" id="sourceModeChip">이미지 변환 모드</span>
+            </div>
+            <div class="th-helper" id="thHelperText">슬라이더를 조정하면 변환 결과에 바로 반영돼요</div>
           </div>
-          <span class="th-val" id="thValDisplay">50%</span>
-          <button class="th-btn image-ctrl" id="thAuto" data-i18n="btn_auto">자동</button>
+          <div class="th-slider-wrap">
+            <div class="th-track"><div class="th-fill" id="thFill"></div></div>
+            <div class="th-thumb" id="thThumb"></div>
+            <input type="range" id="thSlider" min="20" max="240" value="128" aria-label="이미지 감도"/>
+          </div>
+          <div class="th-foot">
+            <div class="th-btns">
+              <button class="th-step" id="thMinus" aria-label="이미지 감도 낮추기">−</button>
+              <button class="th-step" id="thPlus"  aria-label="이미지 감도 높이기">+</button>
+            </div>
+            <span class="th-val" id="thValDisplay">50%</span>
+            <button class="th-btn image-ctrl" id="thAuto" data-i18n="btn_auto">자동</button>
+          </div>
+        </div>
+        <div class="dot-edit-panel" id="dotEditPanel" aria-labelledby="dotEditTitle">
+          <div class="dot-edit-head">
+            <span class="dot-edit-title" id="dotEditTitle">점 편집 모드</span>
+            <span class="mode-chip">원본 이미지 없음</span>
+          </div>
+          <p id="dotEditHelp">현재 그래픽은 점 편집 모드예요. 펜과 지우개로 점을 직접 편집할 수 있고, 이미지를 다시 불러오면 감도를 조정할 수 있어요.</p>
+          <div class="dot-edit-tools" role="group" aria-label="점 편집 도구">
+            <button type="button" class="dot-tool-btn" data-dot-tool="move" aria-pressed="true">이동</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="pen" aria-pressed="false">펜</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="eraser" aria-pressed="false">지우개</button>
+            <button type="button" class="dot-tool-btn" data-dot-tool="select" aria-pressed="false">선택</button>
+          </div>
+          <div class="dot-size-row" role="group" aria-label="브러시 크기">
+            <button type="button" class="dot-size-btn" data-dot-size="1" aria-pressed="true">1×</button>
+            <button type="button" class="dot-size-btn" data-dot-size="2" aria-pressed="false">2×</button>
+            <button type="button" class="dot-size-btn" data-dot-size="3" aria-pressed="false">3×</button>
+          </div>
+          <div class="dot-edit-actions" role="group" aria-label="전체 핀 편집">
+            <button type="button" class="dot-edit-action" data-dot-action="up">전체 올리기</button>
+            <button type="button" class="dot-edit-action" data-dot-action="down">전체 내리기</button>
+            <button type="button" class="dot-edit-action" data-dot-action="invert">반전</button>
+          </div>
+          <button type="button" class="th-cta" id="dotEditImportImageBtn">이미지 불러오기</button>
         </div>
       </div>
 
@@ -1328,6 +1558,67 @@ body[data-kind="tactile"]   .preset-grid { opacity: .38; pointer-events: none }
 
 <!-- Toast -->
 <div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Floating Help -->
+<button id="helpFab" class="help-fab" type="button" aria-label="도움말 열기" aria-controls="helpPanel" aria-expanded="false">
+  ?
+</button>
+
+<div id="helpNudge" class="help-nudge" aria-hidden="true">
+  처음이신가요? ? 버튼에서 기본 사용법을 볼 수 있어요.
+</div>
+
+<div id="helpPanel" class="help-panel" role="dialog" aria-modal="false" aria-labelledby="helpTitle" aria-describedby="helpIntro" hidden>
+  <div class="help-head">
+    <div>
+      <strong id="helpTitle">처음 사용하시나요?</strong>
+      <p id="helpIntro">Dot Canvas 기본 흐름을 안내해드릴게요.</p>
+    </div>
+    <button id="helpClose" type="button" aria-label="도움말 닫기">×</button>
+  </div>
+
+  <div class="help-steps">
+    <div class="help-step">
+      <span>1</span>
+      <div>
+        <strong>명령어로 만들기</strong>
+        <p>“별 그려줘”, “하트 그려줘”처럼 입력하면 촉각그래픽을 만들 수 있어요.</p>
+      </div>
+    </div>
+
+    <div class="help-step">
+      <span>2</span>
+      <div>
+        <strong>이미지 불러오기</strong>
+        <p>이미지나 .dtms/.dtm 파일을 불러올 수 있어요.</p>
+      </div>
+    </div>
+
+    <div class="help-step">
+      <span>3</span>
+      <div>
+        <strong>필요한 부분 자르기</strong>
+        <p>이미지를 불러온 뒤 필요한 영역만 간단히 잘라 변환할 수 있어요.</p>
+      </div>
+    </div>
+
+    <div class="help-step">
+      <span>4</span>
+      <div>
+        <strong>읽기 쉽게 조정</strong>
+        <p>이미지는 임계값과 윤곽선, 명령어 그래픽은 점 밀도 중심으로 조정해요.</p>
+      </div>
+    </div>
+
+    <div class="help-step">
+      <span>5</span>
+      <div>
+        <strong>Dot Pad로 보내기</strong>
+        <p>완성된 촉각그래픽을 Dot Pad로 출력해요.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Guard Modal -->
 <div class="modal-bg" id="guardModal" role="dialog" aria-modal="true" aria-labelledby="guardTitle">

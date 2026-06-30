@@ -35,6 +35,7 @@ import {
 
 import { exportDtms, exportPng, exportJson, copyHexToClipboard, parseDtms } from './export.js';
 import { t } from './i18n.js';
+import { openImageCropModal } from './crop.js';
 
 // ─── DOM helpers ──────────────────────────────────────────────
 const ge  = id => document.getElementById(id);
@@ -64,6 +65,65 @@ function toast(msg, kind = '') {
 function announce(text) {
   const live = ge('liveRegion');
   if (live && text) { live.textContent = ''; setTimeout(() => { live.textContent = text; }, 40); }
+}
+
+// ─── Floating Help ────────────────────────────────────────────
+const HELP_SEEN_KEY = 'dotcanvas_help_seen';
+
+function initHelp() {
+  const helpFab = ge('helpFab');
+  const helpPanel = ge('helpPanel');
+  const helpClose = ge('helpClose');
+  if (!helpFab || !helpPanel || helpFab.dataset.ready === 'true') return;
+
+  helpFab.dataset.ready = 'true';
+
+  try {
+    if (!localStorage.getItem(HELP_SEEN_KEY)) {
+      document.body.classList.add('show-help-nudge');
+    }
+  } catch {
+    document.body.classList.add('show-help-nudge');
+  }
+
+  const markHelpSeen = () => {
+    try { localStorage.setItem(HELP_SEEN_KEY, '1'); } catch {}
+    document.body.classList.remove('show-help-nudge');
+  };
+
+  const openHelp = () => {
+    markHelpSeen();
+    helpPanel.hidden = false;
+    helpFab.setAttribute('aria-expanded', 'true');
+    helpClose?.focus();
+  };
+
+  const closeHelp = () => {
+    helpPanel.hidden = true;
+    helpFab.setAttribute('aria-expanded', 'false');
+    helpFab.focus();
+  };
+
+  helpFab.addEventListener('click', () => {
+    if (helpPanel.hidden) openHelp();
+    else closeHelp();
+  });
+
+  helpClose?.addEventListener('click', closeHelp);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !helpPanel.hidden) closeHelp();
+  });
+
+  document.addEventListener('click', e => {
+    if (
+      !helpPanel.hidden &&
+      !helpPanel.contains(e.target) &&
+      !helpFab.contains(e.target)
+    ) {
+      closeHelp();
+    }
+  });
 }
 
 // ─── Canvas elements ──────────────────────────────────────────
@@ -215,10 +275,36 @@ async function loadImageFile(file) {
   const img = new Image();
   img.onload = () => {
     URL.revokeObjectURL(src);
-    startAnalyze(img, file.name.replace(/\.[^.]+$/, ''));
+    const name = file.name.replace(/\.[^.]+$/, '');
+    openImageCropModal({
+      image: img,
+      fileName: name,
+      onConfirm: async croppedImg => {
+        const page = pagesState.activePage;
+        if (page) page.originalImage = img;
+        startAnalyze(croppedImg, name);
+      },
+      onUseOriginal: () => {
+        const page = pagesState.activePage;
+        if (page) page.originalImage = img;
+        startAnalyze(img, name);
+      },
+    });
   };
   img.onerror = () => { URL.revokeObjectURL(src); toast('이미지를 불러올 수 없어요'); };
   img.src = src;
+}
+
+function reCrop() {
+  const page = pagesState.activePage;
+  const img = page?.originalImage || page?.sourceImage;
+  if (!img) return;
+  openImageCropModal({
+    image: img,
+    fileName: appState.fileName,
+    onConfirm: async croppedImg => { startAnalyze(croppedImg, appState.fileName); },
+    onUseOriginal: () => { startAnalyze(img, appState.fileName); },
+  });
 }
 
 function startAnalyze(img, name) {
@@ -417,24 +503,29 @@ function paintSlider(v) {
 }
 
 function updateThresholdOrDensity(value, delay = 120) {
+  const page = pagesState.activePage;
+  if (page?.sourceKind === 'generated') {
+    const v = Math.max(20, Math.min(240, value));
+    conversionState.threshold = v;
+    const sl = ge('thSlider');
+    if (sl) sl.value = v;
+    paintSlider(v);
+    qsa('.gen-style-btn').forEach(b => b.classList.toggle('active', +b.dataset.density === v));
+    applyGeneratedDensity(v);
+    return;
+  }
+  if (!page?.sourceImageState) {
+    syncConvPanel();
+    return;
+  }
   const v = Math.max(20, Math.min(240, value));
   conversionState.threshold = v;
   const sl = ge('thSlider');
   if (sl) sl.value = v;
   paintSlider(v);
-  const page = pagesState.activePage;
-  if (page?.sourceKind === 'generated') {
-    qsa('.gen-style-btn').forEach(b => b.classList.toggle('active', +b.dataset.density === v));
-    applyGeneratedDensity(v);
-    return;
-  }
-  if (page?.sourceImageState) {
-    conversionState.method = 'global';
-    rebuild(delay);
-    syncConvUI();
-    return;
-  }
-  toast('이 그래픽은 원본 이미지가 없어 점 편집만 가능해요');
+  conversionState.method = 'global';
+  rebuild(delay);
+  syncConvUI();
 }
 
 // ─── Quality Panel ────────────────────────────────────────────
@@ -452,15 +543,27 @@ function pill(el, txt, kind) {
   el.className = 'pill pill-' + kind;
 }
 
+function syncCanvasMeta(cols, rows, pins, fill, hasContent) {
+  const resText = `${cols}×${rows}`;
+  const dotText = `${pins.toLocaleString()} 핀 · ${fill}%`;
+  const dotCls = fill < 10 ? 'chip chip-w' : fill < 45 ? 'chip chip-ok' : 'chip chip-w';
+  const btmDotCls = fill < 10 ? 'chip-w' : fill < 45 ? 'chip-ok' : 'chip-w';
+  const resCh = ge('resChip'); if (resCh) resCh.textContent = resText;
+  const dotCh = ge('dotChip'); if (dotCh) { dotCh.textContent = dotText; dotCh.className = dotCls; }
+  const resCh2 = ge('resChipBtm'); if (resCh2) resCh2.textContent = resText;
+  const dotCh2 = ge('dotChipBtm'); if (dotCh2) { dotCh2.textContent = dotText; dotCh2.className = 'dot-chip ' + btmDotCls; }
+  syncBtns(hasContent);
+}
+
 function syncQuality() {
   const lang = appState.language;
   if (appState.phase !== 'ready') { resetQuality(); return; }
   const { data: g, width: cols, height: rows } = canvasState;
   const n = cols * rows;
   const pins = g.reduce((s, v) => s + v, 0);
-  const fill = Math.round(pins / n * 100);
+  const fill = n ? Math.round(pins / n * 100) : 0;
 
-  if (pins === 0) { resetQuality(); return; }
+  if (pins === 0) { resetQuality({ cols, rows, pins, fill }); return; }
 
   const page = pagesState.activePage;
   const meta = page?.sourceImageMeta;
@@ -502,24 +605,25 @@ function syncQuality() {
   }
 
   // canvas meta strip + bottom bar chips
-  const resText = `${cols}×${rows}`;
-  const dotText = `${pins.toLocaleString()} 핀 · ${fill}%`;
-  const dotCls  = fill < 10 ? 'chip chip-w' : fill < 45 ? 'chip chip-ok' : 'chip chip-w';
-  const resCh = ge('resChip'); if (resCh) resCh.textContent = resText;
-  const dotCh = ge('dotChip'); if (dotCh) { dotCh.textContent = dotText; dotCh.className = dotCls; }
-  const resCh2 = ge('resChipBtm'); if (resCh2) resCh2.textContent = resText;
-  const dotCh2 = ge('dotChipBtm'); if (dotCh2) { dotCh2.textContent = dotText; dotCh2.className = 'dot-chip ' + (fill < 10 ? 'chip-w' : fill < 45 ? 'chip-ok' : 'chip-w'); }
-  syncBtns(true);
+  syncCanvasMeta(cols, rows, pins, fill, true);
 }
 
-function resetQuality() {
+function resetQuality(meta) {
   ['qClarity','qDensity','qReadability','qStructure'].forEach(id => {
     const el = ge(id); if (el) { el.textContent = '—'; el.className = 'pill pill-neutral'; }
   });
+  const qd = ge('qDotCount'); if (qd) qd.textContent = meta ? meta.pins.toLocaleString() : '0';
+  const qs2 = ge('qDotSub'); if (qs2) qs2.textContent = meta ? `/ ${(meta.cols * meta.rows).toLocaleString()} · ${meta.fill}%` : '/ 0 · 0%';
+  const df = ge('densityFill');
+  if (df) {
+    df.style.width = meta ? Math.min(100, meta.fill) + '%' : '0%';
+    df.style.background = '#15803D';
+  }
   const card = ge('aiFeedbackCard'); if (card) card.style.display = 'none';
   const empty = ge('aiFeedbackEmpty'); if (empty) { empty.style.display = ''; empty.textContent = t('ai_empty', appState.language); }
   const chips = ge('aiChips'); if (chips) chips.style.display = 'none';
-  syncBtns(false);
+  if (meta) syncCanvasMeta(meta.cols, meta.rows, meta.pins, meta.fill, false);
+  else syncBtns(false);
 }
 
 function renderAiChips(fill, sc) {
@@ -591,24 +695,59 @@ function syncConvUI() {
 function syncConvPanel() {
   const page = pagesState.activePage;
   const kind = page?.sourceKind || 'drawn';
+  const hasSourceImage = !!page?.sourceImageState;
+  const isGeneratedMode = kind === 'generated' && appState.phase === 'ready';
+  const isDotEditMode = !hasSourceImage && !isGeneratedMode && appState.phase === 'ready';
+  const canAdjustSlider = hasSourceImage || isGeneratedMode;
   document.body.dataset.kind = kind;
+  document.body.dataset.hasSourceImage = String(hasSourceImage);
+  document.body.dataset.controlMode = hasSourceImage ? 'image' : isGeneratedMode ? 'generated' : isDotEditMode ? 'dot' : 'empty';
   const thLabel = ge('thLabel');
   const convTitle = ge('convPanelTitle');
-  if (kind === 'generated') {
+  const modeChip = ge('sourceModeChip');
+  const helper = ge('thHelperText');
+  const controls = ['thSlider', 'thMinus', 'thPlus', 'thAuto'];
+
+  if (hasSourceImage) {
+    if (thLabel) thLabel.textContent = '이미지 감도';
+    if (convTitle) convTitle.textContent = '변환 설정';
+    if (modeChip) modeChip.textContent = '이미지 변환 모드';
+    if (helper) helper.textContent = '슬라이더를 조정하면 변환 결과에 바로 반영돼요';
+  } else if (isGeneratedMode) {
     if (thLabel) thLabel.textContent = '점 밀도';
     if (convTitle) convTitle.textContent = '생성 그래픽 조정';
+    if (modeChip) modeChip.textContent = '생성 그래픽';
+    if (helper) helper.textContent = '점 밀도를 조정하면 생성 그래픽에 바로 반영돼요';
+  } else if (isDotEditMode) {
+    if (convTitle) convTitle.textContent = '점 편집 모드';
+    if (modeChip) modeChip.textContent = '원본 이미지 없음';
+    if (helper) helper.textContent = '이미지를 다시 불러오면 감도를 조정할 수 있어요';
   } else {
-    if (thLabel) thLabel.textContent = '임계값';
+    if (thLabel) thLabel.textContent = '이미지 감도';
     if (convTitle) convTitle.textContent = '변환 설정';
+    if (modeChip) modeChip.textContent = '이미지 없음';
+    if (helper) helper.textContent = '이미지를 불러오면 감도를 조정할 수 있어요';
   }
+  controls.forEach(id => {
+    const el = ge(id);
+    if (el) el.disabled = id === 'thAuto' ? !hasSourceImage : !canAdjustSlider;
+  });
+  const miniSlider = ge('miniThSlider');
+  if (miniSlider) miniSlider.disabled = !canAdjustSlider;
+  syncDotEditUI();
 }
 
 function noImageMsg(lang) {
   const kind = pagesState.activePage?.sourceKind;
-  if (kind === 'generated' || kind === 'tactile') {
+  if (kind === 'generated') {
     return lang === 'ko'
-      ? '이 그래픽은 원본 이미지가 없어 점 밀도와 직접 편집으로 조정할 수 있어요'
-      : 'No source image — use density slider or direct editing';
+      ? '생성 그래픽은 점 밀도와 직접 편집으로 조정할 수 있어요'
+      : 'Generated graphics can be adjusted with dot density and direct editing';
+  }
+  if (kind === 'tactile') {
+    return lang === 'ko'
+      ? '현재 그래픽은 점 편집 모드예요'
+      : 'This graphic is in dot edit mode';
   }
   return t('toast_need_image', lang);
 }
@@ -689,6 +828,11 @@ function selectTool(name) {
     b.classList.toggle('active', b.dataset.tool === name);
     b.setAttribute('aria-pressed', String(b.dataset.tool === name));
   });
+  qsa('.dot-tool-btn[data-dot-tool]').forEach(b => {
+    const active = b.dataset.dotTool === name;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
   if (padEl) padEl.style.cursor = name === 'move' ? 'grab' : 'crosshair';
   drawCanvas();
 }
@@ -699,6 +843,39 @@ function setSize(s) {
     b.classList.toggle('active', +b.dataset.size === s);
     b.setAttribute('aria-pressed', String(+b.dataset.size === s));
   });
+  qsa('.dot-size-btn[data-dot-size]').forEach(b => {
+    const active = +b.dataset.dotSize === s;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function syncDotEditUI() {
+  qsa('.dot-tool-btn[data-dot-tool]').forEach(b => {
+    const active = b.dataset.dotTool === toolState.currentTool;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
+  qsa('.dot-size-btn[data-dot-size]').forEach(b => {
+    const active = +b.dataset.dotSize === toolState.brushSize;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function fillAllPins(value) {
+  pushUndo();
+  canvasState.data.fill(value);
+  afterChange();
+  toast(value ? t('toast_pin_up', appState.language) : t('toast_pin_down', appState.language));
+}
+
+function invertAllPins() {
+  pushUndo();
+  const d = canvasState.data;
+  for (let i = 0; i < d.length; i++) d[i] ^= 1;
+  afterChange();
+  toast(t('toast_pin_inv', appState.language));
 }
 
 // ─── Pointer events ───────────────────────────────────────────
@@ -1307,6 +1484,23 @@ function wireFullMode() {
     rebuild();
   }));
 
+  // dot edit mode controls (shown when there is no source image)
+  qsa('.dot-tool-btn[data-dot-tool]').forEach(b => b.addEventListener('click', () => {
+    selectTool(b.dataset.dotTool);
+  }));
+  qsa('.dot-size-btn[data-dot-size]').forEach(b => b.addEventListener('click', () => {
+    setSize(+b.dataset.dotSize);
+  }));
+  qsa('.dot-edit-action[data-dot-action]').forEach(b => b.addEventListener('click', () => {
+    const action = b.dataset.dotAction;
+    if (action === 'up') fillAllPins(1);
+    else if (action === 'down') fillAllPins(0);
+    else if (action === 'invert') invertAllPins();
+  }));
+  ge('dotEditImportImageBtn')?.addEventListener('click', () => {
+    ge('imgFileInput')?.click();
+  });
+
   // processing toggles (dilate / erode / denoise / edge)
   qsa('[data-proc]').forEach(b => b.addEventListener('click', () => {
     const page = pagesState.activePage;
@@ -1339,14 +1533,9 @@ function wireFullMode() {
   });
 
   // pin control
-  ge('pinUpBtn')?.addEventListener('click',   () => { pushUndo(); canvasState.data.fill(1); afterChange(); toast(t('toast_pin_up', appState.language)); });
-  ge('pinDownBtn')?.addEventListener('click', () => { pushUndo(); canvasState.data.fill(0); afterChange(); toast(t('toast_pin_down', appState.language)); });
-  ge('pinInvBtn')?.addEventListener('click',  () => {
-    pushUndo();
-    const d = canvasState.data;
-    for (let i = 0; i < d.length; i++) d[i] ^= 1;
-    afterChange(); toast(t('toast_pin_inv', appState.language));
-  });
+  ge('pinUpBtn')?.addEventListener('click',   () => fillAllPins(1));
+  ge('pinDownBtn')?.addEventListener('click', () => fillAllPins(0));
+  ge('pinInvBtn')?.addEventListener('click',  invertAllPins);
 
   // DotPad
   initDotPad(
@@ -1553,6 +1742,7 @@ export function init() {
   syncConn();
   syncPageUI();
   applyI18n();
+  initHelp();
 
   window.addEventListener('resize', fitCanvas);
   document.fonts?.ready?.then(fitCanvas);
