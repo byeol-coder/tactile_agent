@@ -276,10 +276,12 @@ async function loadTactileFile(file) {
   reader.onload = async e => {
     try {
       const { parseDtms } = await import('./export.js');
-      const { fileName, pages: items, cols, rows } = parseDtms(e.target.result);
+      const { fileName: parsedFileName, pages: items, cols, rows } = parseDtms(e.target.result);
       if (!items.length) return;
-      appState.fileName = fileName;
-      const inp = ge('fname'); if (inp) inp.value = fileName;
+      const importedFileName = (file.name || '').replace(/\.[^.]+$/, '').trim();
+      const displayFileName = importedFileName || parsedFileName || 'Untitled';
+      appState.fileName = displayFileName;
+      const inp = ge('fname'); if (inp) inp.value = displayFileName;
 
       // Use file's own resolution if present, otherwise keep current canvas size
       const w = cols || canvasState.width;
@@ -303,7 +305,7 @@ async function loadTactileFile(file) {
       drawCanvas(); syncQuality();
       syncPageUI(); syncConvUI(); syncConvPanel(); fitCanvas();
       syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
-      toast(fileName + ' 불러왔어요 ✓', 'ok');
+      toast(displayFileName + ' 불러왔어요 ✓', 'ok');
       announce(describeTactile(canvasState.data, canvasState.width, canvasState.height, appState.language));
     } catch (err) {
       console.error('[dtms] load failed:', err);
