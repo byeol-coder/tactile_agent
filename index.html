@@ -5,36 +5,39 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzFBMUExQSIvPgogIDxjaXJjbGUgY3g9IjkiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iOSIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IiNGRjREMDAiLz4KICA8Y2lyY2xlIGN4PSIyMyIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjIuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMiIvPgogIDxjaXJjbGUgY3g9IjE2IiBjeT0iMjMiIHI9IjIuNSIgZmlsbD0id2hpdGUiLz4KICA8Y2lyY2xlIGN4PSIyMyIgY3k9IjIzIiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+"/>
 <title>Dot Canvas — AI 촉각그래픽</title>
+<!-- PWA: 설치형 + 오프라인 -->
+<meta name="theme-color" content="#111111"/>
+<link rel="manifest" href="manifest.webmanifest"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
 /* ── Tokens ──────────────────────────────────────────────── */
 :root {
-  --bg:       #0F172A;
-  --surface:  #1E293B;
-  --surface2: #162032;
-  --border:   #334155;
-  --border2:  #475569;
-  --ink:      #F1F5F9;
-  --text:     #CBD5E1;
-  --sub:      #94A3B8;
-  --hint:     #64748B;
-  --accent:   #3B82F6;
-  --accent-d: #2563EB;
-  --accent-bg:rgba(59,130,246,.12);
-  --green:    #10B981;
-  --green-d:  #34D399;
-  --green-bg: rgba(16,185,129,.12);
-  --amber:    #FBBF24;
-  --amber-bg: rgba(251,191,36,.10);
-  --red:      #FB7185;
-  --red-bg:   rgba(251,113,133,.10);
-  --blue:     #60A5FA;
+  --bg:       #F5F5F7;
+  --surface:  #FFFFFF;
+  --surface2: #F2F2F4;
+  --border:   #E5E5EA;
+  --border2:  #D1D1D6;
+  --ink:      #1C1C1E;
+  --text:     #3A3A3C;
+  --sub:      #6C6C70;
+  --hint:     #AEAEB2;
+  --accent:   #FF4D00;
+  --accent-d: #E34400;
+  --accent-bg:#FFF3EE;
+  --green:    #30D158;
+  --green-d:  #25A244;
+  --green-bg: #F0FBF3;
+  --amber:    #FF9F0A;
+  --amber-bg: #FFF8EC;
+  --red:      #FF3B30;
+  --red-bg:   #FFF2F1;
+  --blue:     #0A84FF;
   --font: 'Inter','Noto Sans KR',system-ui,-apple-system,sans-serif;
   --r3:3px; --r6:6px; --r8:8px; --r10:10px; --r12:12px; --r16:16px; --r20:20px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.04);
-  --shadow-md: 0 4px 24px rgba(0,0,0,.50), 0 0 0 1px rgba(255,255,255,.06);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
   --h-header: 48px;
   --w-rail:   44px;
   --w-panel:  clamp(324px, 24vw, 360px);
@@ -78,7 +81,7 @@ svg { display: block; flex-shrink: 0 }
 }
 .hd-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0 }
 .hd-logo {
-  width: 26px; height: 26px; border-radius: 7px; background: var(--bg); border: 1px solid var(--border);
+  width: 26px; height: 26px; border-radius: 7px; background: var(--ink);
   display: grid; place-items: center; flex-shrink: 0
 }
 .hd-name { font-size: 13px; font-weight: 700; letter-spacing: -.02em }
@@ -104,7 +107,7 @@ svg { display: block; flex-shrink: 0 }
   padding: 0 8px 0 10px; gap: 8px; height: 32px; min-width: 0;
   transition: border-color .15s, box-shadow .15s;
 }
-.hd-prompt:focus-within { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(59,130,246,.15) }
+.hd-prompt:focus-within { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(255,77,0,.12) }
 .hd-prompt svg { width: 14px; height: 14px; stroke: var(--accent); fill: none;
   stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0 }
 .hd-prompt input {
@@ -116,7 +119,7 @@ svg { display: block; flex-shrink: 0 }
   border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; flex-shrink: 0;
   font-family: var(--font);
 }
-.hd-prompt:focus-within .hd-prompt-kbd { color: var(--accent); border-color: rgba(59,130,246,.35) }
+.hd-prompt:focus-within .hd-prompt-kbd { color: var(--accent); border-color: rgba(255,77,0,.3) }
 
 /* suggestion dropdown */
 .prompt-suggest {
@@ -168,7 +171,7 @@ svg { display: block; flex-shrink: 0 }
 
 /* conn dot in header */
 .hd-conn { width: 7px; height: 7px; border-radius: 50%; background: var(--hint); flex-shrink: 0; transition: .2s }
-.hd-conn.on { background: var(--green); box-shadow: 0 0 5px rgba(16,185,129,.5) }
+.hd-conn.on { background: var(--green); box-shadow: 0 0 5px rgba(48,209,88,.5) }
 
 /* ── Workspace ───────────────────────────────────────────── */
 .ws { flex: 1; display: flex; overflow: hidden; min-height: 0 }
@@ -202,7 +205,7 @@ svg { display: block; flex-shrink: 0 }
   color: var(--hint); border: 1px solid transparent;
 }
 .sz-btn:hover { background: var(--surface2); color: var(--text) }
-.sz-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(59,130,246,.3) }
+.sz-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(255,77,0,.25) }
 
 /* ── Canvas Area ──────────────────────────────────────────── */
 .canvas-area {
@@ -228,9 +231,9 @@ svg { display: block; flex-shrink: 0 }
 
 /* canvas wrapper */
 .canvas-wrap {
-  background: #162844; border-radius: var(--r16); padding: 10px;
+  background: #EEEBE0; border-radius: var(--r16); padding: 10px;
   box-shadow: var(--shadow-md); position: relative; transition: opacity .15s;
-  outline: 2px solid transparent; outline-offset: 2px; border: 1px solid var(--border);
+  outline: 2px solid transparent; outline-offset: 2px; border-radius: var(--r16);
 }
 .canvas-wrap.rebuilding { opacity: .65 }
 #pad { display: block; touch-action: none; border-radius: var(--r6) }
@@ -242,7 +245,7 @@ svg { display: block; flex-shrink: 0 }
   text-align: center; padding: 28px; z-index: 10; border-radius: var(--r16);
 }
 #emptyOv {
-  background: rgba(15,23,42,.92); backdrop-filter: blur(6px);
+  background: rgba(238,235,224,.92); backdrop-filter: blur(4px);
 }
 #analyzeOv { background: transparent; pointer-events: none }
 
@@ -250,7 +253,7 @@ body[data-state="empty"] #emptyOv    { display: flex }
 body[data-state="analyzing"] #analyzeOv { display: flex }
 
 .ov-icon {
-  width: 48px; height: 48px; border-radius: 14px; background: var(--accent);
+  width: 48px; height: 48px; border-radius: 14px; background: var(--ink);
   display: grid; place-items: center; margin-bottom: 4px; flex-shrink: 0;
 }
 .ov-title { font-size: 15px; font-weight: 700; letter-spacing: -.02em; color: var(--ink) }
@@ -265,8 +268,8 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
   transition: all .12s;
 }
 .ov-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
-.ov-btn.fill { background: var(--accent); color: #fff }
-.ov-btn.fill:hover { background: var(--accent-d) }
+.ov-btn.fill { background: var(--ink); color: #fff }
+.ov-btn.fill:hover { background: #2C2C2E }
 .ov-btn.outline { border: 1px solid var(--border); background: var(--surface); color: var(--text) }
 .ov-btn.outline:hover { background: var(--surface2) }
 .ov-drag { font-size: 11px; color: var(--hint); margin-top: 2px }
@@ -342,8 +345,8 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 
 /* AI card */
 .ai-card {
-  background: linear-gradient(135deg, rgba(59,130,246,.08) 0%, rgba(99,102,241,.06) 100%);
-  border: 1px solid rgba(59,130,246,.2); border-radius: var(--r10); padding: 12px;
+  background: linear-gradient(135deg, #FFF5F0 0%, #FFF0E8 100%);
+  border: 1px solid rgba(255,77,0,.15); border-radius: var(--r10); padding: 12px;
   display: none;
 }
 .ai-badge {
@@ -353,11 +356,11 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
 .ai-badge::before {
   content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
 }
-.ai-text { font-size: 12px; color: var(--text); line-height: 1.75 }
+.ai-text { font-size: 12px; color: #6B4530; line-height: 1.75 }
 .ai-chips { display: none; flex-wrap: wrap; gap: 5px; margin-top: 8px }
 .ai-ch {
-  height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid rgba(59,130,246,.3);
-  background: var(--surface); font-size: 11px; font-weight: 600; color: var(--accent); transition: .12s;
+  height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid rgba(255,77,0,.25);
+  background: #fff; font-size: 11px; font-weight: 600; color: var(--accent); transition: .12s;
 }
 .ai-ch:hover { background: var(--accent); color: #fff }
 .ai-empty {
@@ -421,7 +424,7 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
   border: 1px solid var(--border); background: var(--surface2); color: var(--sub); transition: .12s;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
-.outline-btn.active, .proc-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(59,130,246,.35) }
+.outline-btn.active, .proc-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(255,77,0,.35) }
 .outline-btn:hover:not(.active), .proc-btn:hover:not(.active) { background: var(--surface); color: var(--text) }
 
 /* advanced disclosure */
@@ -461,7 +464,7 @@ details.adv > summary:hover { color: var(--ink) }
   background: var(--surface2); transition: .12s; cursor: pointer;
 }
 .preset-btn:hover { background: var(--surface); border-color: var(--border2) }
-.preset-btn.active { background: var(--accent-bg); border-color: rgba(59,130,246,.35) }
+.preset-btn.active { background: var(--accent-bg); border-color: rgba(255,77,0,.35) }
 .preset-name { font-size: 11px; font-weight: 700; color: var(--ink) }
 .preset-desc { font-size: 10px; color: var(--hint) }
 .preset-btn.active .preset-name { color: var(--accent) }
@@ -484,7 +487,7 @@ details.adv > summary:hover { color: var(--ink) }
   border: 1px solid var(--border); border-radius: var(--btn-radius);
 }
 .dp-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hint); flex-shrink: 0; transition: .2s }
-.dp-dot.on { background: var(--green); box-shadow: 0 0 5px rgba(16,185,129,.45) }
+.dp-dot.on { background: var(--green); box-shadow: 0 0 5px rgba(48,209,88,.45) }
 .dp-lbl { font-size: var(--font-label); font-weight: 600; color: var(--text); flex: 1; min-width: 0 }
 .dp-btn {
   height: 26px; padding: 0 10px; border-radius: var(--r6); font-size: 11px; font-weight: 600;
@@ -524,11 +527,11 @@ details.adv > summary:hover { color: var(--ink) }
 }
 .panel :where(.dp-btn, .pin-btn, .exp-btn).active,
 .panel :where(.dp-btn, .pin-btn, .exp-btn)[aria-pressed="true"] {
-  background: var(--accent-bg); border-color: rgba(59,130,246,.38); color: var(--accent);
+  background: var(--accent-bg); border-color: rgba(255,77,0,.38); color: var(--accent);
 }
 .panel :where(.dp-btn, .pin-btn, .exp-btn):disabled {
-  background: rgba(255,255,255,.04); border-color: var(--border); color: var(--hint);
-  opacity: .6; cursor: not-allowed; transform: none; box-shadow: none;
+  background: #F7F7F8; border-color: var(--border); color: #8E8E93;
+  opacity: .72; cursor: not-allowed; transform: none; box-shadow: none;
 }
 
 /* export */
@@ -557,7 +560,7 @@ details.adv > summary:hover { color: var(--ink) }
 }
 .btm-status { display: flex; align-items: center; gap: 5px }
 .btm-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hint) }
-.btm-dot.on { background: var(--green); box-shadow: 0 0 4px rgba(16,185,129,.5) }
+.btm-dot.on { background: var(--green); box-shadow: 0 0 4px rgba(48,209,88,.5) }
 .btm-txt { font-size: 11px; font-weight: 600; color: var(--text) }
 .btm-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0 }
 .btm-sp { flex: 1 }
@@ -605,17 +608,17 @@ details.adv > summary:hover { color: var(--ink) }
 /* ── Toast ────────────────────────────────────────────────── */
 #toast {
   position: fixed; left: 50%; bottom: 56px; transform: translateX(-50%) translateY(8px);
-  background: var(--surface); color: var(--ink); padding: 7px 14px; border-radius: var(--r10);
+  background: var(--ink); color: #fff; padding: 7px 14px; border-radius: var(--r10);
   font-size: 12px; font-weight: 600; opacity: 0; pointer-events: none;
   transition: opacity .2s, transform .2s; z-index: 300; white-space: nowrap;
-  border: 1px solid var(--border2); box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
-#toast.ok { background: var(--green); color: #fff; border-color: transparent }
+#toast.ok { background: var(--green-d) }
 
 /* ── Guard Modal ─────────────────────────────────────────── */
 .modal-bg {
-  position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(6px);
+  position: fixed; inset: 0; background: rgba(28,28,30,.5); backdrop-filter: blur(4px);
   display: none; align-items: center; justify-content: center; z-index: 200; padding: 24px;
 }
 .modal {
@@ -677,8 +680,8 @@ details.adv > summary:hover { color: var(--ink) }
   height: 28px; padding: 0 9px; border-radius: var(--r8); border: 1.5px solid var(--border);
   background: var(--surface); font-size: 11px; font-weight: 700; color: var(--sub); cursor: pointer; transition: .12s;
 }
-.mini-res-chip.active { background: var(--accent); border-color: var(--accent); color: #fff }
-.mini-res-chip:hover:not(.active) { border-color: var(--border2); color: var(--text) }
+.mini-res-chip.active { background: var(--ink); border-color: var(--ink); color: #fff }
+.mini-res-chip:hover:not(.active) { border-color: var(--ink); color: var(--ink) }
 
 .mini-canvas-card {
   background: var(--surface); border-radius: var(--r12); border: 1px solid var(--border);
@@ -703,7 +706,7 @@ details.adv > summary:hover { color: var(--ink) }
   font-size: 11px; font-weight: 600; color: var(--text); cursor: pointer; transition: .12s; white-space: nowrap;
 }
 .mini-quick-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg) }
-.mini-quick-btn.accent { background: var(--accent-bg); border-color: rgba(59,130,246,.3); color: var(--accent) }
+.mini-quick-btn.accent { background: var(--accent-bg); border-color: rgba(255,77,0,.3); color: var(--accent) }
 .mini-quick-btn:disabled { opacity: .35; cursor: not-allowed }
 
 .mini-actions { display: flex; gap: 6px }
@@ -735,7 +738,7 @@ details.adv > summary:hover { color: var(--ink) }
         <circle cx="7" cy="2.5" r="1.8" fill="white"/>
         <circle cx="11.5" cy="2.5" r="1.8" fill="white"/>
         <circle cx="2.5" cy="7" r="1.8" fill="white" opacity=".35"/>
-        <circle cx="7" cy="7" r="1.8" fill="#3B82F6"/>
+        <circle cx="7" cy="7" r="1.8" fill="#FF4D00"/>
         <circle cx="11.5" cy="7" r="1.8" fill="white" opacity=".35"/>
         <circle cx="2.5" cy="11.5" r="1.8" fill="white" opacity=".18"/>
         <circle cx="7" cy="11.5" r="1.8" fill="white"/>
@@ -1103,7 +1106,7 @@ details.adv > summary:hover { color: var(--ink) }
       <circle cx="2.5" cy="2.5" r="1.8" fill="white"/>
       <circle cx="7" cy="2.5" r="1.8" fill="white"/>
       <circle cx="11.5" cy="2.5" r="1.8" fill="white"/>
-      <circle cx="7" cy="7" r="1.8" fill="#3B82F6"/>
+      <circle cx="7" cy="7" r="1.8" fill="#FF4D00"/>
       <circle cx="7" cy="11.5" r="1.8" fill="white"/>
     </svg>
   </div>
@@ -1198,5 +1201,8 @@ details.adv > summary:hover { color: var(--ink) }
 <div aria-live="polite" aria-atomic="true" class="sr-only" id="liveRegion"></div>
 
 <script type="module" src="js/app.js"></script>
+<!-- 무료 백엔드(Supabase) 연동 + PWA — app.js 다음에 로드 -->
+<script type="module" src="js/cloud-integration.js"></script>
+<script type="module" src="js/pwa-register.js"></script>
 </body>
 </html>

@@ -331,7 +331,7 @@ function syncQuality() {
   const df = ge('densityFill');
   if (df) {
     df.style.width = Math.min(100, fill) + '%';
-    df.style.background = fill < 15 ? '#10B981' : fill < 40 ? '#FBBF24' : '#FB7185';
+    df.style.background = fill < 15 ? '#15803D' : fill < 40 ? '#FF9500' : '#DC2626';
   }
 
   const fillState = fill < 10 ? t('state_low', lang)

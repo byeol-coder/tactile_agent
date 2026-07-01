@@ -2,14 +2,14 @@
 // Stateless rendering functions.
 // All functions take explicit state inputs.
 
-const BG_COLOR    = '#1a2847';
-const GRID_LINE   = 'rgba(255,255,255,.05)';
-const CELL_LINE   = 'rgba(255,255,255,.10)';
-const AXIS_LINE   = 'rgba(255,255,255,.18)';
-const DOT_ON      = '#E2E8F0';
-const DOT_OFF     = 'rgba(255,255,255,.08)';
-const HOVER_PEN   = 'rgba(59,130,246,.32)';
-const HOVER_ERASE = 'rgba(251,113,133,.28)';
+const BG_COLOR   = '#F4F1E8';
+const GRID_LINE  = 'rgba(180,170,158,.28)';
+const CELL_LINE  = 'rgba(155,145,135,.42)';
+const AXIS_LINE  = 'rgba(200,175,155,.55)';
+const DOT_ON     = '#1C1C1E';
+const DOT_OFF    = '#DED8CF';
+const HOVER_PEN  = 'rgba(255,77,0,.28)';
+const HOVER_ERASE = 'rgba(185,28,28,.25)';
 
 /**
  * Compute canvas layout so dots are square and the grid fits inside the container.
@@ -114,7 +114,7 @@ export function renderGrid(ctx, data, cols, rows, layout, opts = {}) {
   if (opts.hoverCells?.length) {
     const isErase = opts.hoverKind === 'eraser';
     ctx.fillStyle   = isErase ? HOVER_ERASE : HOVER_PEN;
-    ctx.strokeStyle = isErase ? 'rgba(251,113,133,.7)' : 'rgba(59,130,246,.75)';
+    ctx.strokeStyle = isErase ? 'rgba(185,28,28,.7)' : 'rgba(255,77,0,.75)';
     ctx.lineWidth = 1.4;
     for (const [x, y] of opts.hoverCells) {
       if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
@@ -128,7 +128,7 @@ export function renderGrid(ctx, data, cols, rows, layout, opts = {}) {
   // selection overlay
   if (opts.selection) {
     const { x0, y0, x1, y1 } = opts.selection;
-    ctx.strokeStyle = 'rgba(59,130,246,.9)';
+    ctx.strokeStyle = 'rgba(255,77,0,.9)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 3]);
     ctx.strokeRect(
