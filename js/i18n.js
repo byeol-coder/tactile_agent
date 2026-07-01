@@ -261,6 +261,12 @@ export const I18N = {
     help_step5_title:    'DotPad로 보내기',
     help_step5_body:     '완성된 촉각그래픽을 DotPad로 출력해요.',
 
+    // ── Workflow stepper ─────────────────────────────────────────
+    step_import:  '가져오기',
+    step_convert: '촉각그래픽 변환',
+    step_check:   '촉각 품질 검사',
+    step_send:    '전송 / 저장 / 내보내기',
+
     // ── Redesign: left panel ───────────────────────────────────
     panel_import:       '가져오기',
     btn_import_material:'이미지 불러오기',
@@ -644,6 +650,12 @@ export const I18N = {
     help_step4_body:     'For images, tweak the threshold and outline. For generated graphics, adjust the density.',
     help_step5_title:    'Send to DotPad',
     help_step5_body:     'Output the finished tactile graphic to your DotPad.',
+
+    // ── Workflow stepper ─────────────────────────────────────────
+    step_import:  'Import',
+    step_convert: 'Convert to Tactile Graphic',
+    step_check:   'Tactile Quality Check',
+    step_send:    'Send / Save / Export',
 
     // ── Redesign: left panel ───────────────────────────────────
     panel_import:       'Import',
