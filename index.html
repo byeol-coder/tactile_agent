@@ -251,6 +251,10 @@ svg { display: block; flex-shrink: 0 }
 
 body[data-state="empty"] #emptyOv    { display: flex }
 body[data-state="analyzing"] #analyzeOv { display: flex }
+.preview-error {
+  display: none; background: rgba(255,242,241,.96); border: 1px solid rgba(255,59,48,.28);
+}
+.preview-error.show { display: flex }
 
 .ov-icon {
   width: 48px; height: 48px; border-radius: 14px; background: var(--ink);

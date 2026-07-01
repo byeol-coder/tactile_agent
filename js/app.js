@@ -7,7 +7,7 @@ import {
   viewportState, toolState, brailleState, dotPadState,
   saveCurrentPageState, loadPageState, addPage, duplicatePage,
   deletePage, setActivePageSourceImage, updateActivePage,
-  createBlankPage,
+  createBlankPage, pageHasContent, syncAppContentState,
 } from './state.js';
 
 import {
@@ -125,15 +125,128 @@ function drawCanvas() {
   });
 }
 
+function ensurePreviewErrorOverlay() {
+  const wrap = ge('dotGridWrap');
+  if (!wrap) return null;
+  let el = ge('previewErrorOv');
+  if (el) return el;
+  el = document.createElement('div');
+  el.className = 'ov preview-error';
+  el.id = 'previewErrorOv';
+  el.setAttribute('role', 'alert');
+  el.innerHTML = `
+    <p class="ov-title">이 페이지를 표시할 수 없습니다.</p>
+    <p class="ov-sub">DTMS 페이지 데이터는 불러왔지만 미리보기 렌더링에 실패했습니다.</p>
+    <div class="ov-ctas">
+      <button type="button" class="ov-btn fill" data-preview-action="retry">Retry rendering</button>
+      <button type="button" class="ov-btn outline" data-preview-action="first">Go to page 1</button>
+      <button type="button" class="ov-btn outline" data-preview-action="debug">Export debug info</button>
+    </div>`;
+  wrap.appendChild(el);
+  return el;
+}
+
+function showPreviewErrorOverlay(show) {
+  const el = ensurePreviewErrorOverlay();
+  if (el) el.classList.toggle('show', !!show);
+}
+
+function exportDtmsDebugInfo() {
+  const page = pagesState.activePage;
+  const info = {
+    fileName: appState.fileName,
+    pageCount: pagesState.pages.length,
+    currentPageIndex: pagesState.activePageIndex,
+    pageNumber: pagesState.activePageIndex + 1,
+    activePageExists: !!page,
+    resolution: page ? { cols: page.width, rows: page.height } : null,
+    activeDots: page?.activeDots ?? canvasState.activeDots,
+    sourceType: page?.sourceType ?? appState.sourceType,
+    hasContent: pageHasContent(page),
+    hasDtmsData: !!page?.hasDtmsData,
+    isEmpty: appState.isEmpty,
+    renderError: page?.renderError ?? null,
+  };
+  const blob = new Blob([JSON.stringify(info, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (appState.fileName || 'dtms') + '-debug.json';
+  document.body.appendChild(a);
+  a.click();
+  requestAnimationFrame(() => { document.body.removeChild(a); URL.revokeObjectURL(url); });
+}
+
+function renderCurrentPage(idx = pagesState.activePageIndex) {
+  let targetIdx = Number.isInteger(idx) ? idx : 0;
+  if (targetIdx < 0 || targetIdx >= pagesState.pages.length) {
+    targetIdx = 0;
+    toast('페이지 번호가 범위를 벗어나 1페이지로 돌아갑니다.', 'err');
+  }
+  const page = pagesState.pages[targetIdx];
+  console.log('[DTMS] render current page', {
+    currentPageIndex: targetIdx,
+    pageNumber: targetIdx + 1,
+    activePageData: page,
+  });
+  if (!page) {
+    showPreviewErrorOverlay(true);
+    return false;
+  }
+  try {
+    if (targetIdx !== pagesState.activePageIndex) loadPageState(targetIdx);
+    syncAppContentState();
+    setPhase(pageHasContent(page) ? 'ready' : 'empty');
+    drawCanvas();
+    page.isRendered = true;
+    page.renderError = null;
+    showPreviewErrorOverlay(false);
+    syncQuality();
+    syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
+    return true;
+  } catch (err) {
+    page.isRendered = false;
+    page.renderError = err?.message || String(err);
+    syncAppContentState();
+    setPhase(pageHasContent(page) ? 'ready' : 'empty');
+    showPreviewErrorOverlay(true);
+    syncQuality();
+    console.warn('[DTMS] render failed', err);
+    return false;
+  }
+}
+
+function resizeGridNearest(data, fromCols, fromRows, toCols, toRows) {
+  const out = new Uint8Array(toCols * toRows);
+  if (!data?.length || !fromCols || !fromRows) return out;
+  for (let y = 0; y < toRows; y++) {
+    const sy = Math.min(fromRows - 1, Math.floor(y * fromRows / toRows));
+    for (let x = 0; x < toCols; x++) {
+      const sx = Math.min(fromCols - 1, Math.floor(x * fromCols / toCols));
+      out[y * toCols + x] = data[sy * fromCols + sx] ? 1 : 0;
+    }
+  }
+  return out;
+}
+
 // ─── App Phase ────────────────────────────────────────────────
 function setPhase(phase) {
+  if (phase === 'empty' && syncAppContentState()) phase = 'ready';
   appState.phase = phase;
+  appState.isEmpty = phase === 'empty';
   document.body.dataset.state = phase;
   syncBottomBar();
   if (phase === 'ready') {
     const badge = qs('.ai-done-badge');
     if (badge) badge.style.display = '';
   }
+}
+
+function setLoadingMessage(title = null, sub = null) {
+  const label = qs('#analyzeOv .conv-label');
+  const desc = qs('#analyzeOv .conv-sub');
+  if (label) label.textContent = title || t('converting', appState.language);
+  if (desc) desc.textContent = sub || t('converting_sub', appState.language);
 }
 
 // ─── Undo / Redo ──────────────────────────────────────────────
@@ -270,18 +383,24 @@ function finishAnalyze() {
 }
 
 function loadTactileFile(file) {
+  if (!file) return;
+  setPhase('analyzing');
+  setLoadingMessage('Opening DTMS file…', 'Parsing page metadata and tactile dots.');
   const reader = new FileReader();
   reader.onload = async e => {
     try {
       const { parseDtms } = await import('./export.js');
       const { fileName, pages: items, cols, rows } = parseDtms(e.target.result);
-      if (!items.length) return;
+      if (!items.length) throw new Error('No DTMS pages found');
       appState.fileName = fileName;
       const inp = ge('fname'); if (inp) inp.value = fileName;
 
       // Use file's own resolution if present, otherwise keep current canvas size
       const w = cols || canvasState.width;
       const h = rows || canvasState.height;
+      const currentResolution = `${canvasState.width}×${canvasState.height}`;
+      const fileResolution = `${w}×${h}`;
+      setLoadingMessage(`Loading page 1 of ${items.length}…`, 'Rendering tactile preview…');
 
       pagesState.pages = items.map(item => {
         const page = createBlankPage(w, h);
@@ -289,15 +408,45 @@ function loadTactileFile(file) {
         page.canvasData = hexToGrid(item.hex, w, h);
         page.activeDots = page.canvasData.reduce((s, v) => s + v, 0);
         page.altText = item.altText;
+        page.sourceType = 'dtms';
+        page.hasContent = true;
+        page.hasDtmsData = true;
+        page.isRendered = false;
+        page.renderError = null;
         return page;
       });
       canvasState.width = w; canvasState.height = h;
-      loadPageState(0);
-      drawCanvas(); syncQuality();
-      syncPageUI(); fitCanvas();
+      loadPageState(0, { saveCurrent: false });
+      syncAppContentState();
+      fitCanvas();
+      const rendered = renderCurrentPage(0);
+      syncPageUI();
+      syncConvUI();
+      syncRecropVisibility();
+      const page = pagesState.activePage;
+      const pinCount = page?.activeDots ?? canvasState.activeDots;
+      const hasContent = pageHasContent(page);
+      console.log('[DTMS] file parsed', {
+        pageCount: pagesState.pages.length,
+        currentPageIndex: pagesState.activePageIndex,
+        activePageExists: !!page,
+        resolution: { cols: w, rows: h },
+        pinCount,
+        hasContent,
+        isEmpty: !hasContent,
+      });
+      if (cols && rows && currentResolution !== fileResolution) {
+        toast(`이 DTMS 파일은 ${fileResolution} 기준으로 제작되었습니다. 현재 캔버스에 맞게 표시합니다.`, 'ok');
+      }
       toast(fileName + ' 불러왔어요 ✓', 'ok');
-    } catch {
+      if (!rendered) toast('DTMS 페이지 미리보기 렌더링에 실패했어요.', 'err');
+    } catch (err) {
+      console.warn('[DTMS] load failed', err);
+      syncAppContentState();
+      setPhase('empty');
       toast('파일을 읽을 수 없어요', 'err');
+    } finally {
+      setLoadingMessage();
     }
   };
   reader.readAsText(file);
@@ -365,10 +514,30 @@ function syncQuality() {
   const n = cols * rows;
   const pins = g.reduce((s, v) => s + v, 0);
   const fill = Math.round(pins / n * 100);
-
-  if (pins === 0) { resetQuality(); return; }
-
   const page = pagesState.activePage;
+
+  if (pins === 0) {
+    if (!pageHasContent(page)) { resetQuality(); return; }
+    const qd = ge('qDotCount'); if (qd) qd.textContent = '0';
+    const qs2 = ge('qDotSub'); if (qs2) qs2.textContent = `/ ${n.toLocaleString()} · 0%`;
+    pill(ge('qClarity'), '—', 'neutral');
+    pill(ge('qDensity'), '빈 페이지', 'warn');
+    pill(ge('qReadability'), '—', 'neutral');
+    pill(ge('qStructure'), 'DTMS', 'neutral');
+    const resText = `${cols}×${rows}`;
+    const resCh = ge('resChip'); if (resCh) resCh.textContent = resText;
+    const dotCh = ge('dotChip'); if (dotCh) { dotCh.textContent = '0 핀 · 0%'; dotCh.className = 'chip chip-w'; }
+    const resCh2 = ge('resChipBtm'); if (resCh2) resCh2.textContent = resText;
+    const dotCh2 = ge('dotChipBtm'); if (dotCh2) { dotCh2.textContent = '0 핀 · 0%'; dotCh2.className = 'dot-chip chip-w'; }
+    syncBtns(true);
+    return;
+  }
+
+  if (pageHasContent(page) && page?.isRendered === false) {
+    const card = ge('aiFeedbackCard'); if (card) card.style.display = 'block';
+    const aiTxt = ge('aiFeedbackText');
+    if (aiTxt) aiTxt.textContent = '품질 데이터는 계산되었지만 미리보기가 아직 렌더링되지 않았습니다.';
+  }
   const meta = page?.sourceImageMeta;
   const sc = tactileQualityScore(g, cols, rows, { type: meta?.type, outline: conversionState.outline });
   const grade = Math.min(4, Math.max(1, sc.grade));
@@ -536,9 +705,22 @@ function renderPageChips() {
 }
 
 function switchPage(idx) {
-  if (idx === pagesState.activePageIndex) return;
-  loadPageState(idx);
-  drawCanvas(); syncQuality(); syncPageUI();
+  const total = pagesState.pages.length;
+  let safeIdx = Number.isInteger(idx) ? idx : 0;
+  if (safeIdx < 0 || safeIdx >= total) {
+    safeIdx = 0;
+    toast('페이지 번호가 범위를 벗어나 1페이지로 돌아갑니다.', 'err');
+  }
+  if (safeIdx === pagesState.activePageIndex) {
+    renderCurrentPage(safeIdx);
+    syncPageUI();
+    return;
+  }
+  setLoadingMessage(`Loading page ${safeIdx + 1} of ${total}…`, 'Rendering tactile preview…');
+  loadPageState(safeIdx);
+  renderCurrentPage(safeIdx);
+  syncPageUI();
+  setLoadingMessage();
 }
 
 function syncBottomBar() {
@@ -944,9 +1126,27 @@ function setResolution(cols, rows) {
   if (canvasState.width === cols && canvasState.height === rows) return;
   const page = pagesState.activePage;
   const srcImg = page?.sourceImage;
+  const oldData = new Uint8Array(canvasState.data);
+  const oldWidth = canvasState.width;
+  const oldHeight = canvasState.height;
+  const keepGridContent = !srcImg && pageHasContent(page);
   canvasState.width  = cols; canvasState.height = rows;
-  canvasState.data   = new Uint8Array(cols * rows);
-  if (page) { page.width = cols; page.height = rows; page.canvasData = new Uint8Array(cols * rows); }
+  canvasState.data = keepGridContent
+    ? resizeGridNearest(oldData, oldWidth, oldHeight, cols, rows)
+    : new Uint8Array(cols * rows);
+  if (page) {
+    page.width = cols;
+    page.height = rows;
+    page.canvasData = new Uint8Array(canvasState.data);
+    page.activeDots = canvasState.activeDots;
+    page.hasContent = keepGridContent ? true : false;
+    page.isRendered = keepGridContent;
+    page.renderError = null;
+    if (!keepGridContent && !srcImg) {
+      page.sourceType = null;
+      page.hasDtmsData = false;
+    }
+  }
   toolState.undoStack = []; toolState.redoStack = [];
   if (srcImg) {
     const sourceState = createSourceImageState(srcImg, cols, rows);
@@ -955,6 +1155,10 @@ function setResolution(cols, rows) {
     canvasState.data = convertToDots(sourceState, conversionState, cols, rows);
     saveCurrentPageState();
     appState.phase = 'ready'; setPhase('ready');
+  } else if (keepGridContent) {
+    saveCurrentPageState();
+    setPhase('ready');
+    toast(`현재 도트 데이터를 ${cols}×${rows} 캔버스에 맞게 표시합니다.`, 'ok');
   } else {
     appState.phase = 'empty'; setPhase('empty');
   }
@@ -1003,6 +1207,13 @@ function wireFullMode() {
   });
   ge('emptyDropZone')?.addEventListener('click', () => ge('imgFileInput')?.click());
   ge('recropBtn')?.addEventListener('click', reCrop);
+  ge('dotGridWrap')?.addEventListener('click', e => {
+    const act = e.target.closest('[data-preview-action]')?.dataset.previewAction;
+    if (!act) return;
+    if (act === 'retry') renderCurrentPage(pagesState.activePageIndex);
+    if (act === 'first') switchPage(0);
+    if (act === 'debug') exportDtmsDebugInfo();
+  });
 
   // drag-over visual
   const area = qs('.canvas-area');
