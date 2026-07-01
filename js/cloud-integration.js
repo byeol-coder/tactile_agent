@@ -43,7 +43,7 @@ function injectUI() {
     driveBtn.className = "hd-btn ghost";
     driveBtn.id = "dotCloudBtn";
     driveBtn.title = "닷 클라우드 열기";
-    driveBtn.innerHTML = "<span>☁ 닷 클라우드</span>";
+    driveBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg><span>닷 클라우드</span>';
     driveBtn.addEventListener("click", () =>
       openDotCloudUI({ onOpen: (text, name) => loadIntoApp(text, name) })
     );
@@ -57,7 +57,7 @@ function injectUI() {
   cloudBtn.className = "hd-btn ghost";
   cloudBtn.id = "cloudOpenBtn";
   cloudBtn.title = "클라우드에서 열기";
-  cloudBtn.innerHTML = "<span>☁ 클라우드</span>";
+  cloudBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg><span>클라우드</span>';
 
   const authBtn = document.createElement("button");
   authBtn.className = "hd-btn ghost";
@@ -196,7 +196,7 @@ function openAuthModal() {
           close(); toast("로그인됐어요");
         } else {
           const { needsConfirm } = await signUp(email, pw);
-          if (needsConfirm) { setMsg(""); close(); toast("확인 메일을 보냈어요 ✉ 메일의 링크를 눌러주세요"); }
+          if (needsConfirm) { setMsg(""); close(); toast("확인 메일을 보냈어요. 메일의 링크를 눌러주세요"); }
           else { close(); toast("가입하고 로그인됐어요"); }
         }
       } catch (err) {
@@ -296,7 +296,7 @@ async function consumeSaveBlob(blobP) {
         driverKind: "P", parentGroupNo: "ROOT", name,
         dtms: text, thumb: grabThumb(), width: meta.width, height: meta.height, tag: meta.tag,
       });
-      toast("닷 클라우드에 저장됨 ☁");
+      toast("닷 클라우드에 저장됨");
       return;
     }
     // 2) (선택) Supabase 클라우드 — 로그인 상태일 때만
@@ -304,7 +304,7 @@ async function consumeSaveBlob(blobP) {
       const user = await getUser();
       if (!user) return;
       await saveDtms(name, text);
-      toast("클라우드에도 저장됐어요 ☁");
+      toast("클라우드에도 저장됐어요");
     }
   } catch (e) { console.warn("클라우드 저장 실패:", e); }
 }

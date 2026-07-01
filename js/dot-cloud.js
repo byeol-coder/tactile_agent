@@ -183,9 +183,10 @@ function injectStyles() {
   .dc-card{border:1px solid var(--border,#e5e5ea);border-radius:14px;overflow:hidden;background:var(--surface,#fff);
     display:flex;flex-direction:column;transition:.12s;cursor:pointer}
   .dc-card:hover{border-color:var(--accent,#FF4D00);box-shadow:0 4px 14px rgba(0,0,0,.08)}
-  .dc-thumb{aspect-ratio:3/2;background:#EEEBE0;display:grid;place-items:center;overflow:hidden;color:var(--hint,#aeaeb2);font-size:26px}
+  .dc-thumb{aspect-ratio:3/2;background:#EEEBE0;display:grid;place-items:center;overflow:hidden;color:var(--hint,#aeaeb2)}
   .dc-thumb img{width:100%;height:100%;object-fit:contain}
-  .dc-folder-ico{font-size:34px;color:var(--amber,#FF9F0A)}
+  .dc-ico{stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .dc-folder-ico{color:var(--amber,#FF9F0A);display:grid;place-items:center}
   .dc-meta{padding:8px 10px;min-width:0}
   .dc-name{font-size:12px;font-weight:700;color:var(--ink,#1c1c1e);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dc-sub{font-size:10px;color:var(--hint,#aeaeb2);margin-top:3px;display:flex;gap:5px;flex-wrap:wrap}
@@ -205,6 +206,13 @@ function injectStyles() {
   .dc-row .rm{border:none;background:none;color:var(--hint,#aeaeb2);cursor:pointer;font-size:14px;padding:2px 6px}
   .dc-row .rm:hover{color:var(--red,#FF3B30)}
   .dc-empty{text-align:center;color:var(--sub,#6c6c70);font-size:13px;padding:44px 0;line-height:1.9}
+  .dc-loading,.dc-error{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--sub,#6c6c70);font-size:13px;padding:52px 0}
+  .dc-spin{width:22px;height:22px;border:2.5px solid var(--border,#e5e5ea);border-top-color:var(--accent,#FF4D00);border-radius:50%;animation:dc-spin .7s linear infinite}
+  @keyframes dc-spin{to{transform:rotate(360deg)}}
+  .dc-error button{border:1px solid var(--border,#e5e5ea);background:var(--surface2,#f2f2f4);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text,#3a3a3c)}
+  .dc-search-wrap{position:relative;display:flex;align-items:center}
+  .dc-search-wrap .dc-ico{position:absolute;left:8px;color:var(--hint,#aeaeb2);pointer-events:none}
+  .dc-search-wrap input{padding-left:28px}
   .dc-foot{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border-top:1px solid var(--border,#e5e5ea)}
   .dc-pg{min-width:28px;height:28px;border:1px solid var(--border,#e5e5ea);border-radius:7px;background:var(--surface2,#f2f2f4);
     color:var(--sub,#6c6c70);font-size:11px;font-weight:700;cursor:pointer;padding:0 6px}
@@ -229,6 +237,23 @@ function fmtDate(ts) {
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
+// ---- 2D 플랫 SVG 아이콘 (Studio와 동일한 stroke 스타일, 이모지 미사용) ----
+const ICONS = {
+  folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+  up: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+  list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  left: '<polyline points="15 18 9 12 15 6"/>',
+  right: '<polyline points="9 18 15 12 9 6"/>',
+  search: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+};
+function ic(name, size = 16) {
+  return `<svg class="dc-ico" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${ICONS[name] || ""}</svg>`;
+}
+
 // openDotCloudUI({ onOpen(dtmsText, name), startKind })
 export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
   injectStyles();
@@ -241,15 +266,15 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
       <div class="dc-tabs">
         <button class="dc-tab" data-act="tab" data-kind="P">내 드라이브</button>
         <button class="dc-tab" data-act="tab" data-kind="D">공용 드라이브</button>
-        <button class="dc-close" data-act="close" aria-label="닫기">×</button>
+        <button class="dc-close" data-act="close" aria-label="닫기">${ic("x", 18)}</button>
       </div>
       <div class="dc-bar">
-        <button class="dc-nav" data-act="up" title="상위 폴더">↑</button>
+        <button class="dc-nav" data-act="up" title="상위 폴더" aria-label="상위 폴더">${ic("up", 16)}</button>
         <div class="dc-crumb" id="dcCrumb"></div>
-        <input class="dc-search" id="dcSearch" placeholder="검색" value="">
+        <span class="dc-search-wrap">${ic("search", 15)}<input class="dc-search" id="dcSearch" placeholder="검색" value=""></span>
         <div class="dc-view">
-          <button class="dc-vbtn" data-act="view" data-v="grid" title="그리드">▦</button>
-          <button class="dc-vbtn" data-act="view" data-v="list" title="리스트">≣</button>
+          <button class="dc-vbtn" data-act="view" data-v="grid" title="그리드" aria-label="그리드 보기">${ic("grid", 15)}</button>
+          <button class="dc-vbtn" data-act="view" data-v="list" title="리스트" aria-label="리스트 보기">${ic("list", 15)}</button>
         </div>
       </div>
       <div class="dc-body" id="dcBody"></div>
@@ -265,20 +290,33 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
     bg.querySelectorAll(".dc-tab").forEach((t) => t.classList.toggle("active", t.dataset.kind === st.kind));
     bg.querySelectorAll(".dc-vbtn").forEach((v) => v.classList.toggle("active", v.dataset.v === st.view));
 
+    const body = bg.querySelector("#dcBody");
+    const foot = bg.querySelector("#dcFoot");
+
+    // 로딩 상태 (실제 클라우드 API 연결 시 네트워크 대기 동안 노출)
+    body.innerHTML = `<div class="dc-loading"><span class="dc-spin"></span><span>불러오는 중…</span></div>`;
+    foot.innerHTML = "";
+
+    // 데이터 조회 (실패 시 우아하게 오류+재시도)
+    let path, items, totalPage, currentPage, total;
+    try {
+      path = await dotCloud.getPath({ driverKind: st.kind, groupNo: st.parent });
+      ({ items, totalPage, currentPage, total } = await dotCloud.list({
+        driverKind: st.kind, parentGroupNo: st.parent, pageNo: st.page, query: st.query,
+      }));
+    } catch (err) {
+      console.warn("닷 클라우드 조회 실패:", err);
+      body.innerHTML = `<div class="dc-error"><span>클라우드를 불러오지 못했어요.<br>준비 중이거나 일시적인 문제일 수 있어요.</span><button data-act="retry">다시 시도</button></div>`;
+      return;
+    }
+    st.page = currentPage;
+
     // breadcrumb
-    const path = await dotCloud.getPath({ driverKind: st.kind, groupNo: st.parent });
     bg.querySelector("#dcCrumb").innerHTML = path.map((p, i) =>
       i === path.length - 1 ? `<b>${esc(p.name)}</b>`
         : `<a data-act="crumb" data-no="${p.no}">${esc(p.name)}</a> <span>/</span>`
     ).join(" ");
     bg.querySelector(".dc-nav[data-act='up']").disabled = st.parent === "ROOT";
-
-    // list
-    const { items, totalPage, currentPage, total } = await dotCloud.list({
-      driverKind: st.kind, parentGroupNo: st.parent, pageNo: st.page, query: st.query,
-    });
-    st.page = currentPage;
-    const body = bg.querySelector("#dcBody");
 
     if (!total) {
       body.innerHTML = `<div class="dc-empty">${st.query ? "검색 결과가 없어요." :
@@ -286,7 +324,7 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
     } else if (st.view === "grid") {
       body.innerHTML = `<div class="dc-grid">` + items.map((it) => it.type === "folder"
         ? `<div class="dc-card" data-act="open-folder" data-no="${it.no}" data-name="${esc(it.name)}">
-             <div class="dc-thumb"><span class="dc-folder-ico">📁</span></div>
+             <div class="dc-thumb"><span class="dc-folder-ico">${ic("folder", 40)}</span></div>
              <div class="dc-meta"><div class="dc-name" title="${esc(it.name)}">${esc(it.name)}</div>
                <div class="dc-sub"><span>${it.count}개 항목</span></div></div>
              ${readOnly() ? "" : `<div class="dc-actions">
@@ -294,7 +332,7 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
                <button class="del" data-act="delete" data-type="folder" data-no="${it.no}">삭제</button></div>`}
            </div>`
         : `<div class="dc-card" data-act="open-file" data-no="${it.no}" data-name="${esc(it.name)}">
-             <div class="dc-thumb">${it.thumb ? `<img src="${it.thumb}" alt="">` : "◦◦◦"}</div>
+             <div class="dc-thumb">${it.thumb ? `<img src="${it.thumb}" alt="">` : ic("image", 34)}</div>
              <div class="dc-meta"><div class="dc-name" title="${esc(it.name)}">${esc(it.name)}</div>
                <div class="dc-sub">
                  ${it.width ? `<span class="dc-pill">${it.width}×${it.height}</span>` : ""}
@@ -309,20 +347,20 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
     } else {
       body.innerHTML = `<div class="dc-list">` + items.map((it) => it.type === "folder"
         ? `<div class="dc-row" data-act="open-folder" data-no="${it.no}" data-name="${esc(it.name)}">
-             <span class="ic">📁</span><span class="nm">${esc(it.name)}</span>
+             <span class="ic" style="color:var(--amber,#FF9F0A)">${ic("folder", 18)}</span><span class="nm">${esc(it.name)}</span>
              <span class="mt">${it.count}개</span>
-             ${readOnly() ? "" : `<button class="rm" data-act="delete" data-type="folder" data-no="${it.no}" title="삭제">✕</button>`}</div>`
+             ${readOnly() ? "" : `<button class="rm" data-act="delete" data-type="folder" data-no="${it.no}" title="삭제" aria-label="삭제">${ic("x", 14)}</button>`}</div>`
         : `<div class="dc-row" data-act="open-file" data-no="${it.no}" data-name="${esc(it.name)}">
-             <span class="ic">▦</span><span class="nm">${esc(it.name)}</span>
+             <span class="ic">${ic("image", 18)}</span><span class="nm">${esc(it.name)}</span>
              <span class="mt">${it.width ? it.width + "×" + it.height + " · " : ""}${fmtDate(it.modDate)}</span>
-             ${readOnly() ? "" : `<button class="rm" data-act="delete" data-type="file" data-no="${it.no}" title="삭제">✕</button>`}</div>`
+             ${readOnly() ? "" : `<button class="rm" data-act="delete" data-type="file" data-no="${it.no}" title="삭제" aria-label="삭제">${ic("x", 14)}</button>`}</div>`
       ).join("") + `</div>`;
     }
 
     // FAB (개인 드라이브에서만)
     if (!readOnly()) {
       body.insertAdjacentHTML("beforeend",
-        `<button class="dc-fab" data-act="fab" title="새로 만들기">+</button>
+        `<button class="dc-fab" data-act="fab" title="새로 만들기" aria-label="새로 만들기">${ic("plus", 22)}</button>
          <div class="dc-fab-menu" id="dcFab">
            <button data-act="new-folder">새 폴더</button>
            <button data-act="upload">파일 올리기(.dtms)</button>
@@ -330,13 +368,12 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
     }
 
     // pagination
-    const foot = bg.querySelector("#dcFoot");
     if (totalPage <= 1) { foot.innerHTML = ""; }
     else {
-      let html = `<button class="dc-pg" data-act="page" data-p="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
+      let html = `<button class="dc-pg" data-act="page" data-p="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""} aria-label="이전">${ic("left", 14)}</button>`;
       for (let i = 1; i <= totalPage; i++)
         html += `<button class="dc-pg ${i === currentPage ? "active" : ""}" data-act="page" data-p="${i}">${i}</button>`;
-      html += `<button class="dc-pg" data-act="page" data-p="${currentPage + 1}" ${currentPage === totalPage ? "disabled" : ""}>›</button>`;
+      html += `<button class="dc-pg" data-act="page" data-p="${currentPage + 1}" ${currentPage === totalPage ? "disabled" : ""} aria-label="다음">${ic("right", 14)}</button>`;
       foot.innerHTML = html;
     }
   }
@@ -355,6 +392,7 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
     const act = el.dataset.act;
 
     if (act === "close") return close();
+    if (act === "retry") return render();
     if (act === "tab") { st.kind = el.dataset.kind; st.parent = "ROOT"; st.page = 1; st.query = ""; bg.querySelector("#dcSearch").value = ""; return render(); }
     if (act === "view") { st.view = el.dataset.v; return render(); }
     if (act === "crumb") { st.parent = el.dataset.no; st.page = 1; return render(); }
