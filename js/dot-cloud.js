@@ -1,7 +1,7 @@
 // ============================================================
-// dot-cloud.js — 임시 닷 클라우드 (localStorage 기반, 실제 Dot Cloud 구조 미러링)
+// dot-cloud.js — Tactile Library 로컬 저장 드라이버 (localStorage 기반)
 //
-// 실제 Dot Cloud API 와 동일한 개념/필드명을 사용해, 나중에 통합 시
+// 기존 저장 API 와 동일한 개념/필드명을 유지해, 나중에 통합 시
 // 아래 `dotCloud` 드라이버 내부만 실제 API 호출로 교체하면 됩니다.
 //   실제 API 대응:
 //     list()       → GET /drive-app/v1/dtms/groups   (DRIVER_KIND, PARENT_GROUP_NO, PAGE_NO, PAGE_SIZE)
@@ -262,7 +262,7 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
   const bg = document.createElement("div");
   bg.className = "dc-bg";
   bg.innerHTML = `
-    <div class="dc-panel" role="dialog" aria-label="닷 클라우드">
+    <div class="dc-panel" role="dialog" aria-label="Tactile Library local files">
       <div class="dc-tabs">
         <button class="dc-tab" data-act="tab" data-kind="P">내 드라이브</button>
         <button class="dc-tab" data-act="tab" data-kind="D">공용 드라이브</button>
@@ -305,7 +305,7 @@ export async function openDotCloudUI({ onOpen, startKind = "P" } = {}) {
         driverKind: st.kind, parentGroupNo: st.parent, pageNo: st.page, query: st.query,
       }));
     } catch (err) {
-      console.warn("닷 클라우드 조회 실패:", err);
+      console.warn("Tactile Library local file lookup failed:", err);
       body.innerHTML = `<div class="dc-error"><span>클라우드를 불러오지 못했어요.<br>준비 중이거나 일시적인 문제일 수 있어요.</span><button data-act="retry">다시 시도</button></div>`;
       return;
     }

@@ -17,8 +17,8 @@ export const ALLOW_GUEST = true;
 //  - true : Dot Canvas 자체 로그인 카드 + Supabase 클라우드 저장 사용 (단독 배포 / 나중에 SSO)
 export const ENABLE_AUTH_UI = false;
 
-// 임시 닷 클라우드(드라이브 UI) 사용 여부
-//  - true : 로그인 없이 브라우저(localStorage)에 저장하는 임시 닷 클라우드 + 드라이브 화면
-//           진짜 닷 클라우드 통합 시 js/dot-cloud.js 의 dotCloud 내부만 교체
+// Tactile Library의 로컬 My Library 사용 여부
+//  - true : 로그인 없이 브라우저(localStorage)에 저장하는 My Library + Library 화면
+//           실제 백엔드 통합 시 js/dot-cloud.js 의 dotCloud 내부만 교체
 //  - false: 임시 클라우드 끔 (파일 내보내기만)
 export const ENABLE_DOT_CLOUD_TEMP = true;
