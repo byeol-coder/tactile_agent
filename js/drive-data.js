@@ -15,8 +15,8 @@ export const CAT_BY_ID = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
 
 export const READINESS = {
   good: { label: '양호', var: '--green', bgVar: '--green-bg' },
-  review: { label: '검토 필요', var: '--amber', bgVar: '--amber-bg' },
-  complex: { label: '복잡함', var: '--red', bgVar: '--red-bg' },
+  review: { label: '검수 대기', var: '--amber', bgVar: '--amber-bg' },
+  complex: { label: '단순화 필요', var: '--red', bgVar: '--red-bg' },
 };
 
 export const COMPLEXITY = { low: '낮음', medium: '보통', high: '높음' };

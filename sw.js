@@ -4,7 +4,7 @@
 // Supabase API 요청은 절대 캐시하지 않음(항상 네트워크).
 // 새 버전 배포 시 CACHE_VERSION 숫자만 올리면 됩니다.
 // ============================================================
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const CACHE_NAME = `dot-canvas-${CACHE_VERSION}`;
 
 // 최초 설치 시 미리 캐시할 핵심 파일 (경로는 실제 파일에 맞게 조정)
