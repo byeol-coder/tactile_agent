@@ -277,6 +277,7 @@ svg { display: block; flex-shrink: 0 }
 }
 .canvas-wrap.rebuilding { opacity: .65 }
 #pad { display: block; touch-action: none; border-radius: var(--r6) }
+#traceLayer { position: absolute; inset: 10px; pointer-events: none; z-index: 1; border-radius: var(--r6) }
 
 /* ── Overlays ─────────────────────────────────────────────── */
 .ov {
@@ -291,6 +292,10 @@ svg { display: block; flex-shrink: 0 }
 
 body[data-state="empty"] #emptyOv    { display: flex }
 body[data-state="analyzing"] #analyzeOv { display: flex }
+.preview-error {
+  display: none; background: rgba(255,242,241,.96); border: 1px solid rgba(255,59,48,.28);
+}
+.preview-error.show { display: flex }
 
 .ov-icon {
   width: 48px; height: 48px; border-radius: 14px; background: var(--ink);
@@ -435,7 +440,7 @@ body[data-state="analyzing"] #analyzeOv { display: flex }
   border-radius: 50%; background: #fff; border: 2px solid var(--accent);
   box-shadow: 0 1px 4px rgba(0,0,0,.18); pointer-events: none; transition: left .04s;
 }
-#thSlider { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100% }
+#thSlider, #traceOpacitySlider { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100% }
 
 .th-foot { display: flex; align-items: center; justify-content: space-between }
 .th-val { font-size: 11px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums }
@@ -535,6 +540,13 @@ details.adv > summary:hover { color: var(--ink) }
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .dp-btn:hover { background: var(--surface2) }
+.text-input {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--r6);
+  background: var(--surface); color: var(--text); font-size: var(--font-label);
+  font-family: inherit; resize: vertical;
+}
+.text-input:focus { outline: none; border-color: var(--accent) }
+.hint-err { margin-top: 6px; font-size: 11px; color: var(--red) }
 .panel .live-row {
   min-height: var(--btn-height); padding: 0 var(--btn-padding-x);
   display: flex; align-items: center; justify-content: space-between; gap: var(--control-gap);
@@ -942,6 +954,30 @@ details.dev-export[open] > summary::before { transform: rotate(90deg) }
 /* ── Accessibility ───────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0) }
 [aria-live] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0) }
+
+/* ── Presentation mode (fullscreen) ─────────────────────────── */
+body.presenting .rail,
+body.presenting .panel,
+body.presenting header,
+body.presenting .btm { display: none !important }
+body.presenting .canvas-area { padding: 0 }
+.present-exit {
+  position: fixed; top: 16px; right: 16px; z-index: 50; display: none;
+  height: 36px; padding: 0 14px; border-radius: var(--r10); border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
+  align-items: center; gap: 6px;
+}
+body.presenting .present-exit { display: inline-flex }
+
+/* ── Print (produces a paper printout of the dot pattern — this
+   does NOT drive a physical braille embosser) ──────────────── */
+@media print {
+  .rail, .panel, header, .btm, .present-exit { display: none !important }
+  #traceLayer { display: none !important }
+  body, .ws, .canvas-area, .canvas-wrap { background: #fff !important; box-shadow: none !important }
+  .canvas-wrap { padding: 0 !important }
+  #pad { width: 100% !important; height: auto !important }
+}
 </style>
 </head>
 <body data-state="empty">
@@ -991,6 +1027,12 @@ details.dev-export[open] > summary::before { transform: rotate(90deg) }
     </div>
     <div class="hd-conn" id="bbDot" title="DotPad 연결 상태"></div>
     <span class="sr-only" id="bbStatus">DotPad 연결 안 됨</span>
+    <button class="hd-btn ghost" id="printBtn" title="인쇄">
+      <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    </button>
+    <button class="hd-btn ghost" id="presentBtn" title="발표 모드">
+      <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+    </button>
     <button class="hd-btn ghost" id="saveBtn" title="저장 (⌘S)">
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       <span>저장</span>
@@ -1041,10 +1083,23 @@ details.dev-export[open] > summary::before { transform: rotate(90deg) }
 
   <div class="rail-sep" aria-hidden="true"></div>
 
+  <button class="rail-btn" data-tool="line" title="선 (L)">
+    <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+  </button>
+  <button class="rail-btn" data-tool="rect" title="사각형 (R)">
+    <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg>
+  </button>
+  <button class="rail-btn" data-tool="circle" title="원 (C)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+  </button>
+
+  <div class="rail-sep" aria-hidden="true"></div>
+
   <div id="brushSizeGroup" class="sz-group" role="group" aria-label="브러시 크기">
     <button class="sz-btn active" data-size="1" aria-pressed="true">1×</button>
     <button class="sz-btn" data-size="2" aria-pressed="false">2×</button>
     <button class="sz-btn" data-size="3" aria-pressed="false">3×</button>
+    <button class="sz-btn" data-size="4" aria-pressed="false">4×</button>
   </div>
 
   <div class="rail-sep" aria-hidden="true"></div>
@@ -1091,6 +1146,54 @@ details.dev-export[open] > summary::before { transform: rotate(90deg) }
         <button class="btn-secondary res-btn" data-res="96x64" aria-pressed="false">96×64</button>
         <button class="btn-secondary res-btn" data-res="28x40" aria-pressed="false">28×40</button>
       </div>
+    </div>
+
+    <!-- 페이지 설명 + 음성 안내(TTS) -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_description">페이지 설명</div>
+      <textarea id="pageAltTextInput" class="text-input" rows="3" placeholder="이 그래픽에 대한 설명을 입력하세요" aria-label="페이지 설명"></textarea>
+      <button class="dp-btn" id="ttsPlayBtn" data-i18n="btn_tts_play" style="margin-top:8px;width:100%">읽어주기</button>
+    </div>
+
+    <!-- 이미지 레이어 (반투명 트레이싱 가이드) -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_trace">이미지 레이어</div>
+      <label class="dp-btn" for="traceImageInput" data-i18n="btn_trace_upload" style="display:block;text-align:center;cursor:pointer">이미지 삽입</label>
+      <input type="file" id="traceImageInput" accept="image/*" hidden/>
+      <div class="th-section">
+        <div class="th-slider-wrap">
+          <div class="th-track"><div class="th-fill" id="traceFill"></div></div>
+          <div class="th-thumb" id="traceThumb"></div>
+          <input type="range" id="traceOpacitySlider" min="0" max="100" value="40" aria-label="이미지 레이어 투명도"/>
+        </div>
+        <div class="th-foot">
+          <span class="th-val" id="traceOpacityDisplay">40%</span>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-lbl" data-i18n="trace_visible">표시</span>
+        <button class="sw" id="traceVisibleToggle" role="switch" aria-checked="true"></button>
+      </div>
+    </div>
+
+    <!-- 점자 변환 -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_braille">점자 변환</div>
+      <textarea id="brailleTextInput" class="text-input" rows="2" placeholder="점자로 변환할 텍스트" aria-label="점자로 변환할 텍스트"></textarea>
+      <div class="control-grid cols-2" style="margin-top:8px">
+        <button class="dp-btn" id="brailleRenderBtn" data-i18n="btn_braille_render">캔버스에 배치</button>
+        <button class="dp-btn" id="brailleSendBtn" data-i18n="btn_braille_send">DotPad로 보내기</button>
+      </div>
+    </div>
+
+    <!-- 수식 그래프 -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_math">수식 그래프</div>
+      <div class="math-input-row" style="display:flex;gap:6px">
+        <input type="text" id="mathExprInput" class="text-input" placeholder="y = sin(x)" aria-label="수식 입력" style="flex:1"/>
+        <button class="dp-btn" id="mathPlotBtn" data-i18n="btn_plot">그리기</button>
+      </div>
+      <div id="mathErrorMsg" class="hint-err" hidden></div>
     </div>
 
     <!-- Conversion Presets -->
@@ -1190,6 +1293,11 @@ details.dev-export[open] > summary::before { transform: rotate(90deg) }
 <main class="canvas-area" role="main" aria-label="캔버스 작업 영역"
   id="canvasAreaEl">
 
+  <button type="button" class="present-exit" id="presentExitBtn" title="발표 모드 종료">
+    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4"/></svg>
+    <span>발표 모드 종료</span>
+  </button>
+
   <!-- meta strip -->
   <div class="canvas-meta" aria-live="polite">
     <span id="resChip" class="chip chip-n">60×40</span>
@@ -1200,6 +1308,7 @@ details.dev-export[open] > summary::before { transform: rotate(90deg) }
   <!-- canvas wrapper -->
   <div class="canvas-wrap" id="dotGridWrap">
     <canvas id="pad" aria-label="촉각그래픽 캔버스" role="img"></canvas>
+    <canvas id="traceLayer" aria-hidden="true"></canvas>
 
     <!-- empty overlay -->
     <div class="ov" id="emptyOv" role="region" aria-label="시작 안내">

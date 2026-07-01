@@ -71,6 +71,7 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .td-name { font-size: 15px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap }
 .td-search-desktop { flex: 1; max-width: 420px; display: none }
 .td-nav { margin-left: auto; display: flex; align-items: center; gap: 8px }
+.td-device-status { display: flex; align-items: center; flex-shrink: 0 }
 .td-search-mobile { display: block; padding: 0 20px 12px }
 @media (min-width: 860px) {
   .td-search-desktop { display: block }
@@ -142,13 +143,14 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .featured-row { display: flex; gap: 8px; overflow-x: auto; margin: 18px 0; padding-bottom: 2px }
 .featured-pill {
   flex-shrink: 0; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
-  border-radius: var(--r12); padding: 9px 14px; font-size: 12.5px; font-weight: 700;
+  border-radius: var(--r12); padding: 9px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;
 }
+.featured-pill[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
 
 /* ── Layout: filter + grid ───────────────────────────────────── */
 .td-body { display: flex; gap: 24px; align-items: flex-start }
 .td-filter { width: 256px; flex-shrink: 0 }
-@media (max-width: 900px) { .td-body { flex-direction: column } .td-filter { width: 100% } }
+@media (max-width: 900px) { .td-body { flex-direction: column } .td-filter { width: 100%; order: 2 } .td-grid { order: 1 } }
 .filter-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r16); padding: 16px }
 .filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px }
 .filter-head h2 { font-size: 14px; font-weight: 800; margin: 0 }
@@ -160,6 +162,7 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .filter-section-title { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--sub); margin: 0 0 8px }
 .filter-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13.5px; cursor: pointer }
 .filter-row input { accent-color: var(--accent); width: 16px; height: 16px }
+.filter-help { margin: 8px 0 0; color: var(--sub); font-size: 12px; line-height: 1.45 }
 
 .td-grid { flex: 1; min-width: 0 }
 .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px }
@@ -206,7 +209,7 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .report-visual-lbl { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--sub); margin: 0 0 6px }
 .res-tabs { display: flex; gap: 8px; margin-bottom: 8px }
 .res-tab { height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; font-weight: 700; cursor: pointer }
-.res-tab[aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
+.res-tab[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
 .res-tab:disabled { opacity: .35; cursor: not-allowed }
 .detail-tactile { border: 1px solid var(--border); border-radius: var(--r16); height: 200px; overflow: hidden; margin-bottom: 20px }
 .panel-block { border: 1px solid var(--border); border-radius: var(--r16); padding: 16px; background: var(--surface); margin-bottom: 16px }
@@ -232,7 +235,9 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .conn-warn svg { width: 13px; height: 13px }
 
 /* ── Reviewer comment (검수자 코멘트) ────────────────────────── */
-.review-box { background: var(--amber-bg); border: 1px solid #F5DFAE; border-radius: var(--r12); padding: 13px 15px; font-size: 13.5px; line-height: 1.65; color: var(--amber-d) }
+.review-box { border-radius: var(--r12); padding: 13px 15px; font-size: 13.5px; line-height: 1.65 }
+.review-box.good { background: var(--green-bg); border: 1px solid #CDEFD5; color: var(--green-d) }
+.review-box.warn { background: var(--amber-bg); border: 1px solid #F5DFAE; color: var(--amber-d) }
 .review-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); margin-top: 8px }
 .review-pending { font-size: 13px; color: var(--sub); font-style: italic; margin: 0 }
 
@@ -240,7 +245,7 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .lib-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px }
 .lib-tab { height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px }
 .lib-tab svg { width: 14px; height: 14px }
-.lib-tab[aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
+.lib-tab[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
 .folder-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px }
 .folder-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: var(--r10); padding: 7px 11px; font-size: 12px; font-weight: 700; color: var(--sub) }
 .folder-chip svg { width: 13px; height: 13px }
@@ -314,10 +319,12 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
     </div>
 
     <nav class="td-nav" aria-label="주요 메뉴">
-      <button type="button" class="btn btn-secondary sm" id="td-conn-toggle" aria-pressed="false"></button>
       <button type="button" class="btn btn-ghost sm" id="td-nav-home">라이브러리</button>
       <button type="button" class="btn btn-ghost sm" id="td-nav-library"></button>
     </nav>
+    <div class="td-device-status" aria-label="기기 연결 상태">
+      <button type="button" class="btn btn-secondary sm" id="td-conn-toggle" aria-pressed="false"></button>
+    </div>
   </div>
   <div class="td-search-mobile">
     <div class="td-search">

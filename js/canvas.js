@@ -125,6 +125,20 @@ export function renderGrid(ctx, data, cols, rows, layout, opts = {}) {
     }
   }
 
+  // shape-drag preview overlay (line/rect/circle tools) — same treatment as the brush hover
+  if (opts.shapePreview?.length) {
+    ctx.fillStyle   = HOVER_PEN;
+    ctx.strokeStyle = 'rgba(255,77,0,.75)';
+    ctx.lineWidth = 1.4;
+    for (const [x, y] of opts.shapePreview) {
+      if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+      const scx = ox + x * cs + cs / 2;
+      const scy = oy + y * cs + cs / 2;
+      ctx.beginPath(); ctx.arc(scx, scy, rOn * 1.1, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(scx, scy, rOn * 1.1, 0, 7); ctx.stroke();
+    }
+  }
+
   // selection overlay
   if (opts.selection) {
     const { x0, y0, x1, y1 } = opts.selection;
@@ -180,6 +194,48 @@ export function bresenhamLine(x0, y0, x1, y1) {
     const e2 = 2 * err;
     if (e2 > -dy) { err -= dy; x0 += sx; }
     if (e2 < dx)  { err += dx; y0 += sy; }
+  }
+  return cells;
+}
+
+/**
+ * Outline cells of the axis-aligned rectangle spanning (x0,y0)-(x1,y1).
+ * Grid-snapped (integer cells), unfilled — 4 straight edges via bresenhamLine.
+ */
+export function rectCells(x0, y0, x1, y1) {
+  const lo = Math.min(x0, x1), hi = Math.max(x0, x1);
+  const top = Math.min(y0, y1), bot = Math.max(y0, y1);
+  const seen = new Set();
+  const cells = [];
+  for (const [x, y] of [
+    ...bresenhamLine(lo, top, hi, top),
+    ...bresenhamLine(lo, bot, hi, bot),
+    ...bresenhamLine(lo, top, lo, bot),
+    ...bresenhamLine(hi, top, hi, bot),
+  ]) {
+    const key = x + ',' + y;
+    if (!seen.has(key)) { seen.add(key); cells.push([x, y]); }
+  }
+  return cells;
+}
+
+/**
+ * Outline cells of an ellipse fit inside the bounding box (x0,y0)-(x1,y1)
+ * (drag corner-to-corner, like the select tool) — perimeter sampling.
+ */
+export function ellipseCells(x0, y0, x1, y1) {
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const rx = Math.abs(x1 - x0) / 2, ry = Math.abs(y1 - y0) / 2;
+  if (rx < 0.5 || ry < 0.5) return [[Math.round(cx), Math.round(cy)]];
+  const steps = Math.max(16, Math.ceil((rx + ry) * 4));
+  const seen = new Set();
+  const cells = [];
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    const x = Math.round(cx + Math.cos(a) * rx);
+    const y = Math.round(cy + Math.sin(a) * ry);
+    const key = x + ',' + y;
+    if (!seen.has(key)) { seen.add(key); cells.push([x, y]); }
   }
   return cells;
 }

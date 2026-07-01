@@ -14,6 +14,11 @@ export function createBlankPage(cols = 60, rows = 40) {
     title: 'Page',
     width: cols,
     height: rows,
+    sourceType: null,       // 'image' | 'dtms' | 'drawn' | 'restored' | null
+    hasContent: false,
+    hasDtmsData: false,
+    isRendered: false,
+    renderError: null,
     canvasData: new Uint8Array(cols * rows),
     sourceImageState: null,  // { grayBuf, alphaBuf }
     sourceImageMeta: null,   // { type, hasAlpha, ... }
@@ -33,6 +38,9 @@ export function createBlankPage(cols = 60, rows = 40) {
     braillePages: [],
     activeDots: 0,
     viewportState: { zoom: 1, panX: 0, panY: 0 },
+    traceImage: null,      // decoded <img>, in-memory tracing guide (not exported/persisted)
+    traceOpacity: 0.4,
+    traceVisible: true,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -45,6 +53,10 @@ export const appState = {
   fileName: 'Untitled',
   isDirty: false,
   phase: 'empty',        // 'empty' | 'analyzing' | 'ready'
+  sourceType: null,
+  hasContent: false,
+  hasDtmsData: false,
+  isEmpty: true,
 };
 
 // ── Pages State ───────────────────────────────────────────────
@@ -53,6 +65,25 @@ export const pagesState = {
   activePageIndex: 0,
   get activePage() { return this.pages[this.activePageIndex] ?? null; },
 };
+
+export function pageHasContent(page) {
+  if (!page) return false;
+  if (page.hasContent || page.hasDtmsData) return true;
+  if (page.sourceImage || page.sourceImageState) return true;
+  if (page.brailleText || page.braillePages?.length) return true;
+  return !!(page.canvasData?.length && page.canvasData.some(v => !!v));
+}
+
+export function syncAppContentState() {
+  const page = pagesState.activePage;
+  const hasContent = pageHasContent(page);
+  appState.sourceType = page?.sourceType ?? null;
+  appState.hasContent = hasContent;
+  appState.hasDtmsData = !!page?.hasDtmsData || pagesState.pages.some(p => !!p.hasDtmsData);
+  appState.isEmpty = !hasContent;
+  appState.phase = hasContent ? 'ready' : 'empty';
+  return hasContent;
+}
 
 // ── Canvas State (working copy of active page) ────────────────
 export const canvasState = {
@@ -87,10 +118,12 @@ export const viewportState = {
 
 // ── Tool State ────────────────────────────────────────────────
 export const toolState = {
-  currentTool: 'move',   // 'move' | 'pen' | 'eraser' | 'select'
+  currentTool: 'move',   // 'move' | 'pen' | 'eraser' | 'select' | 'line' | 'rect' | 'circle'
   brushSize: 1,
   selection: null,       // { x0, y0, x1, y1 } | null
   selBuffer: null,
+  shapeDrag: null,       // { x0, y0, x1, y1 } | null — in-progress line/rect/circle drag
+  shapePreview: null,    // [x,y][] | null — cells to preview while dragging
   undoStack: [],
   redoStack: [],
 };
@@ -128,9 +161,11 @@ export function saveCurrentPageState() {
   if (!page) return;
   page.canvasData = new Uint8Array(canvasState.data);
   page.activeDots = canvasState.activeDots;
+  page.hasContent = page.hasContent || page.hasDtmsData || page.sourceImageState || canvasState.activeDots > 0;
   page.conversionState = { ...conversionState };
   page.viewportState = { ...viewportState };
   page.updatedAt = Date.now();
+  syncAppContentState();
 }
 
 /** Load page data → canvasState + conversionState */
@@ -144,7 +179,7 @@ export function loadPageState(idx, { saveCurrent = true } = {}) {
   canvasState.height = page.height;
   Object.assign(conversionState, page.conversionState);
   Object.assign(viewportState, page.viewportState);
-  appState.phase = page.activeDots > 0 ? 'ready' : 'empty';
+  syncAppContentState();
 }
 
 /** Partially update the active page */
@@ -182,6 +217,9 @@ export function duplicatePage() {
     conversionState: { ...src.conversionState },
     braillePages: src.braillePages.map(p => ({ ...p })),
     viewportState: { ...src.viewportState },
+    traceImage: src.traceImage,
+    traceOpacity: src.traceOpacity,
+    traceVisible: src.traceVisible,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -207,7 +245,13 @@ export function setActivePageSourceImage(sourceImageState, meta, img) {
   if (!page) return;
   page.sourceImageState = sourceImageState;
   page.sourceImageMeta = meta;
+  page.sourceType = 'image';
+  page.hasContent = true;
+  page.hasDtmsData = false;
+  page.isRendered = false;
+  page.renderError = null;
   // keep the decoded original so the image can be re-rendered at any resolution
   if (img !== undefined) page.sourceImage = img;
   page.updatedAt = Date.now();
+  syncAppContentState();
 }

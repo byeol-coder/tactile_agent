@@ -580,6 +580,23 @@ export function buildDtmsJSON(pages, fileName, cols, rows) {
 }
 
 // ─── Braille (KO Grade 1, 20-cell layout) ────────────────────
+// NOTE on scope: `BRL_MAP` below is inherited from the original
+// implementation and is a simplification — several vowels share one cell,
+// doubled/compound jamo fall back to a base form, and final-consonant
+// (받침) cells reuse the same glyph as initial-consonant cells, whereas the
+// real KSSB 한글 점자 규정 uses distinct cells for 종성. That deeper
+// cell-level correctness is a separate follow-up that needs review by
+// someone who can verify it against the official regulation.
+//
+// The bug fixed here is structural and independently verifiable: this
+// function never decomposed precomposed Hangul syllables (e.g. "안" is one
+// Unicode codepoint, not ㅇ+ㅏ+ㄴ) before looking them up, so every real
+// syllable fell straight through to the generic unknown-glyph placeholder
+// (⠿) — Grade 1 didn't actually work on real sentences. Fixed by decomposing
+// each syllable into initial/medial/final jamo via the standard Unicode
+// Hangul algorithm and mapping each part individually. Syllable-initial ㅇ
+// (the silent placeholder consonant, e.g. "아" = ㅇ+ㅏ) is correctly omitted,
+// per the real rule.
 const BRL_MAP = {
   'ㄱ':'⠈','ㄴ':'⠉','ㄷ':'⠊','ㄹ':'⠐','ㅁ':'⠑','ㅂ':'⠘','ㅅ':'⠠','ㅇ':'⠿','ㅈ':'⠨','ㅊ':'⠩',
   'ㅋ':'⠪','ㅌ':'⠫','ㅍ':'⠬','ㅎ':'⠭','ㅏ':'⠣','ㅐ':'⠜','ㅑ':'⠜','ㅒ':'⠜','ㅓ':'⠎','ㅔ':'⠟',
@@ -588,11 +605,57 @@ const BRL_MAP = {
   ' ':'⠀',
 };
 
+// Compatibility-jamo tables for standard Unicode Hangul syllable decomposition.
+const CHO  = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const JONG = [null,'ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+// Doubled/compound jamo aren't in BRL_MAP — fall back to a base form
+// (documented approximation, not the real doubled-consonant braille mark).
+const JAMO_FALLBACK = {
+  'ㄲ':'ㄱ', 'ㄸ':'ㄷ', 'ㅃ':'ㅂ', 'ㅆ':'ㅅ', 'ㅉ':'ㅈ',
+  'ㄳ':'ㄱ', 'ㄵ':'ㄴ', 'ㄶ':'ㄴ', 'ㄺ':'ㄹ', 'ㄻ':'ㄹ',
+  'ㄼ':'ㄹ', 'ㄽ':'ㄹ', 'ㄾ':'ㄹ', 'ㄿ':'ㄹ', 'ㅀ':'ㄹ', 'ㅄ':'ㅂ',
+};
+
+function jamoCell(j) {
+  return BRL_MAP[j] ?? BRL_MAP[JAMO_FALLBACK[j]] ?? '⠿';
+}
+
+/**
+ * Decompose a precomposed Hangul syllable into its jamo, using the standard
+ * `(code - 0xAC00)` div/mod-by-21/28 Unicode algorithm.
+ * @returns {{initial:string, medial:string, final:?string}|null} null for non-syllable input
+ */
+export function decomposeHangulSyllable(char) {
+  const code = char.charCodeAt(0);
+  if (code < 0xAC00 || code > 0xD7A3) return null;
+  const sIndex = code - 0xAC00;
+  return {
+    initial: CHO[Math.floor(sIndex / 588)],
+    medial:  JUNG[Math.floor((sIndex % 588) / 28)],
+    final:   JONG[sIndex % 28],
+  };
+}
+
 export function textToBraillePages(text, cellsPerLine = 20) {
   if (!text) return [];
-  const chars = [...text].map(c => BRL_MAP[c] ?? (c.match(/[a-zA-Z0-9]/) ? c : '⠿'));
+  let out = '';
+  for (const ch of text) {
+    const syll = decomposeHangulSyllable(ch);
+    if (syll) {
+      if (syll.initial !== 'ㅇ') out += jamoCell(syll.initial);   // silent placeholder — omitted
+      out += jamoCell(syll.medial);
+      if (syll.final) out += jamoCell(syll.final);
+    } else if (BRL_MAP[ch] !== undefined) {
+      out += BRL_MAP[ch];
+    } else {
+      out += ch.match(/[a-zA-Z0-9]/) ? ch : '⠿';
+    }
+  }
+  const cells = [...out];
   const lines = [];
-  for (let i = 0; i < chars.length; i += cellsPerLine)
-    lines.push(chars.slice(i, i + cellsPerLine).join(''));
+  for (let i = 0; i < cells.length; i += cellsPerLine)
+    lines.push(cells.slice(i, i + cellsPerLine).join(''));
   return lines;
 }

@@ -20,7 +20,8 @@ const state = {
   assets: SEED_ASSETS.map((a) => ({ ...a })),
   query: '',
   category: 'all',
-  filters: { source: new Set(), resolution: new Set(), format: new Set(), complexity: new Set(), sort: 'recent' },
+  featured: 'all',
+  filters: { source: new Set(), resolution: new Set(), format: new Set(), complexity: new Set(), sort: 'recent', savedOnly: false },
   loading: true,
   view: 'home', // home | detail | library
   selectedId: null,
@@ -71,26 +72,31 @@ function readinessBadge(level) {
   const icon = level === 'good' ? 'check' : 'alert';
   return badge(tone, icon, r.label);
 }
-// "DotPad 60×40 Ready" — fixed label per the card quality-signal spec (always shown, not just resolution list)
 function dotPadReadyBadge(resolutionSupport) {
-  if (resolutionSupport?.includes('60x40')) return badge('accent', 'plugZap', 'DotPad 60×40 Ready');
-  if (resolutionSupport?.length) return badge('neutral', 'plug', `${resolutionSupport.join(' · ')} 지원`);
-  return badge('neutral', 'plug', '미최적화');
+  if (resolutionSupport?.includes('60x40')) return badge('accent', 'plugZap', 'DotPad 60×40 준비 완료');
+  if (resolutionSupport?.length) return badge('neutral', 'plug', `DotPad ${resolutionSupport.join(' · ')} 준비 완료`);
+  return badge('neutral', 'plug', 'DotPad 준비 대기');
 }
 function complexityBadge(level) {
   const tone = level === 'low' ? 'good' : level === 'medium' ? 'warn' : 'bad';
   return badge(tone, 'layers', `복잡도 ${COMPLEXITY[level] || '—'}`);
 }
 function readabilityBadge(score) {
-  if (score == null) return badge('neutral', 'gauge', '판독성 미측정');
-  const tone = score >= 90 ? 'good' : score >= 78 ? 'accent' : 'warn';
-  return badge(tone, 'gauge', `판독성 ${score}%`);
+  if (score == null) return badge('neutral', 'gauge', '검수 대기');
+  const tone = score >= 90 ? 'good' : score >= 78 ? 'warn' : 'bad';
+  const label = score >= 90 ? '판독성 좋음' : score >= 78 ? '판독성 보통' : '판독성 낮음';
+  return badge(tone, 'gauge', `${label} ${score}%`);
 }
 function verifiedStateBadge(a) {
-  return a.verified ? badge('verified', 'shieldCheck', 'Verified') : badge('neutral', 'clock', '검수 대기');
+  return a.verified ? badge('verified', 'shieldCheck', '검수 완료') : badge('warn', 'clock', '검수 대기');
 }
 function sourceBadge(source) {
   return source === 'Tactile Agent' ? badge('accent', 'sparkle', source) : badge('neutral', null, source);
+}
+function primaryCardSignal(a) {
+  if (a.verified) return verifiedStateBadge(a);
+  if (a.resolutionSupport?.length) return dotPadReadyBadge(a.resolutionSupport);
+  return verifiedStateBadge(a);
 }
 function categoryTileHtml(categoryId) {
   const c = CAT_BY_ID[categoryId] || CATEGORIES[0];
@@ -103,6 +109,11 @@ function getFiltered() {
   if (state.category === 'agent') list = list.filter((a) => a.source === 'Tactile Agent');
   else if (state.category === 'dotpadready') list = list.filter((a) => a.resolutionSupport.length > 0);
   else if (state.category !== 'all') list = list.filter((a) => a.category === state.category);
+
+  if (state.featured === 'dotpad6040') list = list.filter((a) => a.resolutionSupport.includes('60x40'));
+  else if (state.featured === 'teacher') list = list.filter((a) => a.source !== 'Tactile Agent' && ['education', 'math', 'science'].includes(a.category));
+  else if (state.featured === 'agent') list = list.filter((a) => a.source === 'Tactile Agent');
+  else if (state.featured === 'verified') list = list.filter((a) => a.verified);
 
   const q = state.query.trim().toLowerCase();
   if (q) {
@@ -119,7 +130,7 @@ function getFiltered() {
   if (f.resolution.size) list = list.filter((a) => a.resolutionSupport.some((r) => f.resolution.has(r)));
   if (f.format.size) list = list.filter((a) => a.formats.some((fm) => f.format.has(fm)));
   if (f.complexity.size) list = list.filter((a) => f.complexity.has(a.complexity));
-  if (f.sort === 'saved') list = list.filter((a) => a.saved);
+  if (f.savedOnly) list = list.filter((a) => a.saved);
 
   list = [...list];
   if (f.sort === 'used') list.sort((a, b) => (b.dotPadTested ? 1 : 0) - (a.dotPadTested ? 1 : 0));
@@ -135,7 +146,7 @@ function renderCard(a) {
     <button type="button" class="card-thumb" data-action="open" data-id="${a.id}" aria-label="${esc(a.title)} 상세보기">
       ${categoryTileHtml(a.category)}
       <span class="card-dotpreview">${dotMatrixSvg(a.id, '60x40', { cell: 4 })}</span>
-      ${a.verified ? `<span class="card-verified">${badge('verified', 'shieldCheck', '검수됨')}</span>` : ''}
+      ${a.verified ? `<span class="card-verified">${badge('verified', 'shieldCheck', '검수 완료')}</span>` : ''}
     </button>
     <div class="card-body">
       <div class="card-title-row">
@@ -145,9 +156,7 @@ function renderCard(a) {
         </button>
       </div>
       <div class="badge-row">${badge('neutral', null, cat?.ko)}${sourceBadge(a.source)}</div>
-      <div class="badge-row">${verifiedStateBadge(a)}${dotPadReadyBadge(a.resolutionSupport)}</div>
-      <div class="badge-row">${complexityBadge(a.complexity)}${readabilityBadge(a.tactileReadability)}</div>
-      <div class="badge-row">${a.formats.map((fm) => badge('neutral', null, fm)).join('')}</div>
+      <div class="badge-row">${primaryCardSignal(a)}</div>
       <div class="card-actions">
         <button type="button" class="btn btn-secondary sm" data-action="open" data-id="${a.id}">${svgIcon('eye')}보기</button>
         <button type="button" class="btn btn-secondary sm icon-only" data-action="send" data-id="${a.id}" aria-label="${esc(a.title)} DotPad로 보내기">${svgIcon('send')}</button>
@@ -197,7 +206,6 @@ function filterPanelHtml(resultCount) {
   const sortOptions = [
     { id: 'recent', label: '최근 추가순' },
     { id: 'used', label: '많이 사용됨' },
-    { id: 'saved', label: '내가 저장한 자료' },
   ];
   return `
   <aside class="td-filter" aria-label="필터">
@@ -213,7 +221,8 @@ function filterPanelHtml(resultCount) {
         ${checkRow('source', 'Tactile World', f.source.has('Tactile World'), 'Tactile World')}
         ${checkRow('source', 'Tactile Agent', f.source.has('Tactile Agent'), 'Tactile Agent')}
         ${checkRow('source', 'Uploaded', f.source.has('Uploaded'), '직접 업로드')}
-        ${checkRow('source', 'Verified', f.source.has('Verified'), '검수된 자료만')}
+        ${checkRow('source', 'Verified', f.source.has('Verified'), '검수 완료 자료만')}
+        ${checkRow('savedOnly', 'true', f.savedOnly, '내가 저장한 자료만')}
       </div>
       <div class="filter-section">
         <p class="filter-section-title">DotPad 해상도</p>
@@ -223,6 +232,7 @@ function filterPanelHtml(resultCount) {
       <div class="filter-section">
         <p class="filter-section-title">형식</p>
         ${['SVG', 'PNG', 'PDF', 'STL', 'DOTPAD'].map((fm) => checkRow('format', fm, f.format.has(fm), fm)).join('')}
+        <p class="filter-help">DOTPAD는 점 배열과 해상도 정보를 함께 저장한 즉시 출력용 형식입니다.</p>
       </div>
       <div class="filter-section">
         <p class="filter-section-title">복잡도</p>
@@ -246,7 +256,7 @@ function categoryChipsHtml() {
     { id: 'all', ko: '전체' },
     ...CATEGORIES,
     { id: 'agent', ko: 'Tactile Agent' },
-    { id: 'dotpadready', ko: 'DotPad Ready' },
+    { id: 'dotpadready', ko: 'DotPad 준비 완료' },
   ];
   return `<div class="chip-row" role="group" aria-label="카테고리 필터">${items.map((c) =>
     `<button type="button" class="cat-chip" data-action="category" data-cat="${c.id}" aria-pressed="${state.category === c.id}">${esc(c.ko)}</button>`
@@ -267,7 +277,7 @@ function renderHome() {
     </section>
 
     <div class="featured-row" aria-label="추천 컬렉션">
-      ${FEATURED.map((f) => `<span class="featured-pill">${esc(f.label)}</span>`).join('')}
+      ${FEATURED.map((f) => `<button type="button" class="featured-pill" data-action="featured" data-featured="${f.id}" aria-pressed="${state.featured === f.id}">${esc(f.label)}</button>`).join('')}
     </div>
 
     <div class="td-body">
@@ -286,8 +296,6 @@ function checklistFor(a) {
   return [
     { ok: a.complexity !== 'high', label: '명확한 윤곽선' },
     { ok: a.readinessScore !== 'complex', label: '낮은 시각적 혼잡도' },
-    { ok: !!a.lineSpec, label: '선 굵기/간격 체크 완료' },
-    { ok: !!a.decorativeRemoved, label: '불필요한 장식 요소 제거' },
     { ok: a.dotPadTested, label: 'DotPad 출력 테스트 완료' },
     { ok: a.verified, label: '교사/디자이너 검수 완료' },
   ];
@@ -299,6 +307,11 @@ function checklistHtml(a) {
       <span>${esc(c.label)}</span>
       <span class="sr-only">${c.ok ? '충족' : '미충족'}</span>
     </li>`).join('')}</ul>`;
+}
+function reviewBoxTone(a) {
+  if (!a.reviewer) return 'pending';
+  if (!a.verified || /대기|권장|필요|좁음|불균일|추가/.test(a.reviewer.comment)) return 'warn';
+  return 'good';
 }
 function metaRow(label, value) {
   if (!value) return '';
@@ -319,8 +332,9 @@ function renderDetail() {
             <h1 tabindex="-1">${esc(a.title)}</h1>
             <div class="badge-row">
               ${badge('neutral', null, cat?.ko)}${sourceBadge(a.source)}
-              ${a.verified ? badge('verified', 'shieldCheck', '검수됨') : ''}
+              ${verifiedStateBadge(a)}
               ${readinessBadge(a.readinessScore)}
+              ${readabilityBadge(a.tactileReadability)}
             </div>
           </div>
           <button type="button" class="btn btn-secondary" data-action="toggle-save" data-id="${a.id}" aria-pressed="${a.saved}">
@@ -334,28 +348,28 @@ function renderDetail() {
         <p class="report-visual-lbl">촉각그래픽 미리보기</p>
         <div class="detail-visual" style="height:150px">${dotMatrixSvg(a.id + '-tactile', state.detailRes, { cell: 5 })}</div>
 
-        <div class="res-tabs" role="tablist" aria-label="DotPad 미리보기 해상도">
+        <div class="res-tabs" role="group" aria-label="DotPad 미리보기 해상도">
           ${['60x40', '96x64'].map((r) => {
             const disabled = !a.resolutionSupport.includes(r);
-            return `<button type="button" class="res-tab" role="tab" aria-selected="${state.detailRes === r}" data-action="res-tab" data-res="${r}" ${disabled ? 'disabled' : ''}>DotPad ${r.replace('x', ' × ')} 미리보기${disabled ? ' (미지원)' : ''}</button>`;
+            return `<button type="button" class="res-tab" aria-pressed="${state.detailRes === r}" data-action="res-tab" data-res="${r}" ${disabled ? 'disabled' : ''}>DotPad ${r.replace('x', ' × ')} 미리보기${disabled ? ' (미지원)' : ''}</button>`;
           }).join('')}
         </div>
         <div class="detail-tactile">${dotMatrixSvg(a.id, state.detailRes, { cell: 8 })}</div>
 
         <section class="panel-block" aria-labelledby="a11y-desc-h">
-          <h2 id="a11y-desc-h">📋 촉각그래픽 검수 리포트</h2>
+          <h2 id="a11y-desc-h">촉각그래픽 검수 리포트</h2>
           <dl class="a11y-dl">
             <dt>간단 설명</dt><dd>${esc(a.description)}</dd>
             <dt>촉각 탐색 순서</dt><dd>${esc(a.tactileGuide)}</dd>
             <dt>주요 랜드마크</dt><dd><ul>${a.landmarks.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></dd>
-            <dt>단순화 정도</dt><dd>${esc(a.simplification || '평가 대기 중')}</dd>
-            <dt>선 굵기/간격 체크</dt><dd>${esc(a.lineSpec || '평가 대기 중')}</dd>
+            <dt>단순화 정도</dt><dd>${esc(a.simplification || '검수 대기')}</dd>
+            <dt>선 굵기/간격 체크</dt><dd>${esc(a.lineSpec || '검수 대기')}</dd>
             <dt>장식 요소 제거 여부</dt><dd>
               <span class="check-dot ${a.decorativeRemoved ? 'ok' : 'no'}" style="display:inline-flex;width:18px;height:18px;vertical-align:middle;margin-right:6px">${svgIcon(a.decorativeRemoved ? 'check' : 'x')}</span>
-              ${a.decorativeRemoved ? '제거 완료' : '미완료 — 추가 정리 필요'}
+              ${a.decorativeRemoved ? '제거 완료' : '검수 대기'}
             </dd>
             <dt>대체 텍스트 (Alt)</dt><dd>${esc(a.title)} — ${esc(a.description)}</dd>
-            <dt>스크린리더 설명</dt><dd>${esc(a.screenReaderDesc || `${cat?.ko} 카테고리, 복잡도 ${COMPLEXITY[a.complexity]}, 준비 상태 ${READINESS[a.readinessScore].label}인 촉각 자료입니다.`)}</dd>
+            <dt>스크린리더 설명</dt><dd>${esc(a.screenReaderDesc || `${cat?.ko} 카테고리 자료입니다. 먼저 전체 윤곽을 확인한 뒤 주요 랜드마크를 순서대로 탐색하세요.`)}</dd>
           </dl>
         </section>
 
@@ -367,9 +381,9 @@ function renderDetail() {
         <section class="panel-block" aria-labelledby="reviewer-h">
           <h2 id="reviewer-h">검수자 코멘트</h2>
           ${a.reviewer
-            ? `<div class="review-box">${esc(a.reviewer.comment)}</div>
+            ? `<div class="review-box ${reviewBoxTone(a)}">${esc(a.reviewer.comment)}</div>
                <div class="review-meta"><span>${esc(a.reviewer.name)}</span><span>${esc(a.reviewer.date)}</span></div>`
-            : `<p class="review-pending">검수 대기 중 — 아직 검수자 코멘트가 없어요.</p>`}
+            : `<p class="review-pending">검수 대기</p>`}
         </section>
       </div>
 
@@ -433,9 +447,9 @@ function renderLibrary() {
     <h1 tabindex="-1" style="font-size:20px;font-weight:800;margin:0 0 4px">내 라이브러리</h1>
     <p style="font-size:13px;color:var(--sub);margin:0 0 20px">저장한 자료, 팀 자료, 최근 열람 기록, Tactile Agent 초안을 관리하세요.</p>
 
-    <div class="lib-tabs" role="tablist" aria-label="내 라이브러리 탭">
+    <div class="lib-tabs" role="group" aria-label="내 라이브러리 보기">
       ${LIB_TABS.map((t) => `
-        <button type="button" class="lib-tab" role="tab" aria-selected="${state.libraryTab === t.id}" data-action="lib-tab" data-tab="${t.id}">
+        <button type="button" class="lib-tab" aria-pressed="${state.libraryTab === t.id}" data-action="lib-tab" data-tab="${t.id}">
           ${svgIcon(t.icon)}${esc(t.label)}
         </button>`).join('')}
     </div>
@@ -584,8 +598,9 @@ function saveAgentDraft() {
   rerenderCurrentView();
 }
 function resetFilters() {
-  state.filters = { source: new Set(), resolution: new Set(), format: new Set(), complexity: new Set(), sort: 'recent' };
+  state.filters = { source: new Set(), resolution: new Set(), format: new Set(), complexity: new Set(), sort: 'recent', savedOnly: false };
   state.category = 'all';
+  state.featured = 'all';
   state.query = '';
   syncSearchInputs();
   renderHome();
@@ -657,6 +672,11 @@ function initMainDelegation() {
     else if (action === 'send') sendToDotPad(id);
     else if (action === 'adapt') openAgent(id, btn);
     else if (action === 'category') { state.category = btn.dataset.cat; renderHome(); }
+    else if (action === 'featured') {
+      state.featured = state.featured === btn.dataset.featured ? 'all' : btn.dataset.featured;
+      if (state.featured === 'recent') state.filters.sort = 'recent';
+      renderHome();
+    }
     else if (action === 'reset-filters') resetFilters();
     else if (action === 'back') { state.view = 'home'; renderHome(); syncNavActive(); }
     else if (action === 'res-tab') { if (!btn.disabled) { state.detailRes = btn.dataset.res; renderDetail(); } }
@@ -671,6 +691,7 @@ function initMainDelegation() {
     if (!el) return;
     const group = el.dataset.filterGroup, value = el.dataset.filterValue;
     if (group === 'sort') { state.filters.sort = value; renderHome(); return; }
+    if (group === 'savedOnly') { state.filters.savedOnly = el.checked; renderHome(); return; }
     const set = state.filters[group];
     if (!set) return;
     el.checked ? set.add(value) : set.delete(value);

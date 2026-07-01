@@ -7,7 +7,7 @@ import {
   viewportState, toolState, brailleState, dotPadState,
   saveCurrentPageState, loadPageState, addPage, duplicatePage,
   deletePage, setActivePageSourceImage, updateActivePage,
-  createBlankPage,
+  createBlankPage, pageHasContent, syncAppContentState,
 } from './state.js';
 
 import {
@@ -21,11 +21,12 @@ import { interpretCommand, QUICK_COMMANDS } from './commands.js';
 import { drawPrimitive, renderBrailleGrid, describeTactile } from './generate.js';
 import { initBank, loadSymbol } from './bank.js';
 import { svgIcon } from './icons.js';
-import { renderMathGraph } from './mathgraph.js';
+import { renderMathGraph, normalizeExpr } from './mathgraph.js';
+import { renderTraceLayer } from './tracelayer.js';
 
 import {
   computeCanvasLayout, applyLayout, renderGrid,
-  getPointerCell, getBrushCells, bresenhamLine,
+  getPointerCell, getBrushCells, bresenhamLine, rectCells, ellipseCells,
 } from './canvas.js';
 
 import {
@@ -98,6 +99,7 @@ function fitCanvas() {
   viewportState.panY = 0;
   applyPan();
   drawCanvas();
+  drawTraceLayer();
 }
 
 // Apply the current pan offset as a transform on the canvas wrapper.
@@ -124,12 +126,119 @@ function drawCanvas() {
     hoverCells: toolState.hoverBrush || [],
     hoverKind:  toolState.currentTool,
     selection:  toolState.selection,
+    shapePreview: toolState.shapePreview,
   });
+}
+
+function ensurePreviewErrorOverlay() {
+  const wrap = ge('dotGridWrap');
+  if (!wrap) return null;
+  let el = ge('previewErrorOv');
+  if (el) return el;
+  el = document.createElement('div');
+  el.className = 'ov preview-error';
+  el.id = 'previewErrorOv';
+  el.setAttribute('role', 'alert');
+  el.innerHTML = `
+    <p class="ov-title">이 페이지를 표시할 수 없습니다.</p>
+    <p class="ov-sub">DTMS 페이지 데이터는 불러왔지만 미리보기 렌더링에 실패했습니다.</p>
+    <div class="ov-ctas">
+      <button type="button" class="ov-btn fill" data-preview-action="retry">Retry rendering</button>
+      <button type="button" class="ov-btn outline" data-preview-action="first">Go to page 1</button>
+      <button type="button" class="ov-btn outline" data-preview-action="debug">Export debug info</button>
+    </div>`;
+  wrap.appendChild(el);
+  return el;
+}
+
+function showPreviewErrorOverlay(show) {
+  const el = ensurePreviewErrorOverlay();
+  if (el) el.classList.toggle('show', !!show);
+}
+
+function exportDtmsDebugInfo() {
+  const page = pagesState.activePage;
+  const info = {
+    fileName: appState.fileName,
+    pageCount: pagesState.pages.length,
+    currentPageIndex: pagesState.activePageIndex,
+    pageNumber: pagesState.activePageIndex + 1,
+    activePageExists: !!page,
+    resolution: page ? { cols: page.width, rows: page.height } : null,
+    activeDots: page?.activeDots ?? canvasState.activeDots,
+    sourceType: page?.sourceType ?? appState.sourceType,
+    hasContent: pageHasContent(page),
+    hasDtmsData: !!page?.hasDtmsData,
+    isEmpty: appState.isEmpty,
+    renderError: page?.renderError ?? null,
+  };
+  const blob = new Blob([JSON.stringify(info, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (appState.fileName || 'dtms') + '-debug.json';
+  document.body.appendChild(a);
+  a.click();
+  requestAnimationFrame(() => { document.body.removeChild(a); URL.revokeObjectURL(url); });
+}
+
+function renderCurrentPage(idx = pagesState.activePageIndex) {
+  let targetIdx = Number.isInteger(idx) ? idx : 0;
+  if (targetIdx < 0 || targetIdx >= pagesState.pages.length) {
+    targetIdx = 0;
+    toast('페이지 번호가 범위를 벗어나 1페이지로 돌아갑니다.', 'err');
+  }
+  const page = pagesState.pages[targetIdx];
+  console.log('[DTMS] render current page', {
+    currentPageIndex: targetIdx,
+    pageNumber: targetIdx + 1,
+    activePageData: page,
+  });
+  if (!page) {
+    showPreviewErrorOverlay(true);
+    return false;
+  }
+  try {
+    if (targetIdx !== pagesState.activePageIndex) loadPageState(targetIdx);
+    syncAppContentState();
+    setPhase(pageHasContent(page) ? 'ready' : 'empty');
+    drawCanvas();
+    page.isRendered = true;
+    page.renderError = null;
+    showPreviewErrorOverlay(false);
+    syncQuality();
+    syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
+    return true;
+  } catch (err) {
+    page.isRendered = false;
+    page.renderError = err?.message || String(err);
+    syncAppContentState();
+    setPhase(pageHasContent(page) ? 'ready' : 'empty');
+    showPreviewErrorOverlay(true);
+    syncQuality();
+    console.warn('[DTMS] render failed', err);
+    return false;
+  }
+}
+
+function resizeGridNearest(data, fromCols, fromRows, toCols, toRows) {
+  const out = new Uint8Array(toCols * toRows);
+  if (!data?.length || !fromCols || !fromRows) return out;
+  for (let y = 0; y < toRows; y++) {
+    const sy = Math.min(fromRows - 1, Math.floor(y * fromRows / toRows));
+    for (let x = 0; x < toCols; x++) {
+      const sx = Math.min(fromCols - 1, Math.floor(x * fromCols / toCols));
+      out[y * toCols + x] = data[sy * fromCols + sx] ? 1 : 0;
+    }
+  }
+  return out;
 }
 
 // ─── App Phase ────────────────────────────────────────────────
 function setPhase(phase) {
+  if (phase === 'empty' && syncAppContentState()) phase = 'ready';
   appState.phase = phase;
+  appState.isEmpty = phase === 'empty';
   document.body.dataset.state = phase;
   syncBottomBar();
   syncStepper();
@@ -148,6 +257,13 @@ function syncStepper() {
     el.classList.toggle('active', idx === activeIdx);
     el.classList.toggle('done', idx < activeIdx);
   });
+}
+
+function setLoadingMessage(title = null, sub = null) {
+  const label = qs('#analyzeOv .conv-label');
+  const desc = qs('#analyzeOv .conv-sub');
+  if (label) label.textContent = title || t('converting', appState.language);
+  if (desc) desc.textContent = sub || t('converting_sub', appState.language);
 }
 
 // ─── Undo / Redo ──────────────────────────────────────────────
@@ -288,13 +404,16 @@ function finishAnalyze() {
 function loadTactileFromText(text, fallbackName) {
   try {
     const { fileName, pages: items, cols, rows } = parseDtms(text);
-    if (!items.length) return;
+    if (!items.length) throw new Error('No DTMS pages found');
     appState.fileName = fileName || fallbackName || appState.fileName;
     const inp = ge('fname'); if (inp) inp.value = appState.fileName;
 
     // Use file's own resolution if present, otherwise keep current canvas size
     const w = cols || canvasState.width;
     const h = rows || canvasState.height;
+    const currentResolution = `${canvasState.width}×${canvasState.height}`;
+    const fileResolution = `${w}×${h}`;
+    setLoadingMessage(`Loading page 1 of ${items.length}…`, 'Rendering tactile preview…');
 
     pagesState.pages = items.map(item => {
       const page = createBlankPage(w, h);
@@ -302,19 +421,52 @@ function loadTactileFromText(text, fallbackName) {
       page.canvasData = hexToGrid(item.hex, w, h);
       page.activeDots = page.canvasData.reduce((s, v) => s + v, 0);
       page.altText = item.altText;
+      page.sourceType = 'dtms';
+      page.hasContent = true;
+      page.hasDtmsData = true;
+      page.isRendered = false;
+      page.renderError = null;
       return page;
     });
     canvasState.width = w; canvasState.height = h;
-    loadPageState(0);
-    drawCanvas(); syncQuality();
-    syncPageUI(); fitCanvas();
+    loadPageState(0, { saveCurrent: false });
+    syncAppContentState();
+    fitCanvas();
+    const rendered = renderCurrentPage(0);
+    syncPageUI();
+    syncConvUI();
+    syncRecropVisibility();
+    const page = pagesState.activePage;
+    const pinCount = page?.activeDots ?? canvasState.activeDots;
+    const hasContent = pageHasContent(page);
+    console.log('[DTMS] file parsed', {
+      pageCount: pagesState.pages.length,
+      currentPageIndex: pagesState.activePageIndex,
+      activePageExists: !!page,
+      resolution: { cols: w, rows: h },
+      pinCount,
+      hasContent,
+      isEmpty: !hasContent,
+    });
+    if (cols && rows && currentResolution !== fileResolution) {
+      toast(`이 DTMS 파일은 ${fileResolution} 기준으로 제작되었습니다. 현재 캔버스에 맞게 표시합니다.`, 'ok');
+    }
     toast(appState.fileName + ' ' + t('toast_file_loaded', appState.language), 'ok');
-  } catch {
+    if (!rendered) toast('DTMS 페이지 미리보기 렌더링에 실패했어요.', 'err');
+  } catch (err) {
+    console.warn('[DTMS] load failed', err);
+    syncAppContentState();
+    setPhase('empty');
     toast(t('toast_file_err', appState.language), 'err');
+  } finally {
+    setLoadingMessage();
   }
 }
 
 function loadTactileFile(file) {
+  if (!file) return;
+  setPhase('analyzing');
+  setLoadingMessage('Opening DTMS file…', 'Parsing page metadata and tactile dots.');
   const reader = new FileReader();
   reader.onload = e => loadTactileFromText(e.target.result, file.name);
   reader.readAsText(file);
@@ -365,6 +517,39 @@ function paintSlider(v) {
   const mval = ge('miniThVal'); if (mval) mval.textContent = pct + '%';
 }
 
+// ─── Image tracing layer ──────────────────────────────────────
+function paintTraceSlider(v) {
+  const fill  = ge('traceFill');
+  const thumb = ge('traceThumb');
+  const disp  = ge('traceOpacityDisplay');
+  if (fill)  fill.style.width = v + '%';
+  if (thumb) thumb.style.left = v + '%';
+  if (disp)  disp.textContent = v + '%';
+}
+
+/** Redraw the tracing-guide overlay canvas to match the active page and current layout. */
+function drawTraceLayer() {
+  const el = ge('traceLayer');
+  if (!el || !layout) return;
+  applyLayout(el, layout);
+  const page = pagesState.activePage;
+  renderTraceLayer(el.getContext('2d'), page?.traceVisible ? page.traceImage : null, layout, page?.traceOpacity ?? 0.4);
+}
+
+/** Sync the description textarea, TTS state, and trace-layer controls to the active page. */
+function syncDescriptionUI() {
+  const page = pagesState.activePage;
+  const descEl = ge('pageAltTextInput');
+  if (descEl && descEl.value !== (page?.altText || '')) descEl.value = page?.altText || '';
+  const opacityPct = Math.round((page?.traceOpacity ?? 0.4) * 100);
+  const slider = ge('traceOpacitySlider');
+  if (slider) slider.value = opacityPct;
+  paintTraceSlider(opacityPct);
+  const toggle = ge('traceVisibleToggle');
+  if (toggle) toggle.setAttribute('aria-checked', String(page?.traceVisible ?? true));
+  drawTraceLayer();
+}
+
 // ─── Quality Panel ────────────────────────────────────────────
 function pill(el, txt, kind) {
   if (!el) return;
@@ -399,10 +584,30 @@ function syncQuality() {
   const n = cols * rows;
   const pins = g.reduce((s, v) => s + v, 0);
   const fill = Math.round(pins / n * 100);
-
-  if (pins === 0) { resetQuality(); return; }
-
   const page = pagesState.activePage;
+
+  if (pins === 0) {
+    if (!pageHasContent(page)) { resetQuality(); return; }
+    const qd = ge('qDotCount'); if (qd) qd.textContent = '0';
+    const qs2 = ge('qDotSub'); if (qs2) qs2.textContent = `/ ${n.toLocaleString()} · 0%`;
+    pill(ge('qClarity'), '—', 'neutral');
+    pill(ge('qDensity'), '빈 페이지', 'warn');
+    pill(ge('qReadability'), '—', 'neutral');
+    pill(ge('qStructure'), 'DTMS', 'neutral');
+    const resText = `${cols}×${rows}`;
+    const resCh = ge('resChip'); if (resCh) resCh.textContent = resText;
+    const dotCh = ge('dotChip'); if (dotCh) { dotCh.textContent = '0 핀 · 0%'; dotCh.className = 'chip chip-w'; }
+    const resCh2 = ge('resChipBtm'); if (resCh2) resCh2.textContent = resText;
+    const dotCh2 = ge('dotChipBtm'); if (dotCh2) { dotCh2.textContent = '0 핀 · 0%'; dotCh2.className = 'dot-chip chip-w'; }
+    syncBtns(true);
+    return;
+  }
+
+  if (pageHasContent(page) && page?.isRendered === false) {
+    const card = ge('aiFeedbackCard'); if (card) card.style.display = 'block';
+    const aiTxt = ge('aiFeedbackText');
+    if (aiTxt) aiTxt.textContent = '품질 데이터는 계산되었지만 미리보기가 아직 렌더링되지 않았습니다.';
+  }
   const meta = page?.sourceImageMeta;
   const sc = tactileQualityScore(g, cols, rows, { type: meta?.type, outline: conversionState.outline });
   const grade = Math.min(4, Math.max(1, sc.grade));
@@ -639,10 +844,24 @@ function renderPageChips() {
 }
 
 function switchPage(idx) {
-  if (idx === pagesState.activePageIndex) return;
-  loadPageState(idx);
-  setPhase(appState.phase);
-  drawCanvas(); syncQuality(); syncPageUI();
+  const total = pagesState.pages.length;
+  let safeIdx = Number.isInteger(idx) ? idx : 0;
+  if (safeIdx < 0 || safeIdx >= total) {
+    safeIdx = 0;
+    toast('페이지 번호가 범위를 벗어나 1페이지로 돌아갑니다.', 'err');
+  }
+  if (safeIdx === pagesState.activePageIndex) {
+    renderCurrentPage(safeIdx);
+    syncPageUI();
+    syncDescriptionUI();
+    return;
+  }
+  setLoadingMessage(`Loading page ${safeIdx + 1} of ${total}…`, 'Rendering tactile preview…');
+  loadPageState(safeIdx);
+  renderCurrentPage(safeIdx);
+  syncPageUI();
+  syncDescriptionUI();
+  setLoadingMessage();
 }
 
 function syncBottomBar() {
@@ -656,12 +875,25 @@ function selectTool(name) {
   toolState.currentTool = name;
   toolState.selection = null;
   toolState.hoverBrush = null;
+  toolState.shapeDrag = null;
+  toolState.shapePreview = null;
   qsa('.rail-btn[data-tool]').forEach(b => {
     b.classList.toggle('active', b.dataset.tool === name);
     b.setAttribute('aria-pressed', String(b.dataset.tool === name));
   });
   if (padEl) padEl.style.cursor = name === 'move' ? 'grab' : 'crosshair';
   drawCanvas();
+}
+
+const SHAPE_TOOLS = new Set(['line', 'rect', 'circle']);
+
+/** Cells for the in-progress shape drag, dispatched by tool name. */
+function computeShapePreviewCells(tool, drag) {
+  const { x0, y0, x1, y1 } = drag;
+  if (tool === 'line') return bresenhamLine(x0, y0, x1, y1);
+  if (tool === 'rect') return rectCells(x0, y0, x1, y1);
+  if (tool === 'circle') return ellipseCells(x0, y0, x1, y1);
+  return [];
 }
 
 function setSize(s) {
@@ -699,6 +931,10 @@ function onPointerDown(e) {
   } else if (tool === 'fill') {
     pushUndo();
     floodFill(col, row, canvasState.data[row * canvasState.width + col] ? 0 : 1);
+  } else if (SHAPE_TOOLS.has(tool)) {
+    toolState.shapeDrag = { x0: col, y0: row, x1: col, y1: row };
+    toolState.shapePreview = computeShapePreviewCells(tool, toolState.shapeDrag);
+    drawCanvas();
   }
 }
 
@@ -723,6 +959,11 @@ function onPointerMove(e) {
   } else if (tool === 'select' && _drawing && toolState.selection) {
     toolState.selection.x1 = col;
     toolState.selection.y1 = row;
+    drawCanvas();
+  } else if (SHAPE_TOOLS.has(tool) && _drawing && toolState.shapeDrag) {
+    toolState.shapeDrag.x1 = col;
+    toolState.shapeDrag.y1 = row;
+    toolState.shapePreview = computeShapePreviewCells(tool, toolState.shapeDrag);
     drawCanvas();
   } else {
     toolState.hoverBrush = null;
@@ -750,6 +991,23 @@ function onPointerUp(e) {
       x1: Math.max(s.x0, s.x1), y1: Math.max(s.y0, s.y1),
     };
     drawCanvas();
+  } else if (SHAPE_TOOLS.has(tool) && toolState.shapeDrag) {
+    const outline = toolState.shapePreview || [];
+    toolState.shapeDrag = null;
+    toolState.shapePreview = null;
+    if (outline.length) {
+      pushUndo();
+      const { width: cols, height: rows } = canvasState;
+      for (const [x, y] of outline) {
+        for (const [bx, by] of getBrushCells(x, y, toolState.brushSize)) {
+          if (bx < 0 || by < 0 || bx >= cols || by >= rows) continue;
+          canvasState.data[by * cols + bx] = 1;
+        }
+      }
+      afterChange();
+    } else {
+      drawCanvas();
+    }
   }
 }
 
@@ -788,14 +1046,19 @@ function floodFill(startCol, startRow, val) {
 // ─── Keyboard shortcuts ───────────────────────────────────────
 function onKeyDown(e) {
   if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
-  const map = { v: 'move', p: 'pen', e: 'eraser', f: 'fill' };
+  const map = { v: 'move', p: 'pen', e: 'eraser', f: 'fill', l: 'line', r: 'rect', c: 'circle' };
   if (!e.ctrlKey && !e.metaKey && map[e.key]) { selectTool(map[e.key]); return; }
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') { e.preventDefault(); redo(); return; }
   if (e.key === '+' || e.key === '=') { adjustZoom(0.25); return; }
   if (e.key === '-') { adjustZoom(-0.25); return; }
   if (e.key === '0') { viewportState.zoom = 1; fitCanvas(); return; }
-  if (e.key === 'Escape') { toolState.selection = null; drawCanvas(); return; }
+  if (e.key === 'Escape') {
+    toolState.selection = null;
+    toolState.shapeDrag = null;
+    toolState.shapePreview = null;
+    drawCanvas(); return;
+  }
   if ((e.key === 'Delete' || e.key === 'Backspace') && toolState.selection) {
     e.preventDefault(); fillSelection(0); return;
   }
@@ -870,9 +1133,29 @@ function placeGeneratedGrid(data, altText) {
   setActivePageSourceImage(null, null);
   const page = pagesState.activePage;
   if (page && altText) { page.altText = altText; page.brailleText = altText; }
-  if (appState.phase !== 'ready') setPhase('ready');
+  // Always call setPhase (not just when phase looks stale) — setActivePageSourceImage()
+  // already flips appState.phase to 'ready' internally via syncAppContentState(), so the
+  // old "if not ready yet" guard here was always false and skipped setPhase's real job:
+  // updating document.body.dataset.state, which is what actually hides the empty-state overlay.
+  setPhase('ready');
   appState.isDirty = true;
   afterChange();
+}
+
+/** Convert text to braille cells and place it on the canvas (shared by the NL command and the panel input box). */
+function placeBrailleText(text) {
+  const { width: cols, height: rows } = canvasState;
+  pushUndo();
+  const lines = textToBraillePages(text, Math.floor(cols / 3));
+  canvasState.data = renderBrailleGrid(lines, cols, rows);
+  setActivePageSourceImage(null, null);
+  brailleState.brailleText = text;
+  const page = pagesState.activePage;
+  if (page) { page.brailleText = text; page.altText = text; }
+  setPhase('ready');
+  appState.isDirty = true;
+  afterChange();
+  syncDescriptionUI();
 }
 
 // ─── Command bar (Figma-mini prompt brain) ───────────────────
@@ -916,17 +1199,8 @@ async function parseCommand(text) {
 
   // ── Braille text: render typed text as braille cells ──
   if (intent.action === 'brailleText' && intent.brailleText) {
-    import('./engine.js').then(({ textToBraillePages }) => {
-      pushUndo();
-      const lines = textToBraillePages(intent.brailleText, Math.floor(cols / 3));
-      canvasState.data = renderBrailleGrid(lines, cols, rows);
-      brailleState.brailleText = intent.brailleText;
-      if (page) { page.brailleText = intent.brailleText; page.altText = intent.brailleText; }
-      if (appState.phase !== 'ready') setPhase('ready');
-      appState.isDirty = true;
-      afterChange();
-      toast(intent.reply, 'ok');
-    });
+    placeBrailleText(intent.brailleText);
+    toast(intent.reply, 'ok');
     return;
   }
 
@@ -1078,9 +1352,27 @@ function setResolution(cols, rows) {
   if (canvasState.width === cols && canvasState.height === rows) return;
   const page = pagesState.activePage;
   const srcImg = page?.sourceImage;
+  const oldData = new Uint8Array(canvasState.data);
+  const oldWidth = canvasState.width;
+  const oldHeight = canvasState.height;
+  const keepGridContent = !srcImg && pageHasContent(page);
   canvasState.width  = cols; canvasState.height = rows;
-  canvasState.data   = new Uint8Array(cols * rows);
-  if (page) { page.width = cols; page.height = rows; page.canvasData = new Uint8Array(cols * rows); }
+  canvasState.data = keepGridContent
+    ? resizeGridNearest(oldData, oldWidth, oldHeight, cols, rows)
+    : new Uint8Array(cols * rows);
+  if (page) {
+    page.width = cols;
+    page.height = rows;
+    page.canvasData = new Uint8Array(canvasState.data);
+    page.activeDots = canvasState.activeDots;
+    page.hasContent = keepGridContent ? true : false;
+    page.isRendered = keepGridContent;
+    page.renderError = null;
+    if (!keepGridContent && !srcImg) {
+      page.sourceType = null;
+      page.hasDtmsData = false;
+    }
+  }
   toolState.undoStack = []; toolState.redoStack = [];
   if (srcImg) {
     const sourceState = createSourceImageState(srcImg, cols, rows);
@@ -1089,6 +1381,10 @@ function setResolution(cols, rows) {
     canvasState.data = convertToDots(sourceState, conversionState, cols, rows);
     saveCurrentPageState();
     appState.phase = 'ready'; setPhase('ready');
+  } else if (keepGridContent) {
+    saveCurrentPageState();
+    setPhase('ready');
+    toast(`현재 도트 데이터를 ${cols}×${rows} 캔버스에 맞게 표시합니다.`, 'ok');
   } else {
     appState.phase = 'empty'; setPhase('empty');
   }
@@ -1213,6 +1509,13 @@ function wireFullMode() {
   ge('chooseLibraryBtn')?.addEventListener('click', openLibraryBrowser);
   ge('emptyChooseLibrary')?.addEventListener('click', openLibraryBrowser);
   ge('emptyChooseLibrary')?.addEventListener('keydown', activateOnEnterOrSpace(openLibraryBrowser));
+  ge('dotGridWrap')?.addEventListener('click', e => {
+    const act = e.target.closest('[data-preview-action]')?.dataset.previewAction;
+    if (!act) return;
+    if (act === 'retry') renderCurrentPage(pagesState.activePageIndex);
+    if (act === 'first') switchPage(0);
+    if (act === 'debug') exportDtmsDebugInfo();
+  });
 
   // drag-over visual
   const area = qs('.canvas-area');
@@ -1416,11 +1719,11 @@ function wireFullMode() {
   // Page management
   ge('pagePrev')?.addEventListener('click', () => switchPage(pagesState.activePageIndex - 1));
   ge('pageNext')?.addEventListener('click', () => switchPage(pagesState.activePageIndex + 1));
-  ge('pageAdd')?.addEventListener('click', () => { addPage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); toast(t('toast_page_added', appState.language)); });
-  ge('pageDup')?.addEventListener('click', () => { duplicatePage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); toast(t('toast_page_dup', appState.language)); });
+  ge('pageAdd')?.addEventListener('click', () => { addPage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); syncDescriptionUI(); toast(t('toast_page_added', appState.language)); });
+  ge('pageDup')?.addEventListener('click', () => { duplicatePage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); syncDescriptionUI(); toast(t('toast_page_dup', appState.language)); });
   ge('pageDelete')?.addEventListener('click', () => {
     if (pagesState.pages.length <= 1) return;
-    deletePage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI();
+    deletePage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); syncDescriptionUI();
     toast(t('toast_page_del', appState.language));
   });
 
@@ -1453,6 +1756,79 @@ function wireFullMode() {
       exportDtms(pagesState.pages, appState.fileName, canvasState.width, canvasState.height);
       toast(t('toast_dtms', appState.language), 'ok');
     }
+  });
+
+  // Math graph
+  ge('mathPlotBtn')?.addEventListener('click', () => {
+    const raw = ge('mathExprInput')?.value.trim();
+    if (!raw) return;
+    const expr = normalizeExpr(raw);
+    const { data, error } = renderMathGraph(canvasState.width, canvasState.height, expr);
+    const errEl = ge('mathErrorMsg');
+    if (error) { if (errEl) { errEl.textContent = error; errEl.hidden = false; } return; }
+    if (errEl) errEl.hidden = true;
+    placeGeneratedGrid(data, `y = ${expr}`);
+    toast(`y = ${expr}`, 'ok');
+  });
+
+  // Braille text input box
+  ge('brailleRenderBtn')?.addEventListener('click', () => {
+    const text = ge('brailleTextInput')?.value.trim();
+    if (text) placeBrailleText(text);
+  });
+  ge('brailleSendBtn')?.addEventListener('click', () =>
+    sendBrailleText(ge('brailleTextInput')?.value.trim() || ''));
+
+  // Page description + TTS
+  ge('pageAltTextInput')?.addEventListener('input', function() {
+    updateActivePage({ altText: this.value });
+  });
+  ge('ttsPlayBtn')?.addEventListener('click', () => {
+    if (!('speechSynthesis' in window)) { toast('이 브라우저는 TTS를 지원하지 않아요', 'err'); return; }
+    const text = pagesState.activePage?.altText || '';
+    if (!text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = appState.language === 'ko' ? 'ko-KR' : 'en-US';
+    speechSynthesis.speak(u);
+  });
+
+  // Image tracing layer
+  ge('traceImageInput')?.addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    const img = new Image();
+    img.onload = () => { updateActivePage({ traceImage: img, traceVisible: true }); drawTraceLayer(); };
+    img.src = URL.createObjectURL(f);
+    e.target.value = '';
+  });
+  ge('traceOpacitySlider')?.addEventListener('input', function() {
+    const v = Math.max(0, Math.min(100, +this.value));
+    updateActivePage({ traceOpacity: v / 100 });
+    paintTraceSlider(v);
+    drawTraceLayer();
+  });
+  ge('traceVisibleToggle')?.addEventListener('click', function() {
+    const next = this.getAttribute('aria-checked') !== 'true';
+    this.setAttribute('aria-checked', String(next));
+    updateActivePage({ traceVisible: next });
+    drawTraceLayer();
+  });
+
+  // Print
+  ge('printBtn')?.addEventListener('click', () => window.print());
+
+  // Presentation mode
+  ge('presentBtn')?.addEventListener('click', () => {
+    const area = qs('.canvas-area');
+    if (!document.fullscreenElement) area?.requestFullscreen();
+    else document.exitFullscreen();
+  });
+  ge('presentExitBtn')?.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    document.body.classList.toggle('presenting', !!document.fullscreenElement);
+    fitCanvas();
   });
 
   // Global keyboard
@@ -1574,6 +1950,7 @@ export function init() {
   syncBtns(false);
   syncConn();
   syncPageUI();
+  syncDescriptionUI();
   applyI18n();
 
   window.addEventListener('resize', fitCanvas);
