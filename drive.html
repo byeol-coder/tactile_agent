@@ -1,346 +1,1019 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5"/>
-<title>라이브러리 — Tactile World Library</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>Tactile Library Dashboard</title>
 <style>
-/* ── Tokens (identical to index.html, for brand consistency) ───── */
 :root {
-  --bg:       #F5F5F7;
-  --surface:  #FFFFFF;
-  --surface2: #F2F2F4;
-  --border:   #E5E5EA;
-  --border2:  #D1D1D6;
-  --ink:      #1C1C1E;
-  --text:     #3A3A3C;
-  --sub:      #6C6C70;
-  --hint:     #AEAEB2;
-  --accent:   #FF4D00;
-  --accent-d: #E34400;
-  --accent-bg:#FFF3EE;
-  --green:    #30D158;
-  --green-d:  #25A244;
-  --green-bg: #F0FBF3;
-  --amber:    #FF9F0A;
-  --amber-d:  #B4790A;
-  --amber-bg: #FFF8EC;
-  --red:      #FF3B30;
-  --red-d:    #C23B22;
-  --red-bg:   #FFF2F1;
-  --blue:     #0A84FF;
-  --blue-bg:  #EAF3FF;
-  --font: 'Inter','Noto Sans KR',system-ui,-apple-system,sans-serif;
-  --r6:6px; --r8:8px; --r10:10px; --r12:12px; --r16:16px; --r20:20px; --r24:24px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #f0f1f3;
+  --surface-3: #e9eef3;
+  --ink: #1c1c1e;
+  --text: #3a3a3c;
+  --sub: #64666b;
+  --muted: #8a8d93;
+  --border: #dfe1e5;
+  --border-2: #c9ccd2;
+  --accent: #ff4d00;
+  --accent-dark: #df4300;
+  --accent-soft: #fff1eb;
+  --green: #238b45;
+  --green-soft: #edf8f0;
+  --blue: #1769cf;
+  --blue-soft: #eaf3ff;
+  --amber: #9a6500;
+  --amber-soft: #fff6e6;
+  --red: #b9382c;
+  --red-soft: #fff0ee;
+  --shadow: 0 10px 30px rgba(15, 23, 42, .08);
+  --font: Inter, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
-* { box-sizing: border-box }
-html, body { margin: 0; padding: 0 }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-  background: var(--bg); color: var(--ink); font-family: var(--font);
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
   -webkit-font-smoothing: antialiased;
 }
-button, input { font-family: inherit }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sr-only {
-  position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
-a.skip-link {
-  position: absolute; left: 12px; top: -60px; z-index: 200;
-  background: var(--ink); color: #fff; padding: 10px 16px; border-radius: var(--r8);
-  font-size: 13px; font-weight: 700; text-decoration: none; transition: top .15s;
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: -64px;
+  z-index: 100;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
 }
-a.skip-link:focus { top: 12px }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
-svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
+.skip-link:focus { top: 16px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ── Layout ──────────────────────────────────────────────────── */
-.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px }
-.td-header {
-  position: sticky; top: 0; z-index: 30; background: rgba(245,245,247,.92);
-  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+.app-shell {
+  display: grid;
+  grid-template-columns: 256px minmax(0, 1fr);
+  min-height: 100vh;
 }
-.td-header-row { height: 60px; display: flex; align-items: center; gap: 16px }
-.td-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; background: none; border: none; cursor: pointer; padding: 4px; border-radius: var(--r8) }
-.td-logo { width: 34px; height: 34px; border-radius: var(--r10); background: var(--ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
-.td-logo svg { width: 18px; height: 18px }
-.td-name { font-size: 15px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap }
-.td-search-desktop { flex: 1; max-width: 420px; display: none }
-.td-nav { margin-left: auto; display: flex; align-items: center; gap: 8px }
-.td-device-status { display: flex; align-items: center; flex-shrink: 0 }
-.td-search-mobile { display: block; padding: 0 20px 12px }
-@media (min-width: 860px) {
-  .td-search-desktop { display: block }
-  .td-search-mobile { display: none }
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  border-right: 1px solid var(--border);
+  background: rgba(255, 255, 255, .86);
+  backdrop-filter: blur(12px);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+}
+.logo {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+}
+.logo svg { color: var(--accent); }
+.brand-title { display: grid; gap: 1px; }
+.brand-title strong { font-size: 14px; line-height: 1.2; }
+.brand-title span { color: var(--sub); font-size: 12px; }
+.side-section { display: grid; gap: 8px; }
+.side-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+.side-link[aria-current="page"], .side-link:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.side-link .count {
+  margin-left: auto;
+  color: var(--sub);
+  font-size: 12px;
+  font-weight: 800;
+}
+.side-bottom {
+  margin-top: auto;
+  display: grid;
+  gap: 10px;
+}
+.device-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.device-card strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.device-card p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
-.td-main { padding: 24px 0 64px }
-
-/* ── Search ──────────────────────────────────────────────────── */
-.td-search { position: relative; width: 100% }
-.td-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--hint); pointer-events: none }
-.td-search input {
-  width: 100%; height: 42px; border-radius: var(--r16); border: 1px solid var(--border);
-  background: var(--surface); padding: 0 14px 0 40px; font-size: 13.5px; color: var(--ink);
+.main {
+  min-width: 0;
+  padding: 22px 28px 56px;
 }
-.td-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,77,0,.12) }
-.td-search.lg svg { width: 20px; height: 20px; left: 18px }
-.td-search.lg input { height: 54px; border-radius: var(--r20); padding-left: 50px; font-size: 15px }
-
-/* ── Buttons ─────────────────────────────────────────────────── */
+.topbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.search {
+  position: relative;
+  max-width: 680px;
+}
+.search svg {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+}
+.search input {
+  width: 100%;
+  height: 44px;
+  padding: 0 16px 0 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+.search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 77, 0, .14);
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 36px; padding: 0 14px; border-radius: var(--r12); font-size: 13.5px; font-weight: 600;
-  border: 1px solid transparent; cursor: pointer; transition: background .12s, border-color .12s, filter .12s;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
   white-space: nowrap;
 }
-.btn svg { width: 15px; height: 15px; flex-shrink: 0 }
-.btn.sm { height: 32px; padding: 0 11px; font-size: 12.5px }
-.btn.sm svg { width: 14px; height: 14px }
-.btn.lg { height: 44px; padding: 0 20px; font-size: 14.5px }
-.btn.icon-only { width: 36px; padding: 0 }
-.btn.sm.icon-only { width: 32px }
-.btn-primary { background: var(--accent); color: #fff }
-.btn-primary:hover { filter: brightness(.95) }
-.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border) }
-.btn-secondary:hover { background: var(--surface2) }
-.btn-ghost { background: transparent; color: var(--ink) }
-.btn-ghost:hover { background: var(--surface2) }
-.btn:disabled { opacity: .4; cursor: not-allowed }
-.btn[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary { background: var(--surface); border-color: var(--border); }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-icon { width: 36px; padding: 0; }
 
-/* ── Badge ───────────────────────────────────────────────────── */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px; border-radius: 999px;
-  padding: 3px 9px; font-size: 11px; font-weight: 700; line-height: 1; white-space: nowrap;
+.library-header {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
 }
-.badge svg { width: 11px; height: 11px }
-.badge.neutral { background: var(--surface2); color: var(--sub) }
-.badge.accent { background: var(--accent-bg); color: var(--accent-d) }
-.badge.good { background: var(--green-bg); color: var(--green-d) }
-.badge.warn { background: var(--amber-bg); color: var(--amber-d) }
-.badge.bad { background: var(--red-bg); color: var(--red-d) }
-.badge.verified { background: var(--blue-bg); color: var(--blue) }
-
-/* ── Hero ────────────────────────────────────────────────────── */
-.td-hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r24); padding: 32px; margin-bottom: 20px }
-.td-hero h1 { margin: 0 0 6px; font-size: 26px; font-weight: 800; letter-spacing: -.01em }
-.td-hero p { margin: 0 0 18px; font-size: 14px; color: var(--sub); max-width: 520px }
-.td-hero .td-search.lg { max-width: 540px; margin-bottom: 20px }
-
-/* ── Chips ───────────────────────────────────────────────────── */
-.chip-row { display: flex; flex-wrap: wrap; gap: 8px }
-.cat-chip {
-  height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--ink); font-size: 12.5px; font-weight: 700; cursor: pointer;
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
 }
-.cat-chip[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
-
-.featured-row { display: flex; gap: 8px; overflow-x: auto; margin: 18px 0; padding-bottom: 2px }
-.featured-pill {
-  flex-shrink: 0; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
-  border-radius: var(--r12); padding: 9px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+.title-row > div:first-child {
+  flex: 1 1 420px;
+  min-width: 0;
 }
-.featured-pill[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
-
-/* ── Layout: filter + grid ───────────────────────────────────── */
-.td-body { display: flex; gap: 24px; align-items: flex-start }
-.td-filter { width: 256px; flex-shrink: 0 }
-@media (max-width: 900px) { .td-body { flex-direction: column } .td-filter { width: 100%; order: 2 } .td-grid { order: 1 } }
-.filter-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r16); padding: 16px }
-.filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px }
-.filter-head h2 { font-size: 14px; font-weight: 800; margin: 0 }
-.filter-reset { background: none; border: none; color: var(--accent-d); font-size: 12.5px; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 2px }
-.filter-count { font-size: 12px; color: var(--sub); margin: 0 0 4px }
-.filter-section { border-bottom: 1px solid var(--border); padding: 14px 0 }
-.filter-section:first-of-type { padding-top: 0 }
-.filter-section:last-of-type { border-bottom: none; padding-bottom: 0 }
-.filter-section-title { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--sub); margin: 0 0 8px }
-.filter-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13.5px; cursor: pointer }
-.filter-row input { accent-color: var(--accent); width: 16px; height: 16px }
-.filter-help { margin: 8px 0 0; color: var(--sub); font-size: 12px; line-height: 1.45 }
-
-.td-grid { flex: 1; min-width: 0 }
-.asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px }
-
-/* ── Card ────────────────────────────────────────────────────── */
-.asset-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r16); overflow: hidden; display: flex; flex-direction: column }
-.asset-card:focus-within { box-shadow: 0 0 0 2px var(--accent) }
-.card-thumb { position: relative; height: 128px; background: var(--surface2); border: none; width: 100%; padding: 0; cursor: pointer; display: block }
-.card-thumb-icon { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center }
-.card-thumb-icon svg { width: 32px; height: 32px; color: var(--accent-d) }
-.card-dotpreview { position: absolute; top: 8px; right: 8px; width: 64px; height: 44px; border-radius: var(--r8); overflow: hidden; border: 2px solid #fff; box-shadow: var(--shadow-sm) }
-.card-verified { position: absolute; top: 8px; left: 8px }
-.card-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1 }
-.card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px }
-.card-title { background: none; border: none; padding: 0; text-align: left; font-size: 14px; font-weight: 700; color: var(--ink); cursor: pointer; line-height: 1.35 }
-.card-title:hover { text-decoration: underline }
-.save-btn { background: none; border: none; width: 30px; height: 30px; flex-shrink: 0; border-radius: var(--r8); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--hint) }
-.save-btn svg { width: 18px; height: 18px }
-.save-btn[aria-pressed="true"] { color: var(--accent-d) }
-.badge-row { display: flex; flex-wrap: wrap; gap: 6px }
-.card-actions { display: flex; gap: 6px; padding-top: 10px; margin-top: auto; border-top: 1px solid var(--border) }
-.card-actions .btn:first-child { flex: 1 }
-
-/* ── Skeleton / empty ────────────────────────────────────────── */
-@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .5 } }
-.skeleton-card { border: 1px solid var(--border); border-radius: var(--r16); overflow: hidden; background: var(--surface); animation: pulse 1.4s ease-in-out infinite }
-.skeleton-card .sk-thumb { height: 128px; background: var(--surface2) }
-.skeleton-card .sk-body { padding: 14px; display: flex; flex-direction: column; gap: 8px }
-.skeleton-card .sk-line { height: 12px; border-radius: 6px; background: var(--surface2) }
-
-.empty-state { text-align: center; padding: 64px 24px; border: 1px solid var(--border); border-radius: var(--r16); background: var(--surface) }
-.empty-state .empty-dots { width: 96px; height: 64px; margin: 0 auto 16px; border-radius: var(--r10); overflow: hidden; opacity: .7 }
-.empty-state h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800 }
-.empty-state p { margin: 0 0 16px; font-size: 13px; color: var(--sub) }
-
-/* ── Detail page ─────────────────────────────────────────────── */
-.back-link { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--sub); font-size: 13.5px; font-weight: 700; cursor: pointer; padding: 4px; margin-bottom: 16px; border-radius: var(--r8) }
-.back-link svg { width: 16px; height: 16px }
-.detail-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start }
-@media (max-width: 980px) { .detail-grid { grid-template-columns: 1fr } }
-.detail-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-bottom: 14px }
-.detail-head h1 { margin: 0 0 8px; font-size: 22px; font-weight: 800; line-height: 1.25 }
-.detail-visual { border: 1px solid var(--border); border-radius: var(--r16); height: 220px; overflow: hidden; margin-bottom: 14px; background: var(--surface2) }
-.report-visual-lbl { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; color: var(--sub); margin: 0 0 6px }
-.res-tabs { display: flex; gap: 8px; margin-bottom: 8px }
-.res-tab { height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; font-weight: 700; cursor: pointer }
-.res-tab[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
-.res-tab:disabled { opacity: .35; cursor: not-allowed }
-.detail-tactile { border: 1px solid var(--border); border-radius: var(--r16); height: 200px; overflow: hidden; margin-bottom: 20px }
-.panel-block { border: 1px solid var(--border); border-radius: var(--r16); padding: 16px; background: var(--surface); margin-bottom: 16px }
-.panel-block h2 { font-size: 15px; font-weight: 800; margin: 0 0 12px }
-.a11y-dl dt { font-weight: 700; color: var(--sub); font-size: 12.5px; margin-bottom: 2px }
-.a11y-dl dd { margin: 0 0 12px; font-size: 13.5px; line-height: 1.55 }
-.a11y-dl dd:last-child { margin-bottom: 0 }
-.a11y-dl ul { margin: 0; padding-left: 18px }
-.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px }
-.checklist li { display: flex; align-items: center; gap: 8px; font-size: 13.5px }
-.check-dot { width: 20px; height: 20px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
-.check-dot svg { width: 12px; height: 12px }
-.check-dot.ok { background: var(--green-bg); color: var(--green-d) }
-.check-dot.no { background: var(--surface2); color: var(--hint) }
-.meta-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border) }
-.meta-row:last-child { border-bottom: none }
-.meta-row dt { color: var(--sub) }
-.meta-row dd { margin: 0; font-weight: 700; text-align: right }
-.side-col { display: flex; flex-direction: column; gap: 16px }
-.action-stack { display: flex; flex-direction: column; gap: 8px }
-.action-stack .btn { width: 100% }
-.conn-warn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--amber-d); margin: -2px 0 2px }
-.conn-warn svg { width: 13px; height: 13px }
-
-/* ── Reviewer comment (검수자 코멘트) ────────────────────────── */
-.review-box { border-radius: var(--r12); padding: 13px 15px; font-size: 13.5px; line-height: 1.65 }
-.review-box.good { background: var(--green-bg); border: 1px solid #CDEFD5; color: var(--green-d) }
-.review-box.warn { background: var(--amber-bg); border: 1px solid #F5DFAE; color: var(--amber-d) }
-.review-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); margin-top: 8px }
-.review-pending { font-size: 13px; color: var(--sub); font-style: italic; margin: 0 }
-
-/* ── My Library ──────────────────────────────────────────────── */
-.lib-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px }
-.lib-tab { height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px }
-.lib-tab svg { width: 14px; height: 14px }
-.lib-tab[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent) }
-.folder-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px }
-.folder-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: var(--r10); padding: 7px 11px; font-size: 12px; font-weight: 700; color: var(--sub) }
-.folder-chip svg { width: 13px; height: 13px }
-.lib-empty { border: 1px solid var(--border); border-radius: var(--r16); padding: 40px; text-align: center; background: var(--surface) }
-.lib-empty p:first-child { font-weight: 700; font-size: 13.5px; margin: 0 0 4px }
-.lib-empty p:last-child { margin: 0; font-size: 12.5px; color: var(--sub) }
-
-/* ── Modal / Agent panel ─────────────────────────────────────── */
-.modal-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(28,28,30,.5); display: flex; align-items: center; justify-content: center; padding: 16px }
-.modal-box { width: 100%; max-width: 620px; max-height: 88vh; overflow-y: auto; background: var(--surface); border-radius: var(--r20); box-shadow: var(--shadow-md) }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border) }
-.modal-header h2 { margin: 0; font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px }
-.modal-header h2 svg { width: 18px; height: 18px; color: var(--accent-d) }
-.modal-header p { margin: 2px 0 0; font-size: 12px; color: var(--sub) }
-.modal-close { width: 34px; height: 34px; border-radius: var(--r10); border: none; background: none; color: var(--sub); display: flex; align-items: center; justify-content: center; cursor: pointer }
-.modal-close svg { width: 17px; height: 17px }
-.modal-body { padding: 20px }
-.agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px }
-.agent-action { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: var(--r12); padding: 12px; background: var(--surface); text-align: left; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ink) }
-.agent-action:hover { background: var(--accent-bg) }
-.agent-icon { width: 32px; height: 32px; border-radius: var(--r8); background: var(--accent-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
-.agent-icon svg { width: 16px; height: 16px; color: var(--accent-d) }
-.agent-processing { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 20px }
-.spin { width: 30px; height: 30px; color: var(--accent-d); animation: spin 0.9s linear infinite; margin-bottom: 12px }
-@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-.agent-processing .a-title { font-size: 13.5px; font-weight: 700; margin: 0 0 4px }
-.agent-processing .a-sub { font-size: 12px; color: var(--sub); margin: 0 }
-.ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px }
-.ba-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; margin: 0 0 6px; color: var(--sub) }
-.ba-label.after { color: var(--accent-d) }
-.ba-preview { border-radius: var(--r12); overflow: hidden; height: 100px; border: 1px solid var(--border) }
-.ba-preview.after { border-color: var(--accent) }
-.agent-note { display: flex; gap: 8px; background: var(--accent-bg); color: var(--accent-d); border-radius: var(--r12); padding: 12px; font-size: 13px; margin-bottom: 16px }
-.agent-note svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px }
-.agent-footer { display: flex; gap: 8px }
-.agent-footer .btn { flex: 1 }
-
-/* ── Toast ───────────────────────────────────────────────────── */
-#td-toast {
-  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px);
-  background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 999px;
-  font-size: 13px; font-weight: 700; opacity: 0; pointer-events: none;
-  transition: opacity .2s, transform .2s; z-index: 100; box-shadow: var(--shadow-md);
+h1 {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 34px);
+  line-height: 1.08;
+  letter-spacing: 0;
 }
-#td-toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
-#td-toast.err { background: var(--red-d) }
+.header-copy {
+  margin: 7px 0 0;
+  max-width: 760px;
+  color: var(--sub);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.summary-strip {
+  flex: 1 1 420px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(112px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+.summary-item {
+  min-height: 62px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.summary-item span {
+  color: var(--sub);
+  font-size: 11px;
+  font-weight: 800;
+}
+.summary-item strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+.tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.library-tab {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+}
+.library-tab[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+.library-tab .tab-count {
+  color: inherit;
+  opacity: .72;
+  font-size: 12px;
+}
+.tab-help {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+}
+.tab-note {
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.tab-note[data-active="true"] {
+  border-color: #ffc7ad;
+  background: var(--accent-soft);
+}
+.tab-note strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.tab-note p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.content-layout {
+  display: grid;
+  grid-template-columns: 218px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  padding-top: 20px;
+}
+.filter-panel {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.filter-panel h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.filter-group {
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.filter-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.filter-chip {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 800;
+  text-align: left;
+}
+.filter-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+.results-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.results-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.results-meta {
+  margin: 3px 0 0;
+  color: var(--sub);
+  font-size: 13px;
+}
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sort-row select {
+  height: 36px;
+  min-width: 132px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(282px, 1fr));
+  gap: 14px;
+}
+.asset-card {
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+}
+.asset-card:hover {
+  border-color: var(--border-2);
+  box-shadow: var(--shadow);
+}
+.thumb {
+  position: relative;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.045) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,.045) 1px, transparent 1px),
+    var(--surface-3);
+  background-size: 18px 18px;
+}
+.thumb svg.preview {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.thumb-label {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .92);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+}
+.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.35;
+}
+.card-sub {
+  margin: 3px 0 0;
+  color: var(--sub);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.status.good { background: var(--green-soft); color: var(--green); }
+.status.warn { background: var(--amber-soft); color: var(--amber); }
+.status.bad { background: var(--red-soft); color: var(--red); }
+.status.blue { background: var(--blue-soft); color: var(--blue); }
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.meta-box {
+  min-height: 54px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfbfc;
+}
+.meta-box span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.meta-box strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.a11y-block {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafb;
+}
+.a11y-block strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.a11y-block p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 40px;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.empty-state {
+  display: none;
+  padding: 48px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: center;
+}
+.empty-state h3 { margin: 0 0 6px; font-size: 17px; }
+.empty-state p { margin: 0; color: var(--sub); font-size: 13px; }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  transform: translateX(-50%) translateY(12px);
+  opacity: 0;
+  pointer-events: none;
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  transition: .18s ease;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 1060px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: static;
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .side-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .side-label { grid-column: 1 / -1; }
+  .side-bottom { display: none; }
+  .main { padding: 20px; }
+  .title-row { align-items: flex-start; flex-direction: column; }
+  .title-row > div:first-child,
+  .summary-strip { flex: none; }
+  .summary-strip { width: 100%; min-width: 0; }
+  .content-layout { grid-template-columns: 1fr; }
+  .filter-panel {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .filter-panel h2 { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .sidebar {
+    padding: 14px 18px;
+    gap: 0;
+  }
+  .sidebar .side-section {
+    display: none;
+  }
+  .topbar { grid-template-columns: 1fr; }
+  .top-actions { justify-content: flex-start; overflow-x: auto; }
+  .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tab-help { grid-template-columns: 1fr; }
+  .summary-item { min-height: 56px; }
+  .tab-note { min-height: auto; }
+  .filter-panel { order: 2; }
+  .content-layout > section { order: 1; }
+  .filter-panel { grid-template-columns: 1fr; }
+  .results-head { align-items: flex-start; flex-direction: column; }
+  .asset-grid { grid-template-columns: 1fr; }
+  .side-section { grid-template-columns: 1fr; }
+  .card-actions { grid-template-columns: 1fr 1fr 40px; }
+}
 </style>
 </head>
 <body>
-
-<a href="#td-main" class="skip-link">본문으로 건너뛰기</a>
-
-<header class="td-header">
-  <div class="wrap td-header-row">
-    <button type="button" class="td-brand" id="td-brand-btn" aria-label="라이브러리 홈으로">
-      <span class="td-logo">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="7" cy="7" r="1.6" fill="#F2ECDF" stroke="none"/><circle cx="12" cy="7" r="1.6" fill="#F2ECDF" stroke="none"/><circle cx="17" cy="7" r="1.6" fill="#F2ECDF" stroke="none"/>
-          <circle cx="7" cy="12" r="1.6" fill="#F2ECDF" stroke="none" opacity=".4"/><circle cx="12" cy="12" r="1.6" fill="var(--accent)" stroke="none"/><circle cx="17" cy="12" r="1.6" fill="#F2ECDF" stroke="none" opacity=".4"/>
-          <circle cx="7" cy="17" r="1.6" fill="#F2ECDF" stroke="none" opacity=".2"/><circle cx="12" cy="17" r="1.6" fill="#F2ECDF" stroke="none"/><circle cx="17" cy="17" r="1.6" fill="#F2ECDF" stroke="none" opacity=".2"/>
-        </svg>
+<a class="skip-link" href="#content">본문으로 건너뛰기</a>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="라이브러리 사이드바">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.5" fill="#fff" stroke="none"/><circle cx="17" cy="7" r="1.5" fill="#fff" stroke="none"/><circle cx="7" cy="12" r="1.5" fill="#fff" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="17" cy="12" r="1.5" fill="#fff" stroke="none"/><circle cx="7" cy="17" r="1.5" fill="#fff" stroke="none"/><circle cx="12" cy="17" r="1.5" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="1.5" fill="currentColor" stroke="none"/></svg>
       </span>
-      <span class="td-name">라이브러리</span>
-    </button>
+      <span class="brand-title">
+        <strong>Tactile Library</strong>
+        <span>자료 관리 대시보드</span>
+      </span>
+    </div>
 
-    <div class="td-search-desktop">
-      <div class="td-search">
-        <span id="td-search-icon-1"></span>
-        <input type="search" id="td-search-desktop-input" aria-label="라이브러리 자료 검색" placeholder="지도, 과학 도표, 게임, 학습지, 문화, 수학 검색…"/>
+    <nav class="side-section" aria-label="빠른 이동">
+      <p class="side-label">Workspace</p>
+      <button class="side-link" type="button" data-side="all" aria-current="page"><span data-icon="folder"></span>전체 자료 <span class="count" id="side-count-all">0</span></button>
+      <button class="side-link" type="button" data-side="recent"><span data-icon="clock"></span>최근 열람 <span class="count">8</span></button>
+      <button class="side-link" type="button" data-side="shared"><span data-icon="users"></span>공유 요청 <span class="count">3</span></button>
+      <button class="side-link" type="button" data-side="review"><span data-icon="shield"></span>검수 대기 <span class="count">5</span></button>
+    </nav>
+
+    <nav class="side-section" aria-label="스마트 필터">
+      <p class="side-label">Smart Filters</p>
+      <button class="side-link" type="button" data-smart="dotpad"><span data-icon="send"></span>DotPad 준비 완료</button>
+      <button class="side-link" type="button" data-smart="verified"><span data-icon="check"></span>검수 완료</button>
+      <button class="side-link" type="button" data-smart="draft"><span data-icon="sparkle"></span>Agent 초안</button>
+      <button class="side-link" type="button" data-smart="template"><span data-icon="book"></span>공식 템플릿</button>
+    </nav>
+
+    <div class="side-bottom">
+      <div class="device-card">
+        <strong><span data-icon="plug"></span>Dot Pad 60x40 연결됨</strong>
+        <p>선택한 자료를 즉시 전송하거나 Tactile Studio에서 편집할 수 있습니다.</p>
+        <button class="btn btn-secondary" type="button" data-toast="Dot Pad 상태 패널을 열었습니다."><span data-icon="settings"></span>기기 설정</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="content">
+    <div class="topbar">
+      <label class="search">
+        <span data-icon="search"></span>
+        <input id="search" type="search" autocomplete="off" placeholder="자료명, 태그, 랜드마크, 제작자 검색" aria-label="촉각그래픽 자료 검색">
+      </label>
+      <div class="top-actions" aria-label="자료 작업">
+        <button class="btn btn-secondary" type="button" data-toast="이미지 업로드 흐름을 시작합니다."><span data-icon="upload"></span>업로드</button>
+        <button class="btn btn-secondary" type="button" data-toast="새 폴더를 만들었습니다."><span data-icon="folder"></span>새 폴더</button>
+        <button class="btn btn-primary" type="button" data-toast="Tactile Studio에서 새 프로젝트를 엽니다."><span data-icon="plus"></span>새 자료</button>
       </div>
     </div>
 
-    <nav class="td-nav" aria-label="주요 메뉴">
-      <button type="button" class="btn btn-ghost sm" id="td-nav-home">라이브러리</button>
-      <button type="button" class="btn btn-ghost sm" id="td-nav-library"></button>
-    </nav>
-    <div class="td-device-status" aria-label="기기 연결 상태">
-      <button type="button" class="btn btn-secondary sm" id="td-conn-toggle" aria-pressed="false"></button>
+    <section class="library-header" aria-labelledby="page-title">
+      <div class="title-row">
+        <div>
+          <h1 id="page-title">Tactile Library</h1>
+          <p class="header-copy">촉각그래픽 파일을 찾고, 검수 상태와 접근성 설명을 확인한 뒤, 열기·공유·Dot Pad 전송까지 이어지는 자료 중심 라이브러리입니다.</p>
+        </div>
+        <div class="summary-strip" aria-label="라이브러리 요약">
+          <div class="summary-item"><span>전체 자료</span><strong id="sum-total">0</strong></div>
+          <div class="summary-item"><span>DotPad 준비</span><strong id="sum-dotpad">0</strong></div>
+          <div class="summary-item"><span>검수 완료</span><strong id="sum-verified">0</strong></div>
+          <div class="summary-item"><span>공유 중</span><strong id="sum-shared">0</strong></div>
+        </div>
+      </div>
+
+      <div class="tab-row" role="tablist" aria-label="라이브러리 구분">
+        <button id="tab-mine" class="library-tab" type="button" role="tab" aria-selected="true" aria-controls="asset-grid" data-tab="mine"><span data-icon="user"></span>내 라이브러리 <span class="tab-count"></span></button>
+        <button id="tab-shared" class="library-tab" type="button" role="tab" aria-selected="false" aria-controls="asset-grid" data-tab="shared"><span data-icon="users"></span>공유 라이브러리 <span class="tab-count"></span></button>
+        <button id="tab-public" class="library-tab" type="button" role="tab" aria-selected="false" aria-controls="asset-grid" data-tab="public"><span data-icon="globe"></span>공용 라이브러리 <span class="tab-count"></span></button>
+      </div>
+
+      <div class="tab-help" aria-label="탭 설명">
+        <div class="tab-note" data-tab-note="mine" data-active="true">
+          <strong>내 라이브러리</strong>
+          <p>내가 만든 촉각그래픽과 저장한 프로젝트</p>
+        </div>
+        <div class="tab-note" data-tab-note="shared" data-active="false">
+          <strong>공유 라이브러리</strong>
+          <p>나와 팀에게 공유된 촉각 자료</p>
+        </div>
+        <div class="tab-note" data-tab-note="public" data-active="false">
+          <strong>공용 라이브러리</strong>
+          <p>누구나 사용할 수 있는 공식 템플릿과 샘플 자료</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="content-layout">
+      <aside class="filter-panel" aria-label="자료 필터">
+        <h2>필터</h2>
+        <div class="filter-group">
+          <p class="filter-title">유형</p>
+          <button class="filter-chip" type="button" data-filter="all" aria-pressed="true">전체 <span id="filter-all">0</span></button>
+          <button class="filter-chip" type="button" data-filter="tactile" aria-pressed="false">촉각그래픽 <span id="filter-tactile">0</span></button>
+          <button class="filter-chip" type="button" data-filter="project" aria-pressed="false">프로젝트 <span id="filter-project">0</span></button>
+          <button class="filter-chip" type="button" data-filter="template" aria-pressed="false">템플릿 <span id="filter-template">0</span></button>
+        </div>
+        <div class="filter-group">
+          <p class="filter-title">상태</p>
+          <button class="filter-chip" type="button" data-filter="dotpad" aria-pressed="false">DotPad 준비 <span id="filter-dotpad">0</span></button>
+          <button class="filter-chip" type="button" data-filter="verified" aria-pressed="false">검수 완료 <span id="filter-verified">0</span></button>
+          <button class="filter-chip" type="button" data-filter="review" aria-pressed="false">검수 대기 <span id="filter-review">0</span></button>
+        </div>
+        <div class="filter-group">
+          <p class="filter-title">주제</p>
+          <button class="filter-chip" type="button" data-filter="maps" aria-pressed="false">지도</button>
+          <button class="filter-chip" type="button" data-filter="science" aria-pressed="false">과학</button>
+          <button class="filter-chip" type="button" data-filter="math" aria-pressed="false">수학</button>
+          <button class="filter-chip" type="button" data-filter="daily" aria-pressed="false">생활</button>
+        </div>
+      </aside>
+
+      <section aria-labelledby="results-title">
+        <div class="results-head">
+          <div>
+            <h2 id="results-title">내 라이브러리</h2>
+            <p class="results-meta" id="results-meta">자료를 불러오는 중입니다.</p>
+          </div>
+          <div class="sort-row">
+            <button class="btn btn-secondary btn-icon" type="button" data-toast="카드 보기로 표시 중입니다." aria-label="카드 보기"><span data-icon="grid"></span></button>
+            <select id="sort" aria-label="정렬">
+              <option value="recent">최근 업데이트순</option>
+              <option value="readability">촉각 판독성 높은순</option>
+              <option value="title">이름순</option>
+            </select>
+          </div>
+        </div>
+        <div class="asset-grid" id="asset-grid" role="tabpanel" aria-labelledby="tab-mine"></div>
+        <div class="empty-state" id="empty-state">
+          <h3>조건에 맞는 자료가 없습니다</h3>
+          <p>검색어를 줄이거나 다른 탭과 필터를 선택해 보세요.</p>
+        </div>
+      </section>
     </div>
-  </div>
-  <div class="td-search-mobile">
-    <div class="td-search">
-      <span id="td-search-icon-2"></span>
-      <input type="search" id="td-search-mobile-input" aria-label="라이브러리 자료 검색 (모바일)" placeholder="자료 검색…"/>
-    </div>
-  </div>
-</header>
+  </main>
+</div>
 
-<main id="td-main" class="wrap td-main"></main>
+<div class="sr-only" role="status" aria-live="polite" id="live"></div>
+<div class="toast" id="toast" aria-hidden="true"></div>
 
-<div id="td-agent-root"></div>
+<script>
+const icons = {
+  search: '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="20.5" y2="20.5"/></svg>',
+  folder: '<svg viewBox="0 0 24 24"><path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4.5l2 2.5H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><polyline points="12 7.5 12 12 15.5 14"/></svg>',
+  users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.5-3.8 3-6 5.5-6s5 2.2 5.5 6"/><circle cx="17" cy="9" r="2.3"/><path d="M15 20c.3-2.6 1.8-4.3 3.5-4.6"/></svg>',
+  shield: '<svg viewBox="0 0 24 24"><path d="M12 3.5l7 3v5.2c0 4.8-3 8-7 9.3-4-1.3-7-4.5-7-9.3V6.5z"/><polyline points="8.7 12.3 11 14.6 15.3 9.8"/></svg>',
+  send: '<svg viewBox="0 0 24 24"><path d="M3.5 11.2L20 4l-6.6 16.5-3-6.9z"/><line x1="10.4" y1="13.6" x2="20" y2="4"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><polyline points="4 12.5 9.5 18 20 6"/></svg>',
+  sparkle: '<svg viewBox="0 0 24 24"><path d="M12 3.2l1.8 5.2 5.2 1.8-5.2 1.8L12 17.2l-1.8-5.2L5 10.2l5.2-1.8z"/><path d="M18.5 15l.55 1.7 1.7.55-1.7.55-.55 1.7-.55-1.7-1.7-.55 1.7-.55z"/></svg>',
+  book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="2" x2="12" y2="17"/></svg>',
+  plug: '<svg viewBox="0 0 24 24"><path d="M9 3v6"/><path d="M15 3v6"/><path d="M6.5 9h11v3a5.5 5.5 0 0 1-11 0z"/><line x1="12" y1="17.5" x2="12" y2="21"/></svg>',
+  settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3.4-.2-.1a1.7 1.7 0 0 0-1.9.2 1.7 1.7 0 0 0-.9 1.6V22H9.2v-.2a1.7 1.7 0 0 0-.9-1.6 1.7 1.7 0 0 0-1.9-.2l-.2.1-2-3.4.1-.1A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14H2v-4h1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-3.4.2.1a1.7 1.7 0 0 0 1.9-.2 1.7 1.7 0 0 0 .9-1.6V2h5.6v.2a1.7 1.7 0 0 0 .9 1.6 1.7 1.7 0 0 0 1.9.2l.2-.1 2 3.4-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1H22v4h-1a1.7 1.7 0 0 0-1.6 1z"/></svg>',
+  upload: '<svg viewBox="0 0 24 24"><path d="M12 20V8"/><polyline points="7.5 12.5 12 8 16.5 12.5"/><path d="M4.5 16.5v3A1.5 1.5 0 0 0 6 21h12a1.5 1.5 0 0 0 1.5-1.5v-3"/><path d="M5 8a6 6 0 0 1 11.7-1.7A4 4 0 0 1 18 14"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.7-4.3 3.6-6.8 7.5-6.8s6.8 2.5 7.5 6.8"/></svg>',
+  globe: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><line x1="4.5" y1="12" x2="19.5" y2="12"/><ellipse cx="12" cy="12" rx="3.6" ry="7.5"/></svg>',
+  grid: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.2"/><rect x="14" y="4" width="6" height="6" rx="1.2"/><rect x="4" y="14" width="6" height="6" rx="1.2"/><rect x="14" y="14" width="6" height="6" rx="1.2"/></svg>',
+  eye: '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg>'
+};
 
-<div class="sr-only" role="status" aria-live="polite" aria-atomic="true" id="td-live"></div>
-<div id="td-toast" aria-hidden="true"></div>
+const assets = [
+  { id: 'a1', tab: 'mine', title: '대한민국 지형도 - 산맥과 하천', type: 'tactile', topic: 'maps', owner: '나', updated: '2026-06-18', format: 'SVG, DOTPAD', resolution: '60x40, 96x64', status: 'verified', readiness: 93, dotpad: true, shared: false, source: '저장한 프로젝트', landmarks: '태백산맥, 한강, 동해안선', alt: '한반도의 주요 산맥과 하천 줄기를 단순화한 촉각 지형도입니다.' },
+  { id: 'a2', tab: 'mine', title: '식물 세포 구조 단면도', type: 'project', topic: 'science', owner: '김도윤 교사', updated: '2026-06-22', format: 'PNG, PDF', resolution: '60x40', status: 'review', readiness: 79, dotpad: true, shared: true, source: '업로드 이미지 변환본', landmarks: '세포벽, 핵, 엽록체', alt: '세포벽, 엽록체, 핵을 구분한 식물 세포의 기본 단면 구조입니다.' },
+  { id: 'a3', tab: 'mine', title: '분수 비교 막대 모델', type: 'tactile', topic: 'math', owner: 'Tactile Agent', updated: '2026-06-29', format: 'DOTPAD, SVG', resolution: '60x40', status: 'verified', readiness: 95, dotpad: true, shared: false, source: 'Agent 생성 초안', landmarks: '1/2 막대, 1/3 막대, 1/4 막대', alt: '1/2, 1/3, 1/4의 크기를 나란히 비교할 수 있는 막대 모델입니다.' },
+  { id: 'a4', tab: 'mine', title: '우리 동네 지도 - 학교 주변', type: 'project', topic: 'daily', owner: '나', updated: '2026-05-30', format: 'PNG, PDF', resolution: '60x40', status: 'verified', readiness: 91, dotpad: false, shared: false, source: '저장한 프로젝트', landmarks: '학교, 횡단보도, 편의점', alt: '학교를 중심으로 한 도보 통학로와 주요 건물을 표시한 생활 지도입니다.' },
+  { id: 'a5', tab: 'shared', title: '촉각 미로 게임 - 초급', type: 'tactile', topic: 'daily', owner: '서울맹학교 전공과', updated: '2026-06-27', format: 'DOTPAD', resolution: '60x40', status: 'review', readiness: 90, dotpad: true, shared: true, source: '팀 공유 자료', landmarks: '시작점, 도착점, 벽 경로', alt: '왼쪽 아래 시작점에서 오른쪽 위 도착점까지 벽을 따라가는 초급 미로입니다.' },
+  { id: 'a6', tab: 'shared', title: '정물화 구도 연습 - 사과와 병', type: 'project', topic: 'daily', owner: '이한나 디자이너', updated: '2026-06-05', format: 'SVG, PNG', resolution: '60x40', status: 'review', readiness: 81, dotpad: true, shared: true, source: '기관 협업 자료', landmarks: '병 윤곽, 사과 2개, 원근 선', alt: '명암 대신 윤곽선 굵기로 원근을 표현한 정물화 촉각 버전입니다.' },
+  { id: 'a7', tab: 'shared', title: '세계 지도 - 대륙 윤곽 단순화', type: 'tactile', topic: 'maps', owner: 'Tactile Agent', updated: '2026-06-24', format: 'PNG', resolution: '60x40', status: 'needs', readiness: 68, dotpad: false, shared: true, source: '나에게 공유됨', landmarks: '적도선, 아프리카, 유라시아', alt: '세계 지도 SVG를 60x40 해상도용으로 단순화한 검토용 버전입니다.' },
+  { id: 'a8', tab: 'public', title: '이차함수 그래프 - 포물선 기본형', type: 'template', topic: 'math', owner: 'Tactile World 편집팀', updated: '2026-06-10', format: 'SVG, DOTPAD', resolution: '60x40, 96x64', status: 'verified', readiness: 96, dotpad: true, shared: true, source: '공식 템플릿', landmarks: '원점, 최저점, x축', alt: 'y=x² 기본형과 평행이동된 포물선을 나란히 배치한 그래프입니다.' },
+  { id: 'a9', tab: 'public', title: '태양계 행성 크기 비교', type: 'tactile', topic: 'science', owner: 'Tactile World 편집팀', updated: '2026-06-14', format: 'SVG, DOTPAD, STL', resolution: '96x64', status: 'verified', readiness: 92, dotpad: true, shared: true, source: '검수 완료 샘플', landmarks: '태양, 목성, 수성', alt: '8개 행성을 상대적 크기 순서로 배열한 촉각 다이어그램입니다.' },
+  { id: 'a10', tab: 'public', title: '숫자 놀이판 1-20', type: 'template', topic: 'daily', owner: 'Tactile World 편집팀', updated: '2026-05-20', format: 'DOTPAD', resolution: '60x40', status: 'verified', readiness: 97, dotpad: true, shared: true, source: '교육 콘텐츠', landmarks: '1번 시작 칸, 20번 도착 칸', alt: '1부터 20까지 순서를 손끝으로 따라가는 저학년용 숫자 놀이판입니다.' },
+  { id: 'a11', tab: 'public', title: '명절 음식 상차림 배치도', type: 'tactile', topic: 'daily', owner: '문화 교육 검수팀', updated: '2026-06-02', format: 'PNG, PDF', resolution: '60x40', status: 'review', readiness: 83, dotpad: false, shared: true, source: '샘플 자료', landmarks: '과일 줄, 전 줄, 밥과 국', alt: '차례상의 기본 음식 배치를 촉각으로 익힐 수 있는 도식입니다.' }
+];
 
-<script type="module" src="js/drive-app.js"></script>
+const state = { tab: 'mine', filter: 'all', query: '', sort: 'recent' };
+const tabLabels = { mine: '내 라이브러리', shared: '공유 라이브러리', public: '공용 라이브러리' };
+const statusText = { verified: '검수 완료', review: '검수 대기', needs: '단순화 필요' };
+const typeText = { tactile: '촉각그래픽', project: '프로젝트', template: '템플릿' };
+
+function byId(id) { return document.getElementById(id); }
+function icon(name) { return icons[name] || ''; }
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+function statusClass(status) {
+  if (status === 'verified') return 'good';
+  if (status === 'needs') return 'bad';
+  return 'warn';
+}
+function previewSvg(seed) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+  const dots = [];
+  for (let i = 0; i < 70; i += 1) {
+    hash = Math.imul(hash ^ (hash >>> 15), 2246822507);
+    const x = Math.abs(hash % 180) + 10;
+    hash = Math.imul(hash ^ (hash >>> 13), 3266489909);
+    const y = Math.abs(hash % 96) + 8;
+    const large = Math.abs(hash % 5) === 0;
+    dots.push(`<circle cx="${x}" cy="${y}" r="${large ? 2.4 : 1.5}" fill="${large ? '#ff4d00' : '#1c1c1e'}" opacity="${large ? '.95' : '.42'}"/>`);
+  }
+  return `<svg class="preview" viewBox="0 0 200 112" role="img" aria-label="DotPad 점 배열 미리보기"><rect width="200" height="112" fill="rgba(255,255,255,.15)"/>${dots.join('')}</svg>`;
+}
+function matchesFilter(asset) {
+  if (state.filter === 'all') return true;
+  if (state.filter === 'dotpad') return asset.dotpad;
+  if (state.filter === 'verified') return asset.status === 'verified';
+  if (state.filter === 'review') return asset.status !== 'verified';
+  if (['tactile', 'project', 'template'].includes(state.filter)) return asset.type === state.filter;
+  if (['maps', 'science', 'math', 'daily'].includes(state.filter)) return asset.topic === state.filter;
+  return true;
+}
+function visibleAssets() {
+  const q = state.query.trim().toLowerCase();
+  let list = assets.filter(asset => asset.tab === state.tab).filter(matchesFilter);
+  if (q) {
+    list = list.filter(asset => [
+      asset.title, asset.owner, asset.source, asset.landmarks, asset.alt, asset.format, asset.resolution
+    ].some(value => value.toLowerCase().includes(q)));
+  }
+  list = [...list];
+  if (state.sort === 'readability') list.sort((a, b) => b.readiness - a.readiness);
+  else if (state.sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title, 'ko'));
+  else list.sort((a, b) => b.updated.localeCompare(a.updated));
+  return list;
+}
+function card(asset) {
+  return `
+    <article class="asset-card">
+      <div class="thumb">
+        ${previewSvg(asset.id)}
+        <span class="thumb-label">${escapeHtml(asset.source)}</span>
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <h3 class="card-title">${escapeHtml(asset.title)}</h3>
+            <p class="card-sub">${escapeHtml(asset.owner)} · 업데이트 ${escapeHtml(asset.updated)}</p>
+          </div>
+          <span class="status ${statusClass(asset.status)}">${statusText[asset.status]}</span>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-box"><span>자료 유형</span><strong>${typeText[asset.type]}</strong></div>
+          <div class="meta-box"><span>판독성</span><strong>${asset.readiness}%</strong></div>
+          <div class="meta-box"><span>해상도</span><strong>${escapeHtml(asset.resolution)}</strong></div>
+          <div class="meta-box"><span>형식</span><strong>${escapeHtml(asset.format)}</strong></div>
+        </div>
+        <div class="a11y-block">
+          <strong>${icon('shield')}접근성 메타데이터</strong>
+          <p>${escapeHtml(asset.alt)}</p>
+          <p>랜드마크: ${escapeHtml(asset.landmarks)}</p>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-secondary" type="button" data-toast="${escapeHtml(asset.title)} 자료를 열었습니다.">${icon('eye')}열기</button>
+          <button class="btn btn-secondary" type="button" data-toast="${escapeHtml(asset.title)} 공유 설정을 열었습니다.">${icon('users')}공유</button>
+          <button class="btn btn-primary btn-icon" type="button" data-toast="${escapeHtml(asset.title)} Dot Pad 전송을 시작했습니다." aria-label="${escapeHtml(asset.title)} Dot Pad로 전송">${icon('send')}</button>
+        </div>
+      </div>
+    </article>`;
+}
+function updateCounts() {
+  const count = tab => assets.filter(asset => asset.tab === tab).length;
+  document.querySelector('[data-tab="mine"] .tab-count').textContent = count('mine');
+  document.querySelector('[data-tab="shared"] .tab-count').textContent = count('shared');
+  document.querySelector('[data-tab="public"] .tab-count').textContent = count('public');
+  byId('sum-total').textContent = assets.length;
+  byId('sum-dotpad').textContent = assets.filter(asset => asset.dotpad).length;
+  byId('sum-verified').textContent = assets.filter(asset => asset.status === 'verified').length;
+  byId('sum-shared').textContent = assets.filter(asset => asset.shared).length;
+  byId('side-count-all').textContent = assets.length;
+}
+function updateFilterCounts(tabAssets) {
+  const set = (id, value) => { const el = byId(id); if (el) el.textContent = value; };
+  set('filter-all', tabAssets.length);
+  set('filter-tactile', tabAssets.filter(asset => asset.type === 'tactile').length);
+  set('filter-project', tabAssets.filter(asset => asset.type === 'project').length);
+  set('filter-template', tabAssets.filter(asset => asset.type === 'template').length);
+  set('filter-dotpad', tabAssets.filter(asset => asset.dotpad).length);
+  set('filter-verified', tabAssets.filter(asset => asset.status === 'verified').length);
+  set('filter-review', tabAssets.filter(asset => asset.status !== 'verified').length);
+}
+function render() {
+  const tabAssets = assets.filter(asset => asset.tab === state.tab);
+  const list = visibleAssets();
+  const grid = byId('asset-grid');
+  const empty = byId('empty-state');
+  grid.innerHTML = list.map(card).join('');
+  grid.style.display = list.length ? 'grid' : 'none';
+  empty.style.display = list.length ? 'none' : 'block';
+  byId('results-title').textContent = tabLabels[state.tab];
+  byId('results-meta').textContent = `${tabLabels[state.tab]} ${tabAssets.length}개 중 ${list.length}개 표시 · ${state.filter === 'all' ? '전체 필터' : '선택 필터 적용'}`;
+  grid.setAttribute('aria-labelledby', `tab-${state.tab}`);
+  updateFilterCounts(tabAssets);
+  document.querySelectorAll('.library-tab').forEach(tab => {
+    const active = tab.dataset.tab === state.tab;
+    tab.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('.tab-note').forEach(note => {
+    note.dataset.active = String(note.dataset.tabNote === state.tab);
+  });
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.setAttribute('aria-pressed', String(chip.dataset.filter === state.filter));
+  });
+  byId('live').textContent = `${list.length}개 자료가 표시됩니다.`;
+}
+function toast(message) {
+  const el = byId('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
+updateCounts();
+render();
+
+document.querySelectorAll('.library-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    state.tab = tab.dataset.tab;
+    state.filter = 'all';
+    render();
+  });
+});
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    state.filter = chip.dataset.filter;
+    render();
+  });
+});
+document.querySelectorAll('[data-smart]').forEach(link => {
+  link.addEventListener('click', () => {
+    const map = { dotpad: 'dotpad', verified: 'verified', draft: 'project', template: 'template' };
+    state.filter = map[link.dataset.smart] || 'all';
+    render();
+  });
+});
+document.querySelectorAll('[data-side]').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('[data-side]').forEach(item => item.removeAttribute('aria-current'));
+    link.setAttribute('aria-current', 'page');
+    if (link.dataset.side === 'shared') state.tab = 'shared';
+    if (link.dataset.side === 'review') state.filter = 'review';
+    if (link.dataset.side === 'all') state.filter = 'all';
+    render();
+  });
+});
+byId('search').addEventListener('input', event => {
+  state.query = event.target.value;
+  render();
+});
+byId('sort').addEventListener('change', event => {
+  state.sort = event.target.value;
+  render();
+});
+document.addEventListener('click', event => {
+  const target = event.target.closest('[data-toast]');
+  if (target) toast(target.dataset.toast);
+});
+</script>
 </body>
 </html>
