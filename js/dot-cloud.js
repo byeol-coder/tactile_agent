@@ -67,7 +67,7 @@ export const dotCloud = {
           count: countOf(driverKind, g.DTM_GROUP_NO, g), modDate: g.MOD_DATE, seed: !!g.seed })),
       ...files.sort((a, b) => (b.MOD_DATE || 0) - (a.MOD_DATE || 0))
         .map((f) => ({ type: "file", no: f.DTM_FILE_NO, name: f.FILE_NAME, ext: f.FILE_EXT,
-          width: f.WIDTH, height: f.HEIGHT, tag: f.TAG, thumb: f.thumb, modDate: f.MOD_DATE })),
+          width: f.WIDTH, height: f.HEIGHT, tag: f.TAG, meta: f.META, thumb: f.thumb, modDate: f.MOD_DATE })),
     ];
     const totalPage = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
     const cur = Math.min(Math.max(1, pageNo), totalPage);
@@ -100,7 +100,10 @@ export const dotCloud = {
   },
 
   // 파일 저장 (같은 폴더에 같은 이름이면 덮어쓰기)
-  async saveFile({ driverKind = "P", parentGroupNo = "ROOT", name, dtms, thumb, width, height, tag }) {
+  // `meta` is an optional free-form object (category/description/tags/visibility/
+  // quality snapshot, etc.) used by the "Save to Library" flow — it mirrors how a
+  // real library backend would store rich metadata alongside the DTMS payload.
+  async saveFile({ driverKind = "P", parentGroupNo = "ROOT", name, dtms, thumb, width, height, tag, meta }) {
     const d = ensureSeed();
     const now = Date.now();
     const base = name.replace(/\.(dtms|dtmx|dtm)$/i, "");
@@ -108,10 +111,10 @@ export const dotCloud = {
     const fname = base + "." + ext;
     const files = d[driverKind].files;
     const found = files.find((f) => f.FILE_NAME === fname && f.PARENT_GROUP_NO === parentGroupNo);
-    if (found) Object.assign(found, { dtms, thumb, WIDTH: width, HEIGHT: height, TAG: tag, MOD_DATE: now });
+    if (found) Object.assign(found, { dtms, thumb, WIDTH: width, HEIGHT: height, TAG: tag, META: meta ?? found.META, MOD_DATE: now });
     else files.push({
       DTM_FILE_NO: "f" + now, FILE_NAME: fname, FILE_EXT: ext, WIDTH: width, HEIGHT: height,
-      TAG: tag, PARENT_GROUP_NO: parentGroupNo, DRIVER_KIND: driverKind,
+      TAG: tag, META: meta ?? null, PARENT_GROUP_NO: parentGroupNo, DRIVER_KIND: driverKind,
       dtms, thumb, REG_DATE: now, MOD_DATE: now,
     });
     persist(d);

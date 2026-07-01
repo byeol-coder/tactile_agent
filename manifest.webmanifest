@@ -1,7 +1,7 @@
 {
-  "name": "Dot Canvas — AI 촉각그래픽",
-  "short_name": "Dot Canvas",
-  "description": "AI로 촉각그래픽을 만들고 Dot Pad로 출력하는 도구",
+  "name": "Tactile Agent — AI 촉각그래픽",
+  "short_name": "Tactile Agent",
+  "description": "AI로 촉각그래픽을 만들고 DotPad로 출력하는 도구",
   "lang": "ko",
   "start_url": ".",
   "scope": ".",

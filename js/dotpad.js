@@ -1,4 +1,4 @@
-// ── Dot Pad Layer ─────────────────────────────────────────────
+// ── DotPad Layer ─────────────────────────────────────────────
 // Wraps the SDK and provides a clean interface for sending data.
 // Decoupled from canvas rendering.
 
@@ -50,7 +50,7 @@ export function disconnectDotPad() {
 }
 
 /**
- * Send graphic data to Dot Pad.
+ * Send graphic data to DotPad.
  * Debounced and deduped.
  */
 export function sendGraphicData(hex, force = false) {
@@ -66,7 +66,7 @@ export function sendGraphicData(hex, force = false) {
 }
 
 /**
- * Send braille text to Dot Pad.
+ * Send braille text to DotPad.
  */
 export function sendBrailleText(text) {
   if (!dotPadState.connected || !_sdk) return;
@@ -90,7 +90,7 @@ export function allPinsDown() {
 }
 
 /**
- * Sync the current canvas viewport to Dot Pad.
+ * Sync the current canvas viewport to DotPad.
  * If livePreviewEnabled is false, this is a no-op.
  * @param {Uint8Array} canvasData
  * @param {number} cols

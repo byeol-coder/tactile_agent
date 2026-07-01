@@ -103,7 +103,7 @@ export const brailleState = {
   cellsPerLine: 20,
 };
 
-// ── Dot Pad State ─────────────────────────────────────────────
+// ── DotPad State ─────────────────────────────────────────────
 export const dotPadState = {
   connected: false,
   livePreviewEnabled: true,

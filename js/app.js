@@ -14,7 +14,7 @@ import {
   createSourceImageState, analyzeImageType,
   convertToDots, autoSelectParams, optimizeForDotPad,
   tactileQualityScore, gradeReason, analyzeDensity, autoThinDots,
-  gridToHex, hexToGrid, textToBraillePages,
+  gridToHex, hexToGrid, textToBraillePages, buildDtmsJSON,
 } from './engine.js';
 
 import { interpretCommand, QUICK_COMMANDS } from './commands.js';
@@ -36,6 +36,8 @@ import {
 import { exportDtms, exportPng, exportJson, copyHexToClipboard, parseDtms } from './export.js';
 import { t } from './i18n.js';
 import { openImageCropModal } from './crop.js';
+import { openTactileLibraryUI } from './tactile-library.js';
+import { dotCloud, grabThumb } from './dot-cloud.js';
 
 // ─── DOM helpers ──────────────────────────────────────────────
 const ge  = id => document.getElementById(id);
@@ -130,10 +132,22 @@ function setPhase(phase) {
   appState.phase = phase;
   document.body.dataset.state = phase;
   syncBottomBar();
+  syncStepper();
   if (phase === 'ready') {
     const badge = qs('.ai-done-badge');
     if (badge) badge.style.display = '';
   }
+}
+
+// ─── Workflow stepper ───────────────────────────────────────────
+function syncStepper() {
+  const steps = ['import', 'convert', 'check', 'send'];
+  const activeIdx = appState.phase === 'empty' ? 0 : appState.phase === 'analyzing' ? 1 : 2;
+  qsa('.step-item[data-step]').forEach(el => {
+    const idx = steps.indexOf(el.dataset.step);
+    el.classList.toggle('active', idx === activeIdx);
+    el.classList.toggle('done', idx < activeIdx);
+  });
 }
 
 // ─── Undo / Redo ──────────────────────────────────────────────
@@ -227,6 +241,7 @@ function syncRecropVisibility() {
 
 function startAnalyze(img, name) {
   setPhase('analyzing');
+  _ignoredSuggestions.clear();
   if (name) {
     const inp = ge('fname');
     if (inp) { appState.fileName = name; inp.value = name; }
@@ -269,38 +284,45 @@ function finishAnalyze() {
   announce(describeTactile(canvasState.data, canvasState.width, canvasState.height, appState.language));
 }
 
+/** Load a DTMS/DTM payload from raw text — shared by file-input import and library import. */
+function loadTactileFromText(text, fallbackName) {
+  try {
+    const { fileName, pages: items, cols, rows } = parseDtms(text);
+    if (!items.length) return;
+    appState.fileName = fileName || fallbackName || appState.fileName;
+    const inp = ge('fname'); if (inp) inp.value = appState.fileName;
+
+    // Use file's own resolution if present, otherwise keep current canvas size
+    const w = cols || canvasState.width;
+    const h = rows || canvasState.height;
+
+    pagesState.pages = items.map(item => {
+      const page = createBlankPage(w, h);
+      page.title = item.title;
+      page.canvasData = hexToGrid(item.hex, w, h);
+      page.activeDots = page.canvasData.reduce((s, v) => s + v, 0);
+      page.altText = item.altText;
+      return page;
+    });
+    canvasState.width = w; canvasState.height = h;
+    loadPageState(0);
+    drawCanvas(); syncQuality();
+    syncPageUI(); fitCanvas();
+    toast(appState.fileName + ' ' + t('toast_file_loaded', appState.language), 'ok');
+  } catch {
+    toast(t('toast_file_err', appState.language), 'err');
+  }
+}
+
 function loadTactileFile(file) {
   const reader = new FileReader();
-  reader.onload = async e => {
-    try {
-      const { parseDtms } = await import('./export.js');
-      const { fileName, pages: items, cols, rows } = parseDtms(e.target.result);
-      if (!items.length) return;
-      appState.fileName = fileName;
-      const inp = ge('fname'); if (inp) inp.value = fileName;
-
-      // Use file's own resolution if present, otherwise keep current canvas size
-      const w = cols || canvasState.width;
-      const h = rows || canvasState.height;
-
-      pagesState.pages = items.map(item => {
-        const page = createBlankPage(w, h);
-        page.title = item.title;
-        page.canvasData = hexToGrid(item.hex, w, h);
-        page.activeDots = page.canvasData.reduce((s, v) => s + v, 0);
-        page.altText = item.altText;
-        return page;
-      });
-      canvasState.width = w; canvasState.height = h;
-      loadPageState(0);
-      drawCanvas(); syncQuality();
-      syncPageUI(); fitCanvas();
-      toast(fileName + ' 불러왔어요 ✓', 'ok');
-    } catch {
-      toast('파일을 읽을 수 없어요', 'err');
-    }
-  };
+  reader.onload = e => loadTactileFromText(e.target.result, file.name);
   reader.readAsText(file);
+}
+
+/** Open the (previously dormant) Tactile World Library browser and load whatever the user picks. */
+function openLibraryBrowser() {
+  openTactileLibraryUI({ onOpen: (dtmsText, name) => loadTactileFromText(dtmsText, name) });
 }
 
 // ─── Conversion Rebuild ───────────────────────────────────────
@@ -344,18 +366,30 @@ function paintSlider(v) {
 }
 
 // ─── Quality Panel ────────────────────────────────────────────
-const AI_MSGS = {
-  transparent: '배경을 제거하고 주요 윤곽을 남겼어요. 손끝으로 형태를 구분하기 좋아요.',
-  lineart:     '선화를 감지했어요. 주요 윤곽선을 핀으로 직접 변환했어요.',
-  lowcontrast: '대비가 낮은 이미지예요. 핵심 구조를 찾아 변환했어요.',
-  photo:       '사진을 감지했어요. 주요 윤곽과 핵심 구조를 중심으로 단순화했어요.',
-  default:     'AI가 주요 윤곽과 핵심 구조를 분석해 손가락으로 읽기 쉬운 형태로 정리했어요.',
-};
-
 function pill(el, txt, kind) {
   if (!el) return;
   el.textContent = txt;
   el.className = 'pill pill-' + kind;
+}
+
+// Pure UI-layer derivation on top of engine.js's real tactileQualityScore()/
+// analyzeDensity() output — does not change any conversion/scoring logic.
+function deriveQualitySummary(sc, fill, cols, rows, lang) {
+  const grade = Math.min(4, Math.max(1, sc.grade));
+  const gradeKey = grade === 4 ? 'excellent' : grade === 3 ? 'good' : grade === 2 ? 'review' : 'notsuitable';
+  const m = sc.m || {};
+  const complexity = (fill > 40 || (m.count || 0) > 6) ? 'high'
+    : (fill < 15 && (m.count || 0) <= 3) ? 'low' : 'medium';
+  const compatKey = grade >= 2 ? 'ready' : 'review';
+  const verifKey = grade >= 3 ? 'ai_checked' : 'human_review';
+  return {
+    score: Math.round(sc.score ?? 0),
+    gradeKey,
+    gradeLabel: t('grade_' + gradeKey, lang),
+    complexityLabel: t('q_complexity_' + complexity, lang),
+    compatLabel: compatKey === 'ready' ? `${cols}×${rows} ${t('q_compat_ready', lang)}` : t('q_compat_review', lang),
+    verifLabel: t('verif_' + verifKey, lang),
+  };
 }
 
 function syncQuality() {
@@ -372,6 +406,7 @@ function syncQuality() {
   const meta = page?.sourceImageMeta;
   const sc = tactileQualityScore(g, cols, rows, { type: meta?.type, outline: conversionState.outline });
   const grade = Math.min(4, Math.max(1, sc.grade));
+  const summary = deriveQualitySummary(sc, fill, cols, rows, lang);
 
   // stat
   const qd = ge('qDotCount'); if (qd) qd.textContent = pins.toLocaleString();
@@ -382,29 +417,30 @@ function syncQuality() {
     df.style.background = fill < 15 ? '#15803D' : fill < 40 ? '#FF9500' : '#DC2626';
   }
 
+  // overall score + grade badge
+  const scoreEl = ge('qScoreNum'); if (scoreEl) scoreEl.textContent = summary.score;
+  const badge = ge('qGradeBadge');
+  if (badge) { badge.textContent = summary.gradeLabel; badge.className = 'quality-grade-badge g-' + summary.gradeKey; }
+
   const fillState = fill < 10 ? t('state_low', lang)
     : fill < 35 ? t('state_balanced', lang)
     : fill < 50 ? t('state_a_bit_high', lang)
     : t('state_high', lang);
   const fillCls = fill < 10 ? 'warn' : fill < 35 ? 'good' : fill < 50 ? 'warn' : 'bad';
 
-  pill(ge('qClarity'),     grade >= 3 ? t('state_good', lang) : grade === 2 ? t('state_warning', lang) : t('state_poor', lang), grade >= 3 ? 'good' : grade === 2 ? 'warn' : 'bad');
-  pill(ge('qDensity'),     fillState, fillCls);
   pill(ge('qReadability'), grade >= 3 ? t('state_good', lang) : grade === 2 ? t('state_warning', lang) : t('state_poor', lang), grade >= 3 ? 'good' : grade === 2 ? 'warn' : 'bad');
+  pill(ge('qDensity'), fillState, fillCls);
   const structVal = fill > 40 ? t('state_filled', lang) : fill > 15 ? t('state_mixed', lang) : t('state_outline', lang);
   pill(ge('qStructure'), structVal, 'neutral');
+  pill(ge('qComplexity'), summary.complexityLabel, summary.complexityLabel === t('q_complexity_high', lang) ? 'warn' : 'good');
+  pill(ge('qCompat'), summary.compatLabel, summary.compatKey === 'review' ? 'warn' : 'good');
+  pill(ge('qVerification'), summary.verifLabel, grade >= 3 ? 'good' : 'warn');
 
   // AI feedback
   if (meta) {
-    const base = AI_MSGS[meta.type] || AI_MSGS.default;
-    let extra = fill >= 50 ? ' 점 밀도가 높아요. 윤곽 중심으로 단순화해보세요.'
-      : fill < 10 ? ' 점이 너무 적어요. 점 밀도를 조금 높여보세요.'
-      : ' 현재 점 밀도는 Dot Pad에서 읽기에 적정해요.';
-    const aiTxt = ge('aiFeedbackText');
-    if (aiTxt) aiTxt.textContent = base + extra;
     const card = ge('aiFeedbackCard'); if (card) card.style.display = 'block';
     const empty = ge('aiFeedbackEmpty'); if (empty) empty.style.display = 'none';
-    renderAiChips(fill, sc);
+    renderSuggestions(fill, sc, grade, lang);
   }
 
   // canvas meta strip + bottom bar chips
@@ -419,29 +455,60 @@ function syncQuality() {
 }
 
 function resetQuality() {
-  ['qClarity','qDensity','qReadability','qStructure'].forEach(id => {
-    const el = ge(id); if (el) { el.textContent = '—'; el.className = 'pill pill-neutral'; }
+  ['qReadability','qDensity','qStructure','qComplexity','qCompat','qVerification'].forEach(id => {
+    const el = ge(id); if (el) { el.textContent = '—'; el.className = 'pill pill-n'; }
   });
+  const scoreEl = ge('qScoreNum'); if (scoreEl) scoreEl.textContent = '—';
+  const badge = ge('qGradeBadge'); if (badge) { badge.textContent = '—'; badge.className = 'quality-grade-badge pill-n'; }
   const card = ge('aiFeedbackCard'); if (card) card.style.display = 'none';
   const empty = ge('aiFeedbackEmpty'); if (empty) { empty.style.display = ''; empty.textContent = t('ai_empty', appState.language); }
-  const chips = ge('aiChips'); if (chips) chips.style.display = 'none';
+  const list = ge('aiSuggestions'); if (list) list.innerHTML = '';
   syncRecropVisibility();
   syncBtns(false);
 }
 
-function renderAiChips(fill, sc) {
-  const el = ge('aiChips'); if (!el) return;
-  let cmds = [];
-  if (fill >= 50) cmds = ['simpler', 'denoise'];
-  else if (fill < 10) cmds = ['auto', 'boost'];
-  else cmds = ['simpler', 'outline'];
-  const labels = {
-    simpler: '윤곽 중심으로 변환', denoise: '점 밀도 낮추기',
-    auto: '윤곽 다시 감지', boost: '점 밀도 높이기', outline: '외곽선 1줄',
-  };
-  el.style.display = 'flex';
-  el.innerHTML = cmds.map(cmd => `<button class="ai-ch" data-cmd="${cmd}">${labels[cmd]}</button>`).join('');
-  el.querySelectorAll('.ai-ch').forEach(b => b.addEventListener('click', () => applyAiCmd(b.dataset.cmd)));
+// ─── AI suggestion cards (actionable: Apply AI Fix / Adjust Manually / Ignore) ──
+let _ignoredSuggestions = new Set();
+
+function renderSuggestions(fill, sc, grade, lang) {
+  const el = ge('aiSuggestions'); if (!el) return;
+  const reason = gradeReason(grade, sc.m, lang);
+  const suggestions = [];
+  if (fill >= 50) {
+    suggestions.push({ key: 'dense', text: t('ai_sugg_dense', lang) + (reason ? ' ' + reason : ''), cmd: 'simpler' });
+    suggestions.push({ key: 'denoise', text: t('ai_chip_denoise', lang) + '.', cmd: 'denoise' });
+  } else if (fill < 10) {
+    suggestions.push({ key: 'sparse', text: t('ai_sugg_sparse', lang) + (reason ? ' ' + reason : ''), cmd: 'boost' });
+    suggestions.push({ key: 'auto', text: t('ai_chip_auto', lang) + '.', cmd: 'auto' });
+  } else if (grade < 3) {
+    suggestions.push({ key: 'outline', text: t('ai_sugg_outline', lang) + (reason ? ' ' + reason : ''), cmd: 'outline' });
+  } else {
+    suggestions.push({ key: 'ok', text: t('ai_sugg_ok', lang), cmd: null });
+  }
+
+  el.innerHTML = suggestions
+    .filter(s => !_ignoredSuggestions.has(s.key))
+    .map(s => `
+      <div class="sugg-card" data-key="${s.key}">
+        <div class="sugg-text">${s.text}</div>
+        <div class="sugg-actions">
+          ${s.cmd ? `<button class="sugg-btn apply" data-cmd="${s.cmd}">${t('ai_apply_fix', lang)}</button>` : ''}
+          <button class="sugg-btn manual" data-act="manual">${t('ai_adjust_manually', lang)}</button>
+          <button class="sugg-btn ignore" data-act="ignore" data-key="${s.key}">${t('ai_ignore', lang)}</button>
+        </div>
+      </div>`).join('');
+
+  el.querySelectorAll('.sugg-btn.apply').forEach(b => b.addEventListener('click', () => applyAiCmd(b.dataset.cmd)));
+  el.querySelectorAll('.sugg-btn.manual').forEach(b => b.addEventListener('click', openAdvancedSettings));
+  el.querySelectorAll('.sugg-btn.ignore').forEach(b => b.addEventListener('click', () => {
+    _ignoredSuggestions.add(b.dataset.key);
+    b.closest('.sugg-card')?.remove();
+  }));
+}
+
+function openAdvancedSettings() {
+  const details = ge('advSettings');
+  if (details) { details.open = true; details.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 }
 
 function applyAiCmd(cmd) {
@@ -456,10 +523,17 @@ function applyAiCmd(cmd) {
   rebuild();
 }
 
+const METHOD_HINT_KEY = { global: 'method_manual_desc', otsu: 'method_otsu_desc', adaptive: 'method_adaptive_desc', alpha: 'method_alpha_desc' };
+function syncMethodHint() {
+  const hint = ge('methodHint'); if (!hint) return;
+  hint.textContent = t(METHOD_HINT_KEY[conversionState.method] || 'method_manual_desc', appState.language);
+}
+
 // ─── Sync conversion UI ───────────────────────────────────────
 function syncConvUI() {
   // method tabs
   qsa('.th-method-btn').forEach(b => b.classList.toggle('active', b.dataset.method === conversionState.method));
+  syncMethodHint();
   // outline buttons
   qsa('.outline-btn').forEach(b => b.classList.toggle('active', +b.dataset.outline === conversionState.outline));
   // invert toggle
@@ -486,8 +560,11 @@ function syncConvUI() {
 
 // ─── Sync helpers ─────────────────────────────────────────────
 function syncBtns(hasContent) {
-  const ids = ['dtmsBtn','pngBtn','dotpadBtn','hexBtn','miniSendBtn','miniDtmsBtn','miniPngBtn'];
+  const ids = ['dtmsBtn','pngBtn','hexBtn','jsonBtn','saveLibraryBtn','miniDtmsBtn','miniPngBtn'];
   ids.forEach(id => { const el = ge(id); if (el) el.disabled = !hasContent; });
+  // Send-to-DotPad actions need BOTH a converted result AND an active connection.
+  const canSend = hasContent && dotPadState.connected;
+  ['dotpadBtn','dpSendBtn','miniSendBtn'].forEach(id => { const el = ge(id); if (el) el.disabled = !canSend; });
   const aiBadge = ge('aiBadge');
   if (aiBadge) aiBadge.style.display = hasContent ? '' : 'none';
   // quick-adjust chips in mini mode
@@ -502,14 +579,40 @@ function syncConn() {
   const txt = ge('bbStatus'); if (txt) txt.textContent = on ? t('bb_connected', lang) : t('bb_disconnected', lang);
   // bottom bar dot
   const btmDot = ge('btmDot'); if (btmDot) btmDot.className = 'btm-dot' + (on ? ' on' : '');
-  // panel dot
-  const dot2 = ge('dpDot'); if (dot2) dot2.className = 'dp-dot' + (on ? ' on' : '');
-  const lbl = ge('dpLbl'); if (lbl) lbl.textContent = on ? t('bb_connected', lang) : t('conn_off', lang);
+  // unified DotPad status card: swap disconnected/connected views
+  const disView = ge('dpDisconnectedView'); if (disView) disView.hidden = on;
+  const conView = ge('dpConnectedView'); if (conView) conView.hidden = !on;
+  if (!on) {
+    const dot2 = ge('dpDot'); if (dot2) dot2.className = 'dotpad-card-dot';
+    const lbl = ge('dpLbl'); if (lbl) lbl.textContent = t('dp_status_not_connected', lang);
+  } else {
+    const devLbl = ge('dpDeviceLbl');
+    if (devLbl) devLbl.textContent = dotPadState.device?.name || t('dp_device_generic', lang);
+    const resVal = ge('dpResVal'); if (resVal) resVal.textContent = `${canvasState.width}×${canvasState.height}`;
+    syncLastSentLabel();
+  }
   const liveSw = ge('liveSwitch'); if (liveSw) liveSw.disabled = !on;
-  const bleBtn = ge('bleBtn'); if (bleBtn) bleBtn.textContent = on ? '연결 끊기' : t('conn_btn_ble', lang);
+  syncBtns(appState.phase === 'ready');
   // mini mode
   const miniDot = ge('miniConnDot'); if (miniDot) miniDot.className = 'dp-dot' + (on ? ' on' : '');
   const miniBtn = ge('miniConnBtn'); if (miniBtn) miniBtn.textContent = on ? '연결 끊기' : 'BLE 연결';
+}
+
+function syncLastSentLabel() {
+  const el = ge('dpLastSentVal'); if (!el) return;
+  const lang = appState.language;
+  const ts = dotPadState.lastSyncedAt;
+  if (!ts) { el.textContent = t('dp_last_sent_never', lang); return; }
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  el.textContent = mins < 1 ? t('dp_last_sent_now', lang) : `${mins}${lang === 'ko' ? '분 전' : 'm ago'}`;
+}
+
+/** Shared "Send to DotPad" action — used by the header button and the DotPad card's button. */
+function sendToDotPad() {
+  if (!dotPadState.connected) { toast(t('toast_not_conn', appState.language)); return; }
+  sendGraphicData(gridToHex(canvasState.data, canvasState.width, canvasState.height), true);
+  syncLastSentLabel();
+  toast(t('toast_sent', appState.language), 'ok');
 }
 
 function syncPageUI() {
@@ -538,6 +641,7 @@ function renderPageChips() {
 function switchPage(idx) {
   if (idx === pagesState.activePageIndex) return;
   loadPageState(idx);
+  setPhase(appState.phase);
   drawCanvas(); syncQuality(); syncPageUI();
 }
 
@@ -718,11 +822,41 @@ function fillSelection(val) {
 }
 
 // ─── Guard modal ──────────────────────────────────────────────
+// ─── Shared modal helper: focus trap + Escape-to-close + focus restore ────
+let _lastFocusedEl = null;
+function focusableIn(modal) {
+  return [...modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.offsetParent !== null);
+}
+function trapModalKey(e) {
+  const modal = e.currentTarget;
+  if (e.key === 'Escape') { closeModal(modal); return; }
+  if (e.key !== 'Tab') return;
+  const focusable = focusableIn(modal);
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+function openModal(modal) {
+  if (!modal) return;
+  _lastFocusedEl = document.activeElement;
+  modal.style.display = 'flex';
+  modal.addEventListener('keydown', trapModalKey);
+  focusableIn(modal)[0]?.focus();
+}
+function closeModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'none';
+  modal.removeEventListener('keydown', trapModalKey);
+  _lastFocusedEl?.focus();
+}
+
 function guardUnsavedChanges() {
   return new Promise(resolve => {
     const modal = ge('guardModal'); if (!modal) return resolve(true);
-    modal.style.display = 'flex';
-    const close = result => { modal.style.display = 'none'; resolve(result); };
+    openModal(modal);
+    const close = result => { closeModal(modal); resolve(result); };
     ge('guardSave')?.addEventListener('click', () => { exportDtms(pagesState.pages, appState.fileName, canvasState.width, canvasState.height); close(true); }, { once: true });
     ge('guardProceed')?.addEventListener('click', () => close(true), { once: true });
     ge('guardCancel')?.addEventListener('click',  () => close(false), { once: true });
@@ -899,9 +1033,9 @@ function hidePromptSuggestions() { const b = ge('promptSuggest'); if (b) b.class
 /** Surface a generated description in the AI feedback card + screen-reader live region. */
 function showDescription(text) {
   const card = ge('aiFeedbackCard');
-  const txt = ge('aiFeedbackText');
+  const list = ge('aiSuggestions');
   const empty = ge('aiFeedbackEmpty');
-  if (txt) txt.textContent = text;
+  if (list) list.innerHTML = `<div class="sugg-card"><div class="sugg-text">${text}</div></div>`;
   if (card) card.style.display = 'block';
   if (empty) empty.style.display = 'none';
   announce(text);
@@ -961,6 +1095,76 @@ function setResolution(cols, rows) {
   fitCanvas(); syncQuality(); syncPageUI();
 }
 
+function applyResolution(cols, rows, btn) {
+  setResolution(cols, rows);
+  qsa('.res-btn').forEach(x => {
+    const active = x === btn;
+    x.classList.toggle('active', active);
+    x.setAttribute('aria-pressed', String(active));
+  });
+}
+
+/** Resolution-change confirmation modal (section 9: never silently discard the imported image). */
+function openResModal(cols, rows, btn) {
+  const modal = ge('resModal');
+  if (!modal) { applyResolution(cols, rows, btn); return; }
+  openModal(modal);
+  const close = () => closeModal(modal);
+  ge('resModalKeep')?.addEventListener('click', () => { applyResolution(cols, rows, btn); close(); }, { once: true });
+  ge('resModalBlank')?.addEventListener('click', () => {
+    const page = pagesState.activePage;
+    if (page) { page.sourceImage = null; page.sourceImageState = null; page.sourceImageMeta = null; }
+    applyResolution(cols, rows, btn);
+    close();
+  }, { once: true });
+  ge('resModalCancel')?.addEventListener('click', close, { once: true });
+}
+
+// ─── Save to Library ────────────────────────────────────────────
+function openLibraryModal() {
+  const modal = ge('libraryModal'); if (!modal) return;
+  const titleInp = ge('libTitle'); if (titleInp && !titleInp.value) titleInp.value = appState.fileName;
+  openModal(modal);
+}
+
+function saveToLibrary() {
+  const { data: g, width: cols, height: rows } = canvasState;
+  const pins = g.reduce((s, v) => s + v, 0);
+  const fill = Math.round(pins / (cols * rows) * 100);
+  const page = pagesState.activePage;
+  const sc = tactileQualityScore(g, cols, rows, { type: page?.sourceImageMeta?.type, outline: conversionState.outline });
+  const summary = deriveQualitySummary(sc, fill, cols, rows, appState.language);
+
+  const title = ge('libTitle')?.value.trim() || appState.fileName;
+  const category = ge('libCategory')?.value || 'other';
+  const description = ge('libDesc')?.value.trim() || '';
+  const tags = (ge('libTags')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const recommendedUse = ge('libRecommended')?.value.trim() || '';
+  const visibility = qsa('#libVisibility [role="radio"]').find(b => b.getAttribute('aria-checked') === 'true')?.dataset.value || 'private';
+
+  const dtms = buildDtmsJSON(pagesState.pages, title, cols, rows);
+  const meta = {
+    category, description, tags, recommendedUse, visibility,
+    source: 'Tactile Agent',
+    resolution: `${cols}×${rows}`,
+    qualityScore: summary.score,
+    grade: summary.gradeLabel,
+    complexity: summary.complexityLabel,
+    dotpadCompatibility: summary.compatLabel,
+    verification: summary.verifLabel,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  dotCloud.saveFile({
+    driverKind: 'P', parentGroupNo: 'ROOT', name: title,
+    dtms, thumb: grabThumb(), width: cols, height: rows, tag: appState.language, meta,
+  }).then(() => {
+    toast(t('toast_saved_library', appState.language), 'ok');
+    closeModal(ge('libraryModal'));
+  }).catch(() => toast(t('toast_file_err', appState.language), 'err'));
+}
+
 // ─── Full Mode wiring ─────────────────────────────────────────
 function wireFullMode() {
   // tool rail
@@ -1001,8 +1205,14 @@ function wireFullMode() {
     const f = e.target.files[0]; if (f) loadTactileFile(f);
     e.target.value = '';
   });
+  const activateOnEnterOrSpace = fn => e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
   ge('emptyDropZone')?.addEventListener('click', () => ge('imgFileInput')?.click());
+  ge('emptyDropZone')?.addEventListener('keydown', activateOnEnterOrSpace(() => ge('imgFileInput')?.click()));
+  ge('importImageBtn')?.addEventListener('click', () => ge('imgFileInput')?.click());
   ge('recropBtn')?.addEventListener('click', reCrop);
+  ge('chooseLibraryBtn')?.addEventListener('click', openLibraryBrowser);
+  ge('emptyChooseLibrary')?.addEventListener('click', openLibraryBrowser);
+  ge('emptyChooseLibrary')?.addEventListener('keydown', activateOnEnterOrSpace(openLibraryBrowser));
 
   // drag-over visual
   const area = qs('.canvas-area');
@@ -1059,6 +1269,7 @@ function wireFullMode() {
     if (!page?.sourceImageState) { toast(t('toast_need_image', appState.language)); return; }
     conversionState.method = b.dataset.method;
     qsa('.th-method-btn').forEach(x => x.classList.toggle('active', x === b));
+    syncMethodHint();
     if (conversionState.method !== 'global') {
       const p = autoSelectParams(page.sourceImageState, canvasState.width, canvasState.height);
       conversionState.threshold = p.threshold;
@@ -1139,13 +1350,22 @@ function wireFullMode() {
 
   // DotPad
   initDotPad(
-    () => { syncConn(); if (dotPadState.livePreviewEnabled) syncLivePreview(canvasState.data, canvasState.width, canvasState.height); toast('Dot Pad 연결됐어요 ✓', 'ok'); },
-    () => { syncConn(); toast('Dot Pad 연결이 끊어졌어요', 'err'); }
+    () => { syncConn(); if (dotPadState.livePreviewEnabled) syncLivePreview(canvasState.data, canvasState.width, canvasState.height); toast(t('toast_ble_on', appState.language), 'ok'); },
+    () => { syncConn(); toast(t('toast_ble_off', appState.language), 'err'); }
   );
-  ge('bleBtn')?.addEventListener('click', async () => {
-    if (dotPadState.connected) { disconnectDotPad(); } else { await connectBle(); }
-  });
+  ge('bleBtn')?.addEventListener('click', async () => { await connectBle(); });
   ge('usbBtn')?.addEventListener('click', async () => { await connectUsb(); });
+  ge('dpDisconnectBtn')?.addEventListener('click', () => {
+    disconnectDotPad();
+    syncConn();
+    toast(t('toast_ble_off', appState.language));
+  });
+  ge('dpRefreshBtn')?.addEventListener('click', () => {
+    if (!dotPadState.connected) return;
+    sendGraphicData(gridToHex(canvasState.data, canvasState.width, canvasState.height), true);
+    syncConn();
+    toast(t('dp_refresh_ok', appState.language), 'ok');
+  });
   ge('liveSwitch')?.addEventListener('click', function() {
     const checked = this.getAttribute('aria-checked') !== 'true';
     dotPadState.livePreviewEnabled = checked;
@@ -1153,11 +1373,8 @@ function wireFullMode() {
     if (checked) syncLivePreview(canvasState.data, canvasState.width, canvasState.height);
   });
 
-  ge('dotpadBtn')?.addEventListener('click', () => {
-    if (!dotPadState.connected) { toast(t('toast_not_conn', appState.language)); return; }
-    sendGraphicData(gridToHex(canvasState.data, canvasState.width, canvasState.height), true);
-    toast(t('toast_sent', appState.language), 'ok');
-  });
+  ge('dotpadBtn')?.addEventListener('click', sendToDotPad);
+  ge('dpSendBtn')?.addEventListener('click', sendToDotPad);
 
   // Export
   ge('dtmsBtn')?.addEventListener('click', () => {
@@ -1176,14 +1393,34 @@ function wireFullMode() {
     exportJson(canvasState.data, pagesState.pages, appState.fileName, canvasState.width, canvasState.height);
   });
 
+  // Save to Library
+  ge('saveLibraryBtn')?.addEventListener('click', openLibraryModal);
+  ge('libCancel')?.addEventListener('click', () => closeModal(ge('libraryModal')));
+  ge('libVisibility')?.addEventListener('click', e => {
+    const btn = e.target.closest('[role="radio"]'); if (!btn) return;
+    qsa('#libVisibility [role="radio"]').forEach(b => { b.setAttribute('aria-checked', String(b === btn)); b.tabIndex = b === btn ? 0 : -1; });
+  });
+  // ARIA radiogroup keyboard pattern: arrow keys move selection between options.
+  ge('libVisibility')?.addEventListener('keydown', e => {
+    if (!['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(e.key)) return;
+    e.preventDefault();
+    const opts = qsa('#libVisibility [role="radio"]');
+    const cur = opts.findIndex(b => b.getAttribute('aria-checked') === 'true');
+    const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
+    const next = opts[(cur + dir + opts.length) % opts.length];
+    opts.forEach(b => { b.setAttribute('aria-checked', String(b === next)); b.tabIndex = b === next ? 0 : -1; });
+    next.focus();
+  });
+  ge('libSave')?.addEventListener('click', saveToLibrary);
+
   // Page management
   ge('pagePrev')?.addEventListener('click', () => switchPage(pagesState.activePageIndex - 1));
   ge('pageNext')?.addEventListener('click', () => switchPage(pagesState.activePageIndex + 1));
-  ge('pageAdd')?.addEventListener('click', () => { addPage(); drawCanvas(); syncQuality(); syncPageUI(); toast(t('toast_page_added', appState.language)); });
-  ge('pageDup')?.addEventListener('click', () => { duplicatePage(); drawCanvas(); syncQuality(); syncPageUI(); toast('페이지를 복제했어요'); });
+  ge('pageAdd')?.addEventListener('click', () => { addPage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); toast(t('toast_page_added', appState.language)); });
+  ge('pageDup')?.addEventListener('click', () => { duplicatePage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI(); toast(t('toast_page_dup', appState.language)); });
   ge('pageDelete')?.addEventListener('click', () => {
     if (pagesState.pages.length <= 1) return;
-    deletePage(); drawCanvas(); syncQuality(); syncPageUI();
+    deletePage(); setPhase(appState.phase); drawCanvas(); syncQuality(); syncPageUI();
     toast(t('toast_page_del', appState.language));
   });
 
@@ -1198,8 +1435,11 @@ function wireFullMode() {
   // Resolution
   qsa('.res-btn').forEach(b => b.addEventListener('click', () => {
     const [c, r] = b.dataset.res.split('x').map(Number);
-    setResolution(c, r);
-    qsa('.res-btn').forEach(x => x.classList.toggle('active', x === b));
+    if (c === canvasState.width && r === canvasState.height) return;
+    const page = pagesState.activePage;
+    const hasContent = !!page?.sourceImage || canvasState.data.some(v => v);
+    if (!hasContent) { applyResolution(c, r, b); return; }
+    openResModal(c, r, b);
   }));
 
   // File name

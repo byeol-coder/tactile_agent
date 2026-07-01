@@ -85,7 +85,7 @@ export async function copyHexToClipboard(canvasData, cols, rows) {
 }
 
 /**
- * Infer [cols, rows] from a hex string's length for known Dot Pad grids.
+ * Infer [cols, rows] from a hex string's length for known DotPad grids.
  * Each cell is 2×4 pins = 1 byte = 2 hex chars, so hexLen = (cols/2)*(rows/4)*2.
  * Returns null if the length doesn't match a known resolution — callers
  * should then fall back to the current canvas size rather than silently
@@ -106,7 +106,7 @@ function inferResolutionFromHexLength(hexLen) {
  *
  * cols/rows are the resolution the hex was authored at. When the source
  * doesn't declare it explicitly (raw hex, or a .dtm without `resolution`),
- * we infer it from hex length among known Dot Pad grids (28×40 / 60×40 /
+ * we infer it from hex length among known DotPad grids (28×40 / 60×40 /
  * 96×64) instead of leaving it null — importing at the wrong resolution
  * truncates/misaligns the pin data without any visible error.
  */

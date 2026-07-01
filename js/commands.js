@@ -29,7 +29,7 @@ const RULES = [
   {
     test: /최적화|optimi[sz]e|읽기\s*쉽게|가독|readable|dotpad에?\s*맞게|핀에?\s*맞게|tactile|촉각.*최적/i,
     optimize: true,
-    reply: R('Dot Pad 가독성에 맞춰 자동 최적화했어요', 'Optimized for Dot Pad readability'),
+    reply: R('DotPad 가독성에 맞춰 자동 최적화했어요', 'Optimized for DotPad readability'),
   },
   {
     test: /단순|간단|심플|simpl/i,
@@ -109,12 +109,12 @@ const RULES = [
   {
     test: /점자|브라유|braille/i,
     action: 'braille',
-    reply: R('점자 설명을 Dot Pad로 보냈어요', 'Sent the braille description to Dot Pad'),
+    reply: R('점자 설명을 DotPad로 보냈어요', 'Sent the braille description to DotPad'),
   },
   {
     test: /보내|전송|출력|send|전달|export\s*to\s*dot/i,
     action: 'send',
-    reply: R('Dot Pad로 보냈어요', 'Sent to Dot Pad'),
+    reply: R('DotPad로 보냈어요', 'Sent to DotPad'),
   },
   {
     test: /전체\s*지|모두\s*지|초기화|클리어|clear\s*all|reset\s*canvas/i,
@@ -257,7 +257,7 @@ export function interpretCommand(text, lang = 'ko') {
  */
 export const QUICK_COMMANDS = [
   { group: { ko: '변환', en: 'Transform' },
-    icon: 'sparkle', text: { ko: 'Dot Pad에 맞게 최적화', en: 'Optimize for Dot Pad' }, primary: true },
+    icon: 'sparkle', text: { ko: 'DotPad에 맞게 최적화', en: 'Optimize for DotPad' }, primary: true },
   { icon: 'outline',  text: { ko: '외곽선만 남기기',       en: 'Outline only' } },
   { icon: 'simplify', text: { ko: '더 단순하게',           en: 'Simplify' } },
   { icon: 'crisp',    text: { ko: '더 또렷하게',           en: 'Sharpen' } },

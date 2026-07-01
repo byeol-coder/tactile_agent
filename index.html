@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzFBMUExQSIvPgogIDxjaXJjbGUgY3g9IjkiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIyLjUiIGZpbGw9IndoaXRlIi8+CiAgPGNpcmNsZSBjeD0iOSIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IiNGRjREMDAiLz4KICA8Y2lyY2xlIGN4PSIyMyIgY3k9IjE2IiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjIuNSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMiIvPgogIDxjaXJjbGUgY3g9IjE2IiBjeT0iMjMiIHI9IjIuNSIgZmlsbD0id2hpdGUiLz4KICA8Y2lyY2xlIGN4PSIyMyIgY3k9IjIzIiByPSIyLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjIiLz4KPC9zdmc+"/>
-<title>Dot Canvas — AI 촉각그래픽</title>
+<title>Tactile Agent — AI 촉각그래픽</title>
 <!-- PWA: 설치형 + 오프라인 -->
 <meta name="theme-color" content="#111111"/>
 <link rel="manifest" href="manifest.webmanifest"/>
@@ -14,11 +14,11 @@
 <style>
 /* ── Tokens ──────────────────────────────────────────────── */
 :root {
-  --bg:       #F5F5F7;
+  --bg:       #F7F4EE;
   --surface:  #FFFFFF;
-  --surface2: #F2F2F4;
-  --border:   #E5E5EA;
-  --border2:  #D1D1D6;
+  --surface2: #F2EFE8;
+  --border:   #E6E1D4;
+  --border2:  #D6CFBD;
   --ink:      #1C1C1E;
   --text:     #3A3A3C;
   --sub:      #6C6C70;
@@ -33,6 +33,9 @@
   --amber-bg: #FFF8EC;
   --red:      #FF3B30;
   --red-bg:   #FFF2F1;
+  --danger:   #D7263D;
+  --danger-d: #B01F32;
+  --danger-bg:#FDEEF0;
   --blue:     #0A84FF;
   --font: 'Inter','Noto Sans KR',system-ui,-apple-system,sans-serif;
   --r3:3px; --r6:6px; --r8:8px; --r10:10px; --r12:12px; --r16:16px; --r20:20px;
@@ -40,7 +43,8 @@
   --shadow-md: 0 4px 16px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
   --h-header: 48px;
   --w-rail:   44px;
-  --w-panel:  clamp(324px, 24vw, 360px);
+  --w-panel:  clamp(300px, 22vw, 340px);
+  --w-panel-left: clamp(240px, 18vw, 280px);
   --space-8:  8px;
   --space-12: 12px;
   --space-16: 16px;
@@ -168,6 +172,42 @@ svg { display: block; flex-shrink: 0 }
 .hd-btn.accent:hover { background: var(--accent-d) }
 .hd-btn:disabled { opacity: .38; cursor: not-allowed }
 .hd-btn svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round }
+
+/* ── Button hierarchy ────────────────────────────────────────
+   .btn-primary   = the one main action in a given area (accent fill)
+   .btn-secondary = supporting actions (outlined/neutral)
+   .btn-tertiary  = low-priority / developer actions (quiet, text-like)
+   .btn-danger    = destructive or data-loss actions (red)          */
+.btn-primary, .btn-secondary, .btn-tertiary, .btn-danger {
+  height: var(--btn-height); padding: 0 var(--btn-padding-x); border-radius: var(--btn-radius);
+  font-size: var(--font-button); font-weight: 600; width: 100%; min-width: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap; transition: background .12s, border-color .12s, color .12s, transform .08s;
+}
+.btn-primary svg, .btn-secondary svg, .btn-tertiary svg, .btn-danger svg {
+  width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+}
+.btn-primary { background: var(--accent); color: #fff; border: 1px solid transparent }
+.btn-primary:hover:not(:disabled) { background: var(--accent-d) }
+.btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text) }
+.btn-secondary:hover:not(:disabled) { background: var(--surface2); border-color: var(--border2) }
+.btn-tertiary { background: transparent; border: 1px solid transparent; color: var(--sub); font-weight: 600 }
+.btn-tertiary:hover:not(:disabled) { background: var(--surface2); color: var(--text) }
+.btn-danger { background: var(--surface); border: 1px solid rgba(215,38,61,.35); color: var(--danger) }
+.btn-danger:hover:not(:disabled) { background: var(--danger-bg); border-color: var(--danger) }
+.btn-danger.solid { background: var(--danger); color: #fff; border-color: var(--danger) }
+.btn-danger.solid:hover:not(:disabled) { background: var(--danger-d) }
+.btn-primary:disabled, .btn-secondary:disabled, .btn-tertiary:disabled, .btn-danger:disabled {
+  opacity: .4; cursor: not-allowed; transform: none;
+}
+.btn-primary:active:not(:disabled), .btn-secondary:active:not(:disabled), .btn-danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn-row { display: flex; gap: var(--control-gap) }
+.btn-row > * { flex: 1; min-width: 0 }
+.btn-secondary.active, .btn-secondary[aria-pressed="true"] {
+  background: var(--accent-bg); border-color: rgba(255,77,0,.38); color: var(--accent);
+}
 
 /* conn dot in header */
 .hd-conn { width: 7px; height: 7px; border-radius: 50%; background: var(--hint); flex-shrink: 0; transition: .2s }
@@ -698,13 +738,10 @@ details.adv > summary:hover { color: var(--ink) }
 }
 .modal h2 { font-size: 15px; font-weight: 700; margin-bottom: 6px }
 .modal p  { font-size: 12px; color: var(--sub); margin-bottom: 18px; line-height: 1.65 }
-.modal-btns { display: flex; flex-direction: column; gap: 6px }
-.modal-btns button {
-  width: 100%; height: 38px; border-radius: var(--r10); border: 1px solid var(--border);
-  background: var(--surface2); font-size: 13px; font-weight: 600; transition: .12s;
-}
-.modal-btns button:hover { background: var(--surface); border-color: var(--border2) }
-.modal-btns .acc { background: var(--accent); border-color: var(--accent); color: #fff }
+.modal-btns { display: flex; flex-direction: row; gap: 8px }
+.modal-btns > * { flex: 1; min-width: 0 }
+.modal-btns.stacked { flex-direction: column }
+.modal-btns button { white-space: normal; line-height: 1.3; height: auto; min-height: var(--btn-height); padding: 9px 10px }
 
 /* ── Mini Mode ───────────────────────────────────────────── */
 #app-mini {
@@ -790,6 +827,118 @@ details.adv > summary:hover { color: var(--ink) }
 .mini-btn.acc { background: var(--accent); border-color: var(--accent); color: #fff }
 .mini-btn:disabled { opacity: .35; cursor: not-allowed }
 
+/* ── Left Panel (Import & Settings) ─────────────────────────── */
+.panel-left {
+  width: var(--w-panel-left); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+}
+.panel-left .panel-scroll { gap: 20px }
+@media (max-width: 1100px) { :root { --w-panel-left: 220px } }
+@media (max-width: 860px) { .panel-left { display: none } }
+
+/* ── Workflow Stepper ────────────────────────────────────────── */
+.stepper {
+  display: flex; align-items: center; gap: 6px; padding: 8px 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.step-item { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: var(--hint); white-space: nowrap }
+.step-num {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--surface2); color: var(--hint);
+  display: grid; place-items: center; font-size: 10px; font-weight: 800; flex-shrink: 0; transition: .15s;
+}
+.step-item.done .step-num { background: var(--green-bg); color: var(--green-d) }
+.step-item.active .step-num { background: var(--accent); color: #fff }
+.step-item.active { color: var(--ink) }
+.step-item.done { color: var(--sub) }
+.step-sep { width: 20px; height: 1px; background: var(--border); flex-shrink: 0 }
+@media (max-width: 760px) { .step-item span.step-label { display: none } }
+
+/* ── Import section (left panel) ────────────────────────────── */
+.import-stack { display: flex; flex-direction: column; gap: var(--control-gap) }
+
+/* ── Tactile Quality Check card ──────────────────────────────── */
+.quality-card { background: var(--surface2); border-radius: var(--r12); padding: 14px; display: flex; flex-direction: column; gap: 10px }
+.quality-score-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px }
+.quality-score-num { font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-height: 1 }
+.quality-score-unit { font-size: 12px; color: var(--sub); font-weight: 600 }
+.quality-grade-badge {
+  font-size: 11px; font-weight: 800; padding: 4px 11px; border-radius: 999px; white-space: nowrap;
+}
+.quality-grade-badge.g-excellent { background: var(--green-bg); color: var(--green-d) }
+.quality-grade-badge.g-good      { background: var(--green-bg); color: var(--green-d) }
+.quality-grade-badge.g-review    { background: var(--amber-bg); color: var(--amber) }
+.quality-grade-badge.g-notsuitable { background: var(--red-bg); color: var(--red) }
+.quality-rows { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--border); padding-top: 4px }
+
+/* ── AI suggestion cards ─────────────────────────────────────── */
+.sugg-list { display: flex; flex-direction: column; gap: 8px }
+.sugg-card {
+  background: linear-gradient(135deg, #FFF5F0 0%, #FFF0E8 100%);
+  border: 1px solid rgba(255,77,0,.15); border-radius: var(--r10); padding: 11px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sugg-text { font-size: 12px; color: #6B4530; line-height: 1.6 }
+.sugg-actions { display: flex; gap: 6px; flex-wrap: wrap }
+.sugg-btn {
+  height: 26px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 700; transition: .12s;
+}
+.sugg-btn.apply { background: var(--accent); color: #fff; border: 1px solid transparent }
+.sugg-btn.apply:hover { background: var(--accent-d) }
+.sugg-btn.manual { background: #fff; border: 1px solid rgba(255,77,0,.25); color: var(--accent) }
+.sugg-btn.manual:hover { background: var(--accent-bg) }
+.sugg-btn.ignore { background: transparent; border: 1px solid transparent; color: var(--sub) }
+.sugg-btn.ignore:hover { background: rgba(0,0,0,.05); color: var(--text) }
+
+/* ── DotPad status card ──────────────────────────────────────── */
+.dotpad-card { background: var(--surface2); border-radius: var(--r12); padding: 12px; display: flex; flex-direction: column; gap: 10px }
+.dotpad-card-head { display: flex; align-items: center; gap: 8px }
+.dotpad-card-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hint); flex-shrink: 0; transition: .2s }
+.dotpad-card-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(48,209,88,.5) }
+.dotpad-card-title { font-size: 13px; font-weight: 700; color: var(--ink) }
+.dotpad-card-sub { font-size: 11px; color: var(--sub) }
+.dotpad-meta-rows { display: flex; flex-direction: column; gap: 4px }
+.dotpad-meta-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px }
+.dotpad-meta-row span:first-child { color: var(--hint); font-weight: 600 }
+.dotpad-meta-row span:last-child { color: var(--text); font-weight: 700 }
+
+/* ── Export panel groups ─────────────────────────────────────── */
+.export-group-title { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--hint); margin-bottom: 2px }
+details.dev-export { margin-top: 4px; border-top: 1px solid var(--border); padding-top: 8px }
+details.dev-export > summary {
+  list-style: none; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--sub);
+  display: flex; align-items: center; gap: 5px; user-select: none; padding: 2px 0;
+}
+details.dev-export > summary::-webkit-details-marker { display: none }
+details.dev-export > summary::before { content: '▸'; font-size: 9px; color: var(--hint); transition: transform .15s }
+details.dev-export[open] > summary::before { transform: rotate(90deg) }
+.dev-export-body { padding-top: 8px; display: flex; flex-direction: column; gap: var(--control-gap) }
+
+/* ── Advanced settings hint ──────────────────────────────────── */
+.ctrl-hint { font-size: 11px; color: var(--sub); line-height: 1.6; margin-top: 6px; background: var(--surface2); border-radius: var(--r8); padding: 8px 10px }
+.adv-helper { font-size: 11px; color: var(--sub); line-height: 1.6; margin-bottom: 10px }
+
+/* ── Form fields (shared: resolution modal, library modal) ──── */
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px }
+.field:last-child { margin-bottom: 0 }
+.field label { font-size: 12px; font-weight: 700; color: var(--text) }
+.field input[type=text], .field textarea, .field select {
+  border: 1.5px solid var(--border); border-radius: var(--r8); padding: 8px 10px;
+  font-size: 13px; color: var(--ink); background: var(--surface); transition: .12s; font-family: inherit;
+}
+.field input[type=text]:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,77,0,.12); outline: none;
+}
+.field textarea { resize: vertical; min-height: 60px }
+.segmented { display: flex; gap: 4px; background: var(--surface2); border-radius: var(--r8); padding: 3px }
+.segmented button {
+  flex: 1; height: 30px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--sub); transition: .12s;
+}
+.segmented button[aria-checked="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1) }
+
+/* ── Resolution / Library modal sizing ───────────────────────── */
+.modal.modal-wide { max-width: 380px }
+.modal-desc { font-size: 12px; color: var(--sub); line-height: 1.65; margin-bottom: 16px }
+
 /* ── Accessibility ───────────────────────────────────────── */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0) }
 [aria-live] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0) }
@@ -816,7 +965,7 @@ details.adv > summary:hover { color: var(--ink) }
         <circle cx="11.5" cy="11.5" r="1.8" fill="white" opacity=".18"/>
       </svg>
     </div>
-    <span class="hd-name">Dot <b>Canvas</b></span>
+    <span class="hd-name">Tactile <b>Agent</b></span>
   </div>
 
   <div class="hd-div" aria-hidden="true"></div>
@@ -840,8 +989,8 @@ details.adv > summary:hover { color: var(--ink) }
       <button class="lang-btn active" data-lang="ko" aria-pressed="true">한국어</button>
       <button class="lang-btn" data-lang="en" aria-pressed="false">English</button>
     </div>
-    <div class="hd-conn" id="bbDot" title="Dot Pad 연결 상태"></div>
-    <span class="sr-only" id="bbStatus">Dot Pad 연결 안 됨</span>
+    <div class="hd-conn" id="bbDot" title="DotPad 연결 상태"></div>
+    <span class="sr-only" id="bbStatus">DotPad 연결 안 됨</span>
     <button class="hd-btn ghost" id="saveBtn" title="저장 (⌘S)">
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       <span>저장</span>
@@ -854,6 +1003,25 @@ details.adv > summary:hover { color: var(--ink) }
 </header>
 
 <!-- Workspace -->
+<!-- Workflow Stepper -->
+<div class="stepper" id="workflowStepper" role="group" aria-label="작업 흐름">
+  <div class="step-item" data-step="import">
+    <span class="step-num">1</span><span class="step-label" data-i18n="step_import">가져오기</span>
+  </div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" data-step="convert">
+    <span class="step-num">2</span><span class="step-label" data-i18n="step_convert">촉각그래픽 변환</span>
+  </div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" data-step="check">
+    <span class="step-num">3</span><span class="step-label" data-i18n="step_check">촉각 품질 검사</span>
+  </div>
+  <div class="step-sep" aria-hidden="true"></div>
+  <div class="step-item" data-step="send">
+    <span class="step-num">4</span><span class="step-label" data-i18n="step_send">전송 / 저장 / 내보내기</span>
+  </div>
+</div>
+
 <div class="ws">
 
 <!-- Tool Rail -->
@@ -892,105 +1060,45 @@ details.adv > summary:hover { color: var(--ink) }
   </button>
 </nav>
 
-<!-- Canvas Area -->
-<main class="canvas-area" role="main" aria-label="캔버스 작업 영역"
-  id="canvasAreaEl">
-
-  <!-- meta strip -->
-  <div class="canvas-meta" aria-live="polite">
-    <span id="resChip" class="chip chip-n">60×40</span>
-    <span id="dotChip" class="chip chip-n">0 핀</span>
-    <span class="chip chip-ai" id="aiBadge">AI ✓</span>
-  </div>
-
-  <!-- canvas wrapper -->
-  <div class="canvas-wrap" id="dotGridWrap">
-    <canvas id="pad" aria-label="촉각그래픽 캔버스" role="img"></canvas>
-
-    <!-- empty overlay -->
-    <div class="ov" id="emptyOv" role="region" aria-label="시작 안내">
-      <div class="ov-icon" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-        </svg>
-      </div>
-      <p class="ov-title" data-i18n="empty_title">촉각그래픽을 만들어보세요</p>
-      <p class="ov-sub" data-i18n="empty_sub">AI가 Dot Pad에 맞게
-촉각그래픽으로 자동 변환해드려요</p>
-      <div class="ov-ctas">
-        <div id="emptyDropZone" class="ov-btn fill" role="button" tabindex="0"
-             aria-label="이미지 선택" style="cursor:pointer">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span data-i18n="empty_import">이미지 가져오기</span>
-        </div>
-        <label class="ov-btn outline" for="tactileFileInput" style="cursor:pointer">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span data-i18n="empty_dtms">.dtms 열기</span>
-        </label>
-      </div>
-      <p class="ov-drag" data-i18n="empty_drag">클릭하거나 파일을 드래그하세요</p>
-    </div>
-
-    <!-- analyzing overlay -->
-    <div class="ov" id="analyzeOv" role="status" aria-live="polite">
-      <div class="spin"></div>
-      <p class="conv-label" data-i18n="converting">AI 촉각 변환 중</p>
-      <p class="conv-sub" data-i18n="converting_sub">주요 윤곽과 핵심 구조를 분석하고 있어요</p>
-    </div>
-  </div>
-</main>
-
-<!-- Right Panel -->
-<aside class="panel" role="complementary" aria-label="설정 패널">
+<!-- Left Panel: Import & Settings -->
+<aside class="panel-left" role="complementary" aria-label="가져오기 및 설정">
   <div class="panel-scroll">
 
-    <!-- ① 점 밀도 통계 -->
-    <div>
-      <div class="sec-hd" data-i18n="panel_quality">촉각 품질</div>
-      <div class="stat-card">
-        <div>
-          <div class="stat-num" id="qDotCount">0</div>
-          <div class="stat-unit" id="qDotSub">/ 2,400 핀</div>
-          <div class="density-track" style="width:120px">
-            <div class="density-fill" id="densityFill"></div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
-          <div class="qual-row" style="border:none;padding:0;gap:8px;flex-direction:column;align-items:flex-end">
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">판독성</span>
-              <span class="pill pill-n" id="qClarity">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">밀도</span>
-              <span class="pill pill-n" id="qDensity">—</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-              <span style="font-size:10px;color:var(--hint)">구조</span>
-              <span class="pill pill-n" id="qStructure">—</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- AI feedback -->
-      <div class="ai-card" id="aiFeedbackCard" style="margin-top:8px">
-        <div class="ai-badge" data-i18n="ai_title">AI 추천</div>
-        <div class="ai-text" id="aiFeedbackText"></div>
-        <div class="ai-chips" id="aiChips"></div>
-      </div>
-      <div class="ai-empty" id="aiFeedbackEmpty" data-i18n="ai_empty" style="margin-top:8px">
-        이미지를 가져오면 AI가 촉각그래픽으로 변환해드려요.
+    <!-- Import -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_import">가져오기</div>
+      <div class="import-stack">
+        <button type="button" class="btn-primary" id="importImageBtn" data-i18n="btn_import_material">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="btn_import_material">이미지 불러오기</span>
+        </button>
+        <label class="btn-secondary" for="tactileFileInput" style="cursor:pointer">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span data-i18n="btn_open_dtms">DTMS 파일 열기</span>
+        </label>
+        <button type="button" class="btn-secondary" id="chooseLibraryBtn" data-i18n="btn_choose_library">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span data-i18n="btn_choose_library">라이브러리에서 선택</span>
+        </button>
       </div>
     </div>
 
-    <!-- ② 변환 설정 (Presets + Threshold) -->
-    <div>
+    <!-- Resolution -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_resolution">해상도</div>
+      <div class="res-row control-grid cols-3">
+        <button class="btn-secondary res-btn active" data-res="60x40" aria-pressed="true">60×40</button>
+        <button class="btn-secondary res-btn" data-res="96x64" aria-pressed="false">96×64</button>
+        <button class="btn-secondary res-btn" data-res="28x40" aria-pressed="false">28×40</button>
+      </div>
+    </div>
+
+    <!-- Conversion Presets -->
+    <div class="panel-section">
       <div class="sec-hd sec-hd-row">
-        <span>변환 설정</span>
+        <span data-i18n="panel_presets">변환 프리셋</span>
         <span class="preset-chip" id="presetChip" data-i18n="preset_none">사용자 지정</span>
       </div>
-
-      <!-- Presets -->
       <div class="preset-grid" style="margin-bottom:10px">
         <button class="preset-btn" data-preset="braille">
           <span class="preset-name">점자</span>
@@ -1036,25 +1144,30 @@ details.adv > summary:hover { color: var(--ink) }
           <button class="outline-btn" data-outline="2">2줄</button>
         </div>
       </div>
+    </div>
 
-      <!-- Advanced (collapsed by default) -->
-      <details class="adv">
-        <summary data-i18n="adv_settings">고급 설정</summary>
+    <!-- Advanced Settings (collapsed by default) -->
+    <div class="panel-section">
+      <details class="adv" id="advSettings">
+        <summary data-i18n="panel_advanced">고급 설정</summary>
         <div class="adv-body">
-          <div class="ctrl-lbl" data-i18n="method_title">이진화 방식</div>
-          <div class="th-method-row" role="group" aria-label="이진화 방식">
-            <button class="th-method-btn active" data-method="global" title="수동 임계값">수동</button>
-            <button class="th-method-btn" data-method="otsu"   title="자동 Otsu">Otsu</button>
-            <button class="th-method-btn" data-method="adaptive" title="적응형">적응형</button>
-            <button class="th-method-btn" data-method="alpha"  title="투명도 기반">Alpha</button>
-          </div>
+          <p class="adv-helper" data-i18n="adv_helper">고급 설정은 촉각 변환 결과를 세밀하게 조정하고 싶은 사용자를 위한 항목이에요.</p>
 
-          <div class="ctrl-lbl" style="margin-top:10px" data-i18n="proc_title">처리</div>
+          <div class="ctrl-lbl" data-i18n="adv_binarization">이진화</div>
+          <div class="th-method-row" role="group" aria-label="이진화 방식">
+            <button class="th-method-btn active" data-method="global" data-i18n="method_global_short" title="슬라이더로 임계값을 직접 조정해요.">수동</button>
+            <button class="th-method-btn" data-method="otsu" title="명암 대비가 뚜렷한 이미지에 적합해요.">Otsu</button>
+            <button class="th-method-btn" data-method="adaptive" data-i18n="method_adaptive" title="배경이 고르지 않거나 조명이 일정하지 않은 이미지에 적합해요.">적응형</button>
+            <button class="th-method-btn" data-method="alpha" title="투명 배경(PNG)이 있는 이미지에 적합해요.">Alpha</button>
+          </div>
+          <p class="ctrl-hint" id="methodHint" data-i18n="method_manual_desc">슬라이더로 임계값을 직접 조정해요.</p>
+
+          <div class="ctrl-lbl" style="margin-top:10px" data-i18n="adv_processing">처리</div>
           <div class="proc-grid">
-            <button class="proc-btn" id="dilatBtn" data-proc="dilate" aria-pressed="false" title="점을 주변으로 확장">팽창</button>
-            <button class="proc-btn" id="erodeBtn" data-proc="erode" aria-pressed="false" title="가는 선·고립 점 제거">수축</button>
-            <button class="proc-btn" id="denoiseBtn" data-proc="denoise" aria-pressed="false" title="고립된 점 제거">노이즈</button>
-            <button class="proc-btn" id="edgeBtn" data-proc="edge" aria-pressed="false" title="Sobel 엣지 감지">엣지</button>
+            <button class="proc-btn" id="dilatBtn" data-proc="dilate" aria-pressed="false" data-i18n="proc_dilate" title="윤곽을 굵게 강화해요">윤곽 강화</button>
+            <button class="proc-btn" id="erodeBtn" data-proc="erode" aria-pressed="false" data-i18n="proc_erode" title="가는 선·고립 점을 제거해요">윤곽 얇게</button>
+            <button class="proc-btn" id="denoiseBtn" data-proc="denoise" aria-pressed="false" data-i18n="proc_denoise" title="고립된 점을 제거해요">노이즈 제거</button>
+            <button class="proc-btn" id="edgeBtn" data-proc="edge" aria-pressed="false" data-i18n="proc_edge" title="Sobel 엣지를 강조해요">엣지 강조</button>
           </div>
 
           <div class="toggle-row" style="margin-top:10px">
@@ -1065,70 +1178,220 @@ details.adv > summary:hover { color: var(--ink) }
       </details>
     </div>
 
-    <!-- ③ Dot Pad 연결 -->
-    <div class="panel-section">
-      <div class="sec-hd" data-i18n="panel_dotpad">Dot Pad</div>
-      <div class="dp-status">
-        <div class="dp-dot" id="dpDot"></div>
-        <span class="dp-lbl" id="dpLbl" data-i18n="conn_off">연결 안 됨</span>
-      </div>
-      <div class="dp-conn-row control-grid cols-2">
-        <button class="dp-btn" id="bleBtn" data-i18n="conn_btn_ble">BLE 연결</button>
-        <button class="dp-btn" id="usbBtn" data-i18n="conn_btn_usb">USB 연결</button>
-      </div>
-      <div class="live-row">
-        <span class="live-lbl" data-i18n="live_label">라이브 미리보기</span>
-        <button class="sw" id="liveSwitch" role="switch" aria-checked="false" disabled></button>
-      </div>
-
-      <div class="panel-subsection">
-        <div class="ctrl-lbl" data-i18n="pin_ctrl_title">핀 제어</div>
-        <div class="pin-row control-grid cols-3">
-          <button class="pin-btn" id="pinUpBtn" data-i18n="pin_up">전체 올리기</button>
-          <button class="pin-btn" id="pinDownBtn" data-i18n="pin_down">전체 내리기</button>
-          <button class="pin-btn" id="pinInvBtn" data-i18n="pin_invert">반전</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ④ 저장 / 내보내기 -->
-    <div class="panel-section">
-      <div class="sec-hd" data-i18n="panel_export">내보내기</div>
-      <div class="exp-stack">
-        <div class="exp-row control-grid cols-3">
-          <button class="exp-btn" id="dtmsBtn" disabled>
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            DTMS
-          </button>
-          <button class="exp-btn" id="pngBtn" disabled>
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            PNG
-          </button>
-          <button class="exp-btn" id="hexBtn" disabled>
-            <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            HEX
-          </button>
-        </div>
-        <button class="exp-btn exp-wide" id="jsonBtn">
-          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          JSON 내보내기
-        </button>
-      </div>
-    </div>
-
-    <!-- Resolution selector (hidden but accessible) -->
-    <div class="panel-section">
-      <div class="sec-hd">해상도</div>
-      <div class="res-row control-grid cols-3">
-        <button class="exp-btn res-btn active" data-res="60x40">60×40</button>
-        <button class="exp-btn res-btn" data-res="96x64">96×64</button>
-        <button class="exp-btn res-btn" data-res="28x40">28×40</button>
-      </div>
-    </div>
-
     <!-- Re-crop: hidden by JS (recropBtn.hidden) until an image source exists -->
     <div id="recropRow" class="panel-section" hidden>
       <button type="button" id="recropBtn" class="recrop-btn">다시 자르기</button>
+    </div>
+
+  </div><!-- /panel-scroll -->
+</aside><!-- /panel-left -->
+
+<!-- Canvas Area -->
+<main class="canvas-area" role="main" aria-label="캔버스 작업 영역"
+  id="canvasAreaEl">
+
+  <!-- meta strip -->
+  <div class="canvas-meta" aria-live="polite">
+    <span id="resChip" class="chip chip-n">60×40</span>
+    <span id="dotChip" class="chip chip-n">0 핀</span>
+    <span class="chip chip-ai" id="aiBadge">AI ✓</span>
+  </div>
+
+  <!-- canvas wrapper -->
+  <div class="canvas-wrap" id="dotGridWrap">
+    <canvas id="pad" aria-label="촉각그래픽 캔버스" role="img"></canvas>
+
+    <!-- empty overlay -->
+    <div class="ov" id="emptyOv" role="region" aria-label="시작 안내">
+      <div class="ov-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+      <p class="ov-title" data-i18n="empty_title">촉각그래픽을 만들어보세요</p>
+      <p class="ov-sub" data-i18n="empty_sub">AI가 DotPad에 맞게
+촉각그래픽으로 자동 변환해드려요</p>
+      <div class="ov-ctas">
+        <div id="emptyDropZone" class="ov-btn fill" role="button" tabindex="0"
+             aria-label="이미지 선택" style="cursor:pointer">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span data-i18n="empty_import">이미지 가져오기</span>
+        </div>
+        <label class="ov-btn outline" for="tactileFileInput" style="cursor:pointer">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span data-i18n="empty_dtms">.dtms 열기</span>
+        </label>
+        <div id="emptyChooseLibrary" class="ov-btn outline" role="button" tabindex="0"
+             aria-label="라이브러리에서 선택" style="cursor:pointer">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span data-i18n="btn_choose_library">라이브러리에서 선택</span>
+        </div>
+      </div>
+      <p class="ov-drag" data-i18n="empty_drag">클릭하거나 파일을 드래그하세요</p>
+    </div>
+
+    <!-- analyzing overlay -->
+    <div class="ov" id="analyzeOv" role="status" aria-live="polite">
+      <div class="spin"></div>
+      <p class="conv-label" data-i18n="converting">AI 촉각 변환 중</p>
+      <p class="conv-sub" data-i18n="converting_sub">주요 윤곽과 핵심 구조를 분석하고 있어요</p>
+    </div>
+  </div>
+</main>
+
+<!-- Right Panel -->
+<aside class="panel" role="complementary" aria-label="촉각 품질 및 DotPad 패널">
+  <div class="panel-scroll">
+
+    <!-- ① Tactile Quality Check -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="quality_title">촉각 품질 검사</div>
+      <div class="quality-card">
+        <div class="quality-score-row">
+          <div>
+            <span class="quality-score-num" id="qScoreNum">—</span>
+            <span class="quality-score-unit">/ 100</span>
+          </div>
+          <span class="quality-grade-badge pill-n" id="qGradeBadge">—</span>
+        </div>
+        <div class="stat-unit" id="qDotSub">/ 2,400 핀</div>
+        <div class="density-track">
+          <div class="density-fill" id="densityFill"></div>
+        </div>
+        <div class="quality-rows">
+          <div class="qual-row">
+            <span class="qual-key" data-i18n="q_readability">촉각 판독성</span>
+            <span class="pill pill-n" id="qReadability">—</span>
+          </div>
+          <div class="qual-row">
+            <span class="qual-key" data-i18n="q_pin_density">핀 밀도</span>
+            <span class="pill pill-n" id="qDensity">—</span>
+          </div>
+          <div class="qual-row">
+            <span class="qual-key" data-i18n="q_structure_clarity">구조 명확도</span>
+            <span class="pill pill-n" id="qStructure">—</span>
+          </div>
+          <div class="qual-row">
+            <span class="qual-key" data-i18n="q_complexity">복잡도</span>
+            <span class="pill pill-n" id="qComplexity">—</span>
+          </div>
+          <div class="qual-row">
+            <span class="qual-key" data-i18n="q_dotpad_compat">DotPad 호환성</span>
+            <span class="pill pill-n" id="qCompat">—</span>
+          </div>
+          <div class="qual-row">
+            <span class="qual-key" data-i18n="q_verification">검증 상태</span>
+            <span class="pill pill-n" id="qVerification">—</span>
+          </div>
+        </div>
+        <!-- hidden legacy stat, kept for the dot count screen-reader summary -->
+        <span class="sr-only" id="qDotCount">0</span>
+      </div>
+
+      <!-- AI suggestions -->
+      <div class="ai-card" id="aiFeedbackCard" style="margin-top:10px">
+        <div class="ai-badge" data-i18n="ai_title">AI 추천</div>
+        <div class="sugg-list" id="aiSuggestions"></div>
+      </div>
+      <div class="ai-empty" id="aiFeedbackEmpty" data-i18n="ai_empty" style="margin-top:10px">
+        이미지를 가져오면 AI가 촉각그래픽으로 변환해드려요.
+      </div>
+    </div>
+
+    <!-- ② DotPad -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_dotpad">DotPad</div>
+      <div class="dotpad-card">
+
+        <!-- Disconnected state -->
+        <div id="dpDisconnectedView">
+          <div class="dotpad-card-head">
+            <div class="dotpad-card-dot" id="dpDot" aria-hidden="true"></div>
+            <div>
+              <div class="dotpad-card-title">DotPad</div>
+              <div class="dotpad-card-sub" id="dpLbl" data-i18n="dp_status_not_connected">연결 안 됨</div>
+            </div>
+          </div>
+          <div class="dotpad-meta-rows">
+            <div class="dotpad-meta-row"><span data-i18n="dp_supported_res">지원 해상도</span><span>60×40 / 96×64</span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" id="bleBtn" data-i18n="conn_btn_ble">BLE 연결</button>
+            <button class="btn-secondary" id="usbBtn" data-i18n="conn_btn_usb">USB 연결</button>
+          </div>
+        </div>
+
+        <!-- Connected state -->
+        <div id="dpConnectedView" hidden>
+          <div class="dotpad-card-head">
+            <div class="dotpad-card-dot on" aria-hidden="true"></div>
+            <div>
+              <div class="dotpad-card-title" data-i18n="dp_connected_title">DotPad 연결됨</div>
+              <div class="dotpad-card-sub" id="dpDeviceLbl" data-i18n="dp_device_generic">DotPad 기기</div>
+            </div>
+          </div>
+          <div class="dotpad-meta-rows">
+            <div class="dotpad-meta-row"><span data-i18n="dp_resolution">해상도</span><span id="dpResVal">60×40</span></div>
+            <div class="dotpad-meta-row"><span data-i18n="dp_last_sent">마지막 전송</span><span id="dpLastSentVal" data-i18n="dp_last_sent_never">아직 없음</span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" id="dpSendBtn" data-i18n="btn_send">DotPad로 보내기</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn-secondary" id="dpRefreshBtn" data-i18n="dp_refresh">연결 새로고침</button>
+            <button class="btn-danger" id="dpDisconnectBtn" data-i18n="dp_disconnect">연결 끊기</button>
+          </div>
+        </div>
+
+        <div class="live-row">
+          <span class="live-lbl" data-i18n="live_label">라이브 미리보기</span>
+          <button class="sw" id="liveSwitch" role="switch" aria-checked="false" disabled></button>
+        </div>
+
+        <div class="panel-subsection">
+          <div class="ctrl-lbl" data-i18n="pin_ctrl_title">핀 제어</div>
+          <div class="pin-row control-grid cols-3">
+            <button class="pin-btn" id="pinUpBtn" data-i18n="pin_up">전체 올리기</button>
+            <button class="pin-btn" id="pinDownBtn" data-i18n="pin_down">전체 내리기</button>
+            <button class="pin-btn" id="pinInvBtn" data-i18n="pin_invert">반전</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ Save & Export -->
+    <div class="panel-section">
+      <div class="sec-hd" data-i18n="panel_export_save">저장 및 내보내기</div>
+      <div class="exp-stack">
+        <button type="button" class="btn-primary" id="saveLibraryBtn" disabled data-i18n="btn_save_library">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span data-i18n="btn_save_library">라이브러리에 저장</span>
+        </button>
+        <div class="btn-row">
+          <button class="btn-secondary" id="dtmsBtn" disabled>
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span data-i18n="btn_download_dtms">DTMS 저장</span>
+          </button>
+          <button class="btn-secondary" id="pngBtn" disabled>
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span data-i18n="btn_download_png">PNG 저장</span>
+          </button>
+        </div>
+      </div>
+
+      <details class="dev-export">
+        <summary data-i18n="panel_export_dev">개발용 내보내기</summary>
+        <div class="dev-export-body">
+          <button class="btn-tertiary" id="hexBtn" disabled>
+            <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span data-i18n="btn_export_hex">HEX 내보내기</span>
+          </button>
+          <button class="btn-tertiary" id="jsonBtn" disabled>
+            <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span data-i18n="btn_export_json">개발용 JSON</span>
+          </button>
+        </div>
+      </details>
     </div>
 
   </div><!-- /panel-scroll -->
@@ -1187,7 +1450,7 @@ details.adv > summary:hover { color: var(--ink) }
       <circle cx="7" cy="11.5" r="1.8" fill="white"/>
     </svg>
   </div>
-  <span style="font-size:12px;font-weight:700">Dot Canvas</span>
+  <span style="font-size:12px;font-weight:700">Tactile Agent</span>
   <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
     <div class="dp-dot" id="miniConnDot"></div>
     <button class="dp-btn" id="miniConnBtn">BLE 연결</button>
@@ -1235,13 +1498,13 @@ details.adv > summary:hover { color: var(--ink) }
       <button class="mini-quick-btn" data-cmd="단순하게" type="button" disabled>단순하게</button>
       <button class="mini-quick-btn" data-cmd="또렷하게" type="button" disabled>또렷하게</button>
       <button class="mini-quick-btn" data-cmd="점 정리" type="button" disabled>점 정리</button>
-      <button class="mini-quick-btn accent" data-cmd="Dot Pad에 맞게 최적화" type="button" disabled>최적화</button>
+      <button class="mini-quick-btn accent" data-cmd="DotPad에 맞게 최적화" type="button" disabled>최적화</button>
     </div>
   </div>
 
   <!-- ④ Output actions -->
   <div class="mini-actions">
-    <button class="mini-btn acc" id="miniSendBtn" disabled>Dot Pad 전송</button>
+    <button class="mini-btn acc" id="miniSendBtn" disabled>DotPad 전송</button>
     <button class="mini-btn" id="miniDtmsBtn" disabled>DTMS</button>
     <button class="mini-btn" id="miniPngBtn" disabled>PNG</button>
   </div>
@@ -1288,11 +1551,72 @@ details.adv > summary:hover { color: var(--ink) }
 <div class="modal-bg" id="guardModal" role="dialog" aria-modal="true" aria-labelledby="guardTitle">
   <div class="modal">
     <h2 id="guardTitle" data-i18n="guard_title">변경 사항이 저장되지 않았어요</h2>
-    <p data-i18n="guard_desc">지금 불러오면 현재 작업 내용이 사라집니다.</p>
+    <p class="modal-desc" data-i18n="guard_desc">지금 불러오면 현재 작업 내용이 사라집니다.</p>
     <div class="modal-btns">
-      <button id="guardSave" class="acc" data-i18n="guard_save">저장하고 불러오기</button>
-      <button id="guardProceed" data-i18n="guard_proceed">저장 없이 불러오기</button>
-      <button id="guardCancel" data-i18n="guard_cancel">취소</button>
+      <button id="guardCancel" class="btn-secondary" data-i18n="guard_cancel">취소</button>
+      <button id="guardSave" class="btn-primary" data-i18n="guard_save">저장하고 불러오기</button>
+      <button id="guardProceed" class="btn-danger" data-i18n="guard_continue">저장 없이 계속하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resolution Change Modal -->
+<div class="modal-bg" id="resModal" role="dialog" aria-modal="true" aria-labelledby="resModalTitle">
+  <div class="modal modal-wide">
+    <h2 id="resModalTitle" data-i18n="res_change_title">해상도 변경</h2>
+    <p class="modal-desc" data-i18n="res_change_warn_manual">해상도를 변경하면 원본 이미지 기준으로 다시 변환돼요. 수동으로 편집한 내용이 일부 초기화될 수 있어요.</p>
+    <div class="modal-btns stacked">
+      <button id="resModalKeep" class="btn-primary" data-i18n="res_modal_keep">이미지 유지하고 재변환</button>
+      <button id="resModalBlank" class="btn-danger" data-i18n="res_modal_blank">빈 캔버스로 시작</button>
+      <button id="resModalCancel" class="btn-secondary" data-i18n="res_modal_cancel">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save to Library Modal -->
+<div class="modal-bg" id="libraryModal" role="dialog" aria-modal="true" aria-labelledby="libraryModalTitle">
+  <div class="modal modal-wide">
+    <h2 id="libraryModalTitle" data-i18n="lib_modal_title">라이브러리에 저장</h2>
+    <div class="field">
+      <label for="libTitle" data-i18n="lib_field_title">제목</label>
+      <input type="text" id="libTitle" maxlength="80"/>
+    </div>
+    <div class="field">
+      <label for="libCategory" data-i18n="lib_field_category">카테고리</label>
+      <select id="libCategory">
+        <option value="maps" data-i18n="lib_cat_maps">지도</option>
+        <option value="science" data-i18n="lib_cat_science">과학</option>
+        <option value="math" data-i18n="lib_cat_math">수학</option>
+        <option value="games" data-i18n="lib_cat_games">놀이</option>
+        <option value="daily" data-i18n="lib_cat_daily">생활</option>
+        <option value="culture" data-i18n="lib_cat_culture">문화</option>
+        <option value="art" data-i18n="lib_cat_art">미술</option>
+        <option value="other" data-i18n="lib_cat_other" selected>기타</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="libDesc" data-i18n="lib_field_desc">설명</label>
+      <textarea id="libDesc"></textarea>
+    </div>
+    <div class="field">
+      <label for="libTags" data-i18n="lib_field_tags">태그 (쉼표로 구분)</label>
+      <input type="text" id="libTags" placeholder="지도, 촉각, 학습"/>
+    </div>
+    <div class="field">
+      <label for="libRecommended" data-i18n="lib_field_recommended">추천 활용</label>
+      <input type="text" id="libRecommended"/>
+    </div>
+    <div class="field">
+      <label id="libVisibilityLbl" data-i18n="lib_field_visibility">공개 범위</label>
+      <div class="segmented" role="radiogroup" aria-labelledby="libVisibilityLbl" id="libVisibility">
+        <button type="button" role="radio" aria-checked="true" tabindex="0" data-value="private" data-i18n="lib_visibility_private">비공개</button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-value="team" data-i18n="lib_visibility_team">팀</button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-value="public" data-i18n="lib_visibility_public">전체 공개</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button id="libCancel" class="btn-secondary" data-i18n="cancel">취소</button>
+      <button id="libSave" class="btn-primary" data-i18n="btn_save_library">라이브러리에 저장</button>
     </div>
   </div>
 </div>

@@ -368,7 +368,7 @@ export function autoSelectParams(sourceImageState, cols, rows) {
 /**
  * Search a bounded space of conversion params and return the one that
  * maximizes tactile readability on the target pin grid.
- * This is the core "Dot Pad 최적화" routine — it does NOT mutate state.
+ * This is the core "DotPad 최적화" routine — it does NOT mutate state.
  *
  * @returns {{ params: object, score: number, grade: number }}
  */
@@ -533,7 +533,7 @@ export function autoThinDots(grid, cols, rows, maxIter = 6) {
   return g;
 }
 
-// ─── Encoder (column-major, Dot Pad HEX format) ───────────────
+// ─── Encoder (column-major, DotPad HEX format) ───────────────
 const dotBit = (lx, ly) => lx * 4 + ly;
 
 export function gridToHex(data, cols, rows) {

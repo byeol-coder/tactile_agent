@@ -14,7 +14,7 @@ export const ALLOW_GUEST = true;
 
 // 로그인/클라우드 UI 표시 여부
 //  - false: 텍타일월드가 로그인을 담당 → 여기선 [로그인] 버튼 숨김 (게스트 모드)
-//  - true : Dot Canvas 자체 로그인 카드 + Supabase 클라우드 저장 사용 (단독 배포 / 나중에 SSO)
+//  - true : Tactile Agent 자체 로그인 카드 + Supabase 클라우드 저장 사용 (단독 배포 / 나중에 SSO)
 export const ENABLE_AUTH_UI = false;
 
 // 임시 닷 클라우드(드라이브 UI) 사용 여부

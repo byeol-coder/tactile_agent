@@ -43,17 +43,17 @@ function injectUI() {
   installBtn.textContent = "설치";
   right.insertBefore(installBtn, saveBtn);
 
-  // 텍타일 드라이브 링크 (로그인 불필요, 별도 페이지로 이동)
+  // 라이브러리(Tactile World Library) 링크 (로그인 불필요, 별도 페이지로 이동)
   // 이전에는 여기서 로컬(localStorage) 임시 "닷 클라우드" 모달을 열었지만,
-  // drive.html의 텍타일 드라이브 라이브러리로 대체했다. dot-cloud.js 자체는
+  // drive.html의 라이브러리로 대체했다. dot-cloud.js 자체는
   // 그대로 두어서 필요하면 나중에 다시 연결할 수 있게 했다.
   let driveBtn = null;
   if (ENABLE_DOT_CLOUD_TEMP) {
     driveBtn = document.createElement("button");
     driveBtn.className = "hd-btn ghost";
     driveBtn.id = "tactileDriveBtn";
-    driveBtn.title = "텍타일 드라이브 열기";
-    driveBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>텍타일 드라이브</span>';
+    driveBtn.title = "라이브러리 열기";
+    driveBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>라이브러리</span>';
     driveBtn.addEventListener("click", () => window.open("drive.html", "_blank", "noopener"));
     right.insertBefore(driveBtn, saveBtn);
   }
